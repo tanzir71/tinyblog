@@ -8,19 +8,24 @@
  * Security: prepared statements, CSRF, session timeout, CORS allowlist, safe uploads.
  * Privacy: no third-party trackers; subscribers store only email and opt-in time.
  * Configure allowed widget origins in Admin -> Settings before embedding elsewhere.
- * Repository: https://github.com/tanzir71/tinyblog-widget
+ * Repository: https://github.com/tanzir71/tinyblog
  */
 
 declare(strict_types=1);
 
 const TB_VERSION = '0.1.0';
-const TB_REPO_URL = 'https://github.com/tanzir71/tinyblog-widget';
+const TB_REPO_URL = 'https://github.com/tanzir71/tinyblog';
+
+load_env_file(__DIR__ . DIRECTORY_SEPARATOR . '.env');
 
 $GLOBALS['TB_CONFIG'] = [
-    'db_path' => __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'tinyblog.db',
-    'upload_dir' => __DIR__ . DIRECTORY_SEPARATOR . 'uploads',
-    'session_timeout' => 1800,
-    'max_upload_bytes' => 2 * 1024 * 1024,
+    'db_path' => config_path('TB_DB_PATH', __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'tinyblog.db'),
+    'upload_dir' => config_path('TB_UPLOAD_DIR', __DIR__ . DIRECTORY_SEPARATOR . 'uploads'),
+    'log_path' => config_path('TB_LOG_FILE', __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'tinyblog.log'),
+    'session_timeout' => (int) config_value('TB_SESSION_TIMEOUT', '1800'),
+    'login_rate_limit' => (int) config_value('TB_LOGIN_RATE_LIMIT', '10'),
+    'subscribe_rate_limit' => (int) config_value('TB_SUBSCRIBE_RATE_LIMIT', '5'),
+    'max_upload_bytes' => (int) config_value('TB_MAX_UPLOAD_BYTES', (string) (2 * 1024 * 1024)),
     'allowed_ext' => ['jpg', 'jpeg', 'png', 'gif', 'webp'],
     'allowed_mime' => [
         'image/jpeg' => 'jpg',
@@ -29,6 +34,47 @@ $GLOBALS['TB_CONFIG'] = [
         'image/webp' => 'webp',
     ],
 ];
+
+function load_env_file(string $path): void
+{
+    if (!is_file($path) || !is_readable($path)) {
+        return;
+    }
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return;
+    }
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+            continue;
+        }
+        [$key, $value] = array_map('trim', explode('=', $line, 2));
+        $value = trim($value, "\"'");
+        if (preg_match('/^[A-Z0-9_]+$/', $key)) {
+            $_ENV[$key] = $value;
+            putenv($key . '=' . $value);
+        }
+    }
+}
+
+function config_value(string $key, string $fallback): string
+{
+    $value = $_ENV[$key] ?? getenv($key);
+    if ($value === false || $value === null || $value === '') {
+        return $fallback;
+    }
+    return (string) $value;
+}
+
+function config_path(string $key, string $fallback): string
+{
+    $value = config_value($key, $fallback);
+    if (preg_match('#^(?:[A-Za-z]:[\\\\/]|/)#', $value)) {
+        return $value;
+    }
+    return __DIR__ . DIRECTORY_SEPARATOR . ltrim($value, '.\\/');
+}
 
 function htmlEscape(?string $value): string
 {
@@ -206,6 +252,41 @@ function log_event(PDO $pdo, string $level, string $message, array $context = []
     ]);
 }
 
+function write_server_log(string $level, string $message, array $context = []): void
+{
+    $path = (string) ($GLOBALS['TB_CONFIG']['log_path'] ?? '');
+    if ($path === '') {
+        error_log('[TinyBlog] ' . $message);
+        return;
+    }
+    $dir = dirname($path);
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    $entry = [
+        'time' => now_utc(),
+        'level' => $level,
+        'message' => $message,
+        'context' => $context,
+    ];
+    error_log(json_encode($entry, JSON_UNESCAPED_SLASHES) . PHP_EOL, 3, $path);
+}
+
+function security_headers(string $context = 'html'): void
+{
+    if (headers_sent()) {
+        return;
+    }
+    header('X-Frame-Options: DENY');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
+    // Customize CSP carefully if you add third-party scripts, analytics, or remote media.
+    if ($context === 'html') {
+        header("Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'");
+    }
+}
+
 function secure_session_start(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
@@ -277,6 +358,38 @@ function require_user(PDO $pdo): array
         redirect('/admin');
     }
     return $user;
+}
+
+function require_admin(array $user): void
+{
+    if (($user['role'] ?? '') !== 'admin') {
+        http_response_code(403);
+        security_headers('html');
+        exit('Admin role required.');
+    }
+}
+
+function can_manage_post(PDO $pdo, array $user, int $postId): bool
+{
+    if (!in_array((string) ($user['role'] ?? ''), ['admin', 'editor'], true)) {
+        return false;
+    }
+    if ($postId <= 0) {
+        return true;
+    }
+    $stmt = $pdo->prepare('SELECT id FROM posts WHERE id = :id AND site = :site LIMIT 1');
+    $stmt->execute([
+        ':id' => $postId,
+        ':site' => setting($pdo, 'site_key', 'store-1'),
+    ]);
+    return (bool) $stmt->fetch();
+}
+
+function admin_route_action(): string
+{
+    $action = (string) ($_GET['action'] ?? 'dashboard');
+    $allowed = ['dashboard', 'edit', 'media', 'subscribers', 'settings'];
+    return in_array($action, $allowed, true) ? $action : 'dashboard';
 }
 
 function user_count(PDO $pdo): int
@@ -582,8 +695,8 @@ function check_cors_or_fail(PDO $pdo): void
 function json_response(array $payload, int $status = 200): void
 {
     http_response_code($status);
+    security_headers('json');
     header('Content-Type: application/json; charset=utf-8');
-    header('X-Content-Type-Options: nosniff');
     echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -631,6 +744,7 @@ function handle_api(PDO $pdo, string $path): void
 {
     check_cors_or_fail($pdo);
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        security_headers('json');
         http_response_code(204);
         exit;
     }
@@ -670,7 +784,7 @@ function handle_api(PDO $pdo, string $path): void
     }
 
     if ($path === '/api/subscribe' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        if (!rate_limit($pdo, 'subscribe', 5, 3600)) {
+        if (!rate_limit($pdo, 'subscribe', (int) $GLOBALS['TB_CONFIG']['subscribe_rate_limit'], 3600)) {
             json_response(['error' => 'Too many subscribe attempts. Try again later.'], 429);
         }
         $data = get_json_body();
@@ -708,8 +822,8 @@ function render_page(PDO $pdo, string $title, string $body, array $meta = []): v
     $description = $meta['description'] ?? 'A tiny privacy-friendly embeddable blog feed.';
     $canonical = $meta['canonical'] ?? canonical_url($pdo, route_path());
     $ogImage = $meta['og_image'] ?? '';
+    security_headers('html');
     header('Content-Type: text/html; charset=utf-8');
-    header('X-Content-Type-Options: nosniff');
     echo '<!doctype html><html lang="en"><head><meta charset="utf-8">';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
     echo '<title>' . htmlEscape($title . ' - ' . $blogTitle) . '</title>';
@@ -729,7 +843,7 @@ function render_page(PDO $pdo, string $title, string $body, array $meta = []): v
     echo '</style></head><body><div class="site">';
     echo '<header class="topbar"><a class="brand" href="' . htmlEscape(url_for('/')) . '">' . htmlEscape($blogTitle) . '</a><nav><a href="' . htmlEscape(url_for('/archive')) . '">Archive</a><a href="' . htmlEscape(url_for('/about')) . '">About</a><a href="' . htmlEscape(url_for('/admin')) . '">Admin</a></nav></header>';
     echo $body;
-    echo '<footer class="footer"><p>Privacy: this site stores subscriber emails only for opt-in delivery. No third-party trackers are enabled by default. Enable HTTPS and keep file permissions tight.</p><p><a href="' . TB_REPO_URL . '">GitHub</a> · <a href="' . htmlEscape(url_for('/feed.xml')) . '">RSS</a> · <a href="' . htmlEscape(url_for('/sitemap.xml')) . '">Sitemap</a></p></footer>';
+    echo '<footer class="footer"><p>Privacy: this site stores subscriber emails only for opt-in delivery. No third-party trackers are enabled by default. Enable HTTPS and keep file permissions tight.</p><p><a href="' . TB_REPO_URL . '">GitHub</a> · <a href="' . htmlEscape(url_for('/SETUP.md')) . '">Docs</a> · <a href="' . htmlEscape(url_for('/SECURITY.md')) . '">Security</a> · <a href="' . htmlEscape(url_for('/feed.xml')) . '">RSS</a> · <a href="' . htmlEscape(url_for('/sitemap.xml')) . '">Sitemap</a></p></footer>';
     echo '</div></body></html>';
     exit;
 }
@@ -894,6 +1008,7 @@ function render_rss(PDO $pdo): void
     $site = setting($pdo, 'site_key', 'store-1');
     $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site AND status = :status ORDER BY datetime(published_at) DESC LIMIT 30');
     $stmt->execute([':site' => $site, ':status' => 'published']);
+    security_headers('xml');
     header('Content-Type: application/rss+xml; charset=utf-8');
     echo '<?xml version="1.0" encoding="UTF-8" ?>';
     echo '<rss version="2.0"><channel>';
@@ -916,6 +1031,7 @@ function render_sitemap(PDO $pdo): void
     $site = setting($pdo, 'site_key', 'store-1');
     $stmt = $pdo->prepare('SELECT slug, updated_at FROM posts WHERE site = :site AND status = :status ORDER BY datetime(updated_at) DESC LIMIT 500');
     $stmt->execute([':site' => $site, ':status' => 'published']);
+    security_headers('xml');
     header('Content-Type: application/xml; charset=utf-8');
     echo '<?xml version="1.0" encoding="UTF-8" ?>';
     echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
@@ -932,7 +1048,7 @@ function render_sitemap(PDO $pdo): void
 function render_admin(PDO $pdo): void
 {
     $user = current_user($pdo);
-    $action = (string) ($_GET['action'] ?? 'dashboard');
+    $action = admin_route_action();
     $message = '';
     $error = '';
 
@@ -964,7 +1080,7 @@ function render_admin(PDO $pdo): void
             }
         } elseif ($postAction === 'login') {
             require_csrf();
-            if (!rate_limit($pdo, 'admin_login', 10, 900)) {
+            if (!rate_limit($pdo, 'admin_login', (int) $GLOBALS['TB_CONFIG']['login_rate_limit'], 900)) {
                 $error = 'Too many login attempts. Try again later.';
             } else {
                 $email = strtolower(trim((string) ($_POST['email'] ?? '')));
@@ -986,6 +1102,9 @@ function render_admin(PDO $pdo): void
         } else {
             $user = require_user($pdo);
             require_csrf();
+            if (in_array($postAction, ['save_settings', 'seed_samples'], true)) {
+                require_admin($user);
+            }
             if ($postAction === 'save_post') {
                 save_post($pdo, $user);
                 redirect('/admin');
@@ -1032,7 +1151,12 @@ function render_admin(PDO $pdo): void
 
     echo admin_head($pdo, 'Admin');
     echo '<div class="site admin-layout"><aside class="admin-nav">';
-    foreach (['dashboard' => 'Dashboard', 'edit' => 'New post', 'media' => 'Media', 'subscribers' => 'Subscribers', 'settings' => 'Settings'] as $key => $label) {
+    $nav = ['dashboard' => 'Dashboard', 'edit' => 'New post', 'media' => 'Media'];
+    if (($user['role'] ?? '') === 'admin') {
+        $nav['subscribers'] = 'Subscribers';
+        $nav['settings'] = 'Settings';
+    }
+    foreach ($nav as $key => $label) {
         echo '<a class="button secondary" href="' . htmlEscape(url_for('/admin?action=' . $key)) . '">' . htmlEscape($label) . '</a>';
     }
     echo '<form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="logout"><button class="secondary">Logout</button></form>';
@@ -1041,15 +1165,17 @@ function render_admin(PDO $pdo): void
         echo '<p class="notice">' . htmlEscape($message) . '</p>';
     }
     if ($action === 'edit') {
-        render_post_form($pdo);
+        render_post_form($pdo, $user);
     } elseif ($action === 'media') {
         render_media_admin($pdo);
     } elseif ($action === 'subscribers') {
+        require_admin($user);
         render_subscribers_admin($pdo);
     } elseif ($action === 'settings') {
+        require_admin($user);
         render_settings_admin($pdo);
     } else {
-        render_dashboard_admin($pdo);
+        render_dashboard_admin($pdo, $user);
     }
     echo '</main></div></body></html>';
     exit;
@@ -1057,15 +1183,20 @@ function render_admin(PDO $pdo): void
 
 function admin_head(PDO $pdo, string $title): string
 {
+    security_headers('html');
     $accent = setting($pdo, 'accent_color', '#000000');
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . htmlEscape($title) . ' - TinyBlog Admin</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>' . css_base($accent) . '.editor-preview{border:1px solid var(--line);padding:14px;min-height:180px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}</style></head><body>';
 }
 
-function render_dashboard_admin(PDO $pdo): void
+function render_dashboard_admin(PDO $pdo, array $user): void
 {
-    $stmt = $pdo->prepare('SELECT * FROM posts ORDER BY datetime(updated_at) DESC LIMIT 20');
-    $stmt->execute();
-    echo '<h1>Dashboard</h1><div class="toolbar"><a class="button" href="' . htmlEscape(url_for('/admin?action=edit')) . '">Write post</a><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="seed_samples"><button class="secondary">Load sample posts</button></form></div>';
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site ORDER BY datetime(updated_at) DESC LIMIT 20');
+    $stmt->execute([':site' => setting($pdo, 'site_key', 'store-1')]);
+    echo '<h1>Dashboard</h1><div class="toolbar"><a class="button" href="' . htmlEscape(url_for('/admin?action=edit')) . '">Write post</a>';
+    if (($user['role'] ?? '') === 'admin') {
+        echo '<form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="seed_samples"><button class="secondary">Load sample posts</button></form>';
+    }
+    echo '</div>';
     echo '<table><thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Updated</th></tr></thead><tbody>';
     foreach ($stmt->fetchAll() as $post) {
         echo '<tr><td><a href="' . htmlEscape(url_for('/admin?action=edit&id=' . (int) $post['id'])) . '">' . htmlEscape($post['title']) . '</a><br><span class="muted">/' . htmlEscape($post['slug']) . '</span></td><td>' . htmlEscape($post['status']) . '</td><td>' . (int) $post['view_count'] . '</td><td>' . htmlEscape($post['updated_at']) . '</td></tr>';
@@ -1073,7 +1204,7 @@ function render_dashboard_admin(PDO $pdo): void
     echo '</tbody></table>';
 }
 
-function render_post_form(PDO $pdo): void
+function render_post_form(PDO $pdo, array $user): void
 {
     $post = [
         'id' => '',
@@ -1087,8 +1218,14 @@ function render_post_form(PDO $pdo): void
         'published_at' => now_utc(),
     ];
     if (!empty($_GET['id'])) {
-        $stmt = $pdo->prepare('SELECT * FROM posts WHERE id = :id LIMIT 1');
-        $stmt->execute([':id' => (int) $_GET['id']]);
+        $postId = (int) $_GET['id'];
+        if (!can_manage_post($pdo, $user, $postId)) {
+            http_response_code(403);
+            echo '<h1>Forbidden</h1><p class="muted">You cannot edit that post.</p>';
+            return;
+        }
+        $stmt = $pdo->prepare('SELECT * FROM posts WHERE id = :id AND site = :site LIMIT 1');
+        $stmt->execute([':id' => $postId, ':site' => setting($pdo, 'site_key', 'store-1')]);
         $found = $stmt->fetch();
         if ($found) {
             $post = array_merge($post, $found);
@@ -1126,7 +1263,6 @@ function render_post_form(PDO $pdo): void
 
 function save_post(PDO $pdo, array $user): void
 {
-    unset($user);
     $id = (int) ($_POST['id'] ?? 0);
     $site = setting($pdo, 'site_key', 'store-1');
     $title = trim((string) ($_POST['title'] ?? ''));
@@ -1146,7 +1282,11 @@ function save_post(PDO $pdo, array $user): void
         throw new RuntimeException('Title and body are required.');
     }
     if ($id > 0) {
-        $stmt = $pdo->prepare('UPDATE posts SET title = :title, slug = :slug, body_markdown = :body_markdown, content_html = :content_html, excerpt = :excerpt, hero_image_url = :hero_image_url, tags = :tags, status = :status, published_at = :published_at, updated_at = :updated_at WHERE id = :id');
+        if (!can_manage_post($pdo, $user, $id)) {
+            http_response_code(403);
+            exit('You cannot edit that post.');
+        }
+        $stmt = $pdo->prepare('UPDATE posts SET title = :title, slug = :slug, body_markdown = :body_markdown, content_html = :content_html, excerpt = :excerpt, hero_image_url = :hero_image_url, tags = :tags, status = :status, published_at = :published_at, updated_at = :updated_at WHERE id = :id AND site = :site');
         $stmt->execute([
             ':title' => $title,
             ':slug' => $slug,
@@ -1159,6 +1299,7 @@ function save_post(PDO $pdo, array $user): void
             ':published_at' => $publishedAt,
             ':updated_at' => now_utc(),
             ':id' => $id,
+            ':site' => $site,
         ]);
         return;
     }
@@ -1239,8 +1380,8 @@ function render_media_admin(PDO $pdo): void
 function render_subscribers_admin(PDO $pdo): void
 {
     echo '<h1>Subscribers</h1><p class="muted">Emails are stored for opt-in updates only. Export carefully and delete on request.</p>';
-    $stmt = $pdo->prepare('SELECT email, status, consent_at FROM subscribers ORDER BY datetime(consent_at) DESC LIMIT 200');
-    $stmt->execute();
+    $stmt = $pdo->prepare('SELECT email, status, consent_at FROM subscribers WHERE site = :site ORDER BY datetime(consent_at) DESC LIMIT 200');
+    $stmt->execute([':site' => setting($pdo, 'site_key', 'store-1')]);
     echo '<table><thead><tr><th>Email</th><th>Status</th><th>Consent</th></tr></thead><tbody>';
     foreach ($stmt->fetchAll() as $row) {
         echo '<tr><td>' . htmlEscape($row['email']) . '</td><td>' . htmlEscape($row['status']) . '</td><td>' . htmlEscape($row['consent_at']) . '</td></tr>';
@@ -1361,7 +1502,7 @@ try {
     render_home($pdo);
 } catch (Throwable $e) {
     http_response_code(500);
-    error_log('[TinyBlog] ' . $e->getMessage());
+    write_server_log('error', $e->getMessage(), ['path' => route_path()]);
     try {
         if (isset($pdo) && $pdo instanceof PDO) {
             log_event($pdo, 'error', $e->getMessage(), ['path' => route_path()]);
@@ -1371,5 +1512,6 @@ try {
     if (str_starts_with(route_path(), '/api/')) {
         json_response(['error' => 'A server error occurred.'], 500);
     }
+    security_headers('html');
     echo '<!doctype html><meta charset="utf-8"><title>TinyBlog error</title><p>A server error occurred. Check the server log.</p>';
 }

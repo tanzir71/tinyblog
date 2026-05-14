@@ -3,23 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TinyBlog Widget - embeddable blog MVP</title>
-  <meta name="description" content="TinyBlog Widget is a secure-by-default embeddable blog feed with a small PHP and SQLite backend.">
+  <title>TinyBlog Widget | Secure embeddable publishing</title>
+  <meta name="description" content="TinyBlog Widget is a secure PHP and SQLite backend with a one-line embeddable blog widget.">
   <meta property="og:title" content="TinyBlog Widget">
-  <meta property="og:description" content="One script tag, a small PHP backend, and privacy-friendly publishing embeds.">
+  <meta property="og:description" content="A small shared-hosting blog backend and one-line embed widget.">
   <meta property="og:image" content="assets/og-placeholder.svg">
-  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9D%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #ffffff;
+      --bg: #fff;
       --text: #050505;
-      --muted: #666666;
-      --line: #e7e7e7;
+      --muted: #5f5f5f;
+      --line: #dedede;
       --soft: #f7f7f7;
-      --max: 1120px;
+      --max: 1180px;
     }
     * { box-sizing: border-box; }
     html, body { max-width: 100%; overflow-x: hidden; }
@@ -31,181 +31,254 @@
       letter-spacing: 0;
     }
     a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-    .page { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .wrap { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
     .top {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      padding: 20px 0;
+      align-items: center;
+      gap: 18px;
+      padding: 22px 0;
       border-bottom: 1px solid var(--line);
+      font-size: 14px;
     }
-    .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 900; text-decoration: none; }
-    .brand img { width: 30px; height: 30px; }
-    nav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+    .brand { font-weight: 900; text-decoration: none; }
+    nav { display: flex; flex-wrap: wrap; gap: 18px; color: #111; }
+    nav a { text-decoration: none; }
     .hero {
+      padding: 64px 0 36px;
       display: grid;
-      gap: 26px;
-      padding: 52px 0 34px;
-      border-bottom: 1px solid var(--line);
+      grid-template-columns: 1fr;
+      gap: 34px;
     }
-    .hero > *, .grid > * { min-width: 0; }
+    .hero > *, .section > * { min-width: 0; }
+    .kicker, .section-label {
+      margin: 0 0 18px;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
     h1 {
-      max-width: 900px;
-      font-size: clamp(48px, 12vw, 116px);
-      line-height: .88;
-      letter-spacing: 0;
+      max-width: 860px;
       margin: 0;
+      font-size: clamp(46px, 11vw, 112px);
+      line-height: .9;
+      letter-spacing: 0;
     }
     .lede {
-      max-width: 720px;
-      color: var(--muted);
-      font-size: clamp(18px, 3vw, 25px);
-      line-height: 1.42;
-      margin: 0;
+      max-width: 760px;
+      margin: 22px 0 0;
+      color: #191919;
+      font-size: clamp(18px, 3vw, 24px);
+      line-height: 1.5;
     }
-    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
     .button {
       display: inline-flex;
+      min-height: 44px;
       align-items: center;
       justify-content: center;
-      min-height: 44px;
-      padding: 10px 14px;
       border: 1px solid var(--text);
+      padding: 11px 15px;
       background: var(--text);
       color: #fff;
       text-decoration: none;
-      font-weight: 750;
       font-size: 14px;
+      font-weight: 750;
     }
     .button.secondary { background: #fff; color: var(--text); }
+    .bullets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px 18px;
+      padding: 0;
+      margin: 24px 0 0;
+      color: var(--muted);
+      list-style: none;
+      font-size: 14px;
+    }
+    .bullets li::before { content: "* "; color: var(--text); }
+    .surface {
+      border: 1px solid #101010;
+      background: #fff;
+      min-width: 0;
+    }
+    .surface-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .surface-body { padding: 8px 16px 16px; }
+    .feed-row {
+      display: grid;
+      gap: 4px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .feed-row:last-child { border-bottom: 0; }
+    .feed-row strong { font-size: 18px; line-height: 1.2; }
+    .feed-row span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .section {
+      border-top: 1px solid var(--line);
+      padding: 42px 0;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    h2 {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(34px, 7vw, 66px);
+      line-height: .95;
+      letter-spacing: 0;
+    }
+    h3 { margin: 0 0 8px; font-size: 20px; line-height: 1.2; }
+    p { margin: 0; }
+    .copy { max-width: 720px; color: #242424; font-size: 16px; line-height: 1.72; }
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+      border-top: 1px solid var(--line);
+    }
+    .card { padding: 20px 0; border-bottom: 1px solid var(--line); }
+    .num { display: block; margin-bottom: 18px; font-size: 13px; font-weight: 800; color: var(--muted); }
     .code {
-      background: var(--soft);
-      border: 1px solid var(--line);
-      padding: 16px;
       width: 100%;
       min-width: 0;
-      max-width: 100%;
+      margin: 0;
+      padding: 18px;
       overflow-x: auto;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+      border: 1px solid var(--line);
+      background: var(--soft);
       font-size: 13px;
       line-height: 1.65;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 28px;
-      padding: 34px 0;
-      border-bottom: 1px solid var(--line);
-    }
-    .section-title {
-      font-size: clamp(30px, 6vw, 56px);
-      line-height: .98;
-      margin: 0 0 14px;
-      max-width: 760px;
-    }
-    .copy { color: var(--muted); line-height: 1.7; font-size: 16px; max-width: 720px; }
-    .preview {
-      border: 1px solid var(--text);
-      padding: 18px;
-      align-self: start;
-    }
-    .preview h3 { margin: 0 0 16px; font-size: 15px; }
-    .post {
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 26px 0 46px;
       border-top: 1px solid var(--line);
-      padding: 15px 0;
+      color: var(--muted);
+      font-size: 13px;
     }
-    .post:first-of-type { border-top: 0; padding-top: 0; }
-    .post strong { display: block; font-size: 23px; line-height: 1.1; margin-bottom: 6px; }
-    .post span { color: var(--muted); font-size: 14px; line-height: 1.5; }
-    .cols { display: grid; grid-template-columns: 1fr; gap: 18px; }
-    .rule { border-top: 1px solid var(--line); padding-top: 18px; }
-    footer { padding: 28px 0 46px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+    footer a { color: var(--text); }
     @media (min-width: 860px) {
-      .hero { grid-template-columns: minmax(0, 1.1fr) minmax(320px, .7fr); align-items: end; }
-      .grid { grid-template-columns: .85fr 1.15fr; }
-      .cols { grid-template-columns: repeat(3, 1fr); }
-      .code { font-size: 14px; }
+      .hero { grid-template-columns: minmax(0, 1.05fr) minmax(340px, .72fr); align-items: end; }
+      .section { grid-template-columns: .92fr 1.08fr; }
+      .cards { grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
+      .card { padding: 24px 22px; border-right: 1px solid var(--line); border-bottom: 0; }
+      .card:last-child { border-right: 0; }
     }
     @media (max-width: 560px) {
-      .top { align-items: flex-start; }
-      h1 { font-size: 54px; max-width: 7ch; }
-      .lede, .copy { max-width: 30ch; font-size: 16px; }
-      .section-title { max-width: 12ch; }
-      .code { font-size: 12px; }
+      .top { display: grid; align-items: flex-start; }
+      nav { justify-content: flex-start; gap: 10px 14px; }
+      h1 { max-width: 8ch; font-size: 52px; }
+      .lede, .copy { max-width: 31ch; }
+      .bullets { display: grid; gap: 10px; }
+      .surface { width: calc(100vw - 32px); max-width: calc(100vw - 32px); overflow: hidden; }
+      .surface-head { display: grid; justify-content: start; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
+  <div class="wrap">
     <header class="top">
-      <a class="brand" href="https://github.com/tanzir71/tinyblog-widget">
-        <img src="assets/logo.svg" alt="" width="30" height="30"> TinyBlog Widget
-      </a>
+      <a class="brand" href="https://github.com/tanzir71/tinyblog">TinyBlog Widget</a>
       <nav aria-label="Primary">
-        <a href="https://github.com/tanzir71/tinyblog-widget">GitHub</a>
-        <a href="README.md">README</a>
+        <a href="#overview">Overview</a>
+        <a href="#workflow">Workflow</a>
         <a href="SETUP.md">Setup</a>
         <a href="SECURITY.md">Security</a>
+        <a href="https://github.com/tanzir71/tinyblog">GitHub</a>
       </nav>
     </header>
 
     <main>
-      <section class="hero">
+      <section class="hero" id="overview">
         <div>
-          <h1>Embed a tiny blog anywhere.</h1>
-          <p class="lede">A one-line JavaScript widget backed by a small PHP and SQLite admin. Built for shared hosting, clean typography, and quiet privacy.</p>
-          <div class="actions" aria-label="Project links">
-            <a class="button" href="https://github.com/tanzir71/tinyblog-widget">View repository</a>
-            <a class="button secondary" href="README.md">Read docs</a>
+          <p class="kicker">Secure embeds for small publishers</p>
+          <h1>Show the updates worth opening.</h1>
+          <p class="lede">TinyBlog Widget is a PHP and SQLite backend with a one-line JavaScript embed for feeds, single posts, and subscriber capture. It stays small enough for shared hosting and clear enough to audit.</p>
+          <div class="actions">
+            <a class="button" href="README.md">Read the Docs</a>
+            <a class="button secondary" href="https://github.com/tanzir71/tinyblog">View on GitHub</a>
           </div>
+          <ul class="bullets" aria-label="Project attributes">
+            <li>PHP 8 + SQLite</li>
+            <li>Prepared statements</li>
+            <li>CORS allowlist</li>
+            <li>No third-party trackers</li>
+          </ul>
         </div>
-        <pre class="code"><code>&lt;script
-  src="https://blog.example.com/tinyblog-widget.js"
-  data-tb-config='{"site":"store-1","endpoint":"https://blog.example.com/api"}'&gt;
-&lt;/script&gt;</code></pre>
-      </section>
 
-      <section class="grid">
-        <div>
-          <h2 class="section-title">Feed, post, or subscribe widget.</h2>
-          <p class="copy">The embed script auto-initializes from <code>data-tb-config</code>, or site owners can call <code>window.TinyBlogWidget.init(config)</code>. It fetches JSON over CORS, sanitizes server HTML again in the browser, and renders responsive Inter-style UI with CSS variables.</p>
-        </div>
-        <aside class="preview" aria-label="Widget preview">
-          <h3>Latest posts</h3>
-          <div class="post"><strong>Why TinyBlog Widget exists</strong><span>A tiny publishing feed for stores, portfolios, docs, and product updates.</span></div>
-          <div class="post"><strong>A secure default for shared hosting</strong><span>PDO, CSRF, CORS allowlists, safe uploads, and no third-party trackers.</span></div>
-          <div class="post"><strong>Embedding a feed on any page</strong><span>Feed, post, and subscribe modes from one script tag.</span></div>
+        <aside class="surface" aria-label="TinyBlog widget preview">
+          <div class="surface-head"><span>Review Surface</span><a href="README.md">View all</a></div>
+          <div class="surface-body">
+            <div class="feed-row"><strong>Why TinyBlog Widget exists</strong><span>A tiny publishing feed for stores, portfolios, docs, and product updates.</span></div>
+            <div class="feed-row"><strong>A secure default for shared hosting</strong><span>PDO, CSRF, CORS allowlists, safe uploads, and no default credentials.</span></div>
+            <div class="feed-row"><strong>Embedding a feed on any page</strong><span>Feed, post, and subscribe modes from one script tag.</span></div>
+          </div>
         </aside>
       </section>
 
-      <section class="grid">
+      <section class="section">
         <div>
-          <h2 class="section-title">Small backend, real admin.</h2>
-          <p class="copy">The PHP app auto-creates <code>data/tinyblog.db</code>, provides first-admin registration, Markdown writing with preview/autosave, media uploads, subscriber capture, RSS, sitemap, and canonical public pages for SEO fallbacks.</p>
+          <p class="section-label">Built for the real bottleneck</p>
+          <h2>The job is to publish clearly, not run a CMS fleet.</h2>
         </div>
-        <div class="cols">
-          <div class="rule"><strong>API</strong><p class="copy">Published JSON feeds, single post JSON, subscribe endpoint, RSS, sitemap.</p></div>
-          <div class="rule"><strong>Admin</strong><p class="copy">Login, posts, media, subscribers, settings, sample content loader.</p></div>
-          <div class="rule"><strong>Hosting</strong><p class="copy">PHP 8+, PDO SQLite, Apache rewrite rules, upload protections.</p></div>
+        <p class="copy">TinyBlog narrows the stack to a single PHP app, a SQLite database, and one embed script. Authors get a minimal admin writing surface; readers get static-style canonical pages, RSS, and an accessible widget that can live inside any existing site.</p>
+      </section>
+
+      <section class="section">
+        <div>
+          <p class="section-label">What the tool actually does</p>
+          <h2>Three ways TinyBlog helps before the next deploy.</h2>
+        </div>
+        <div class="cards">
+          <article class="card"><span class="num">01</span><h3>Render blog feeds anywhere</h3><p class="copy">Drop in the script, set an endpoint, and render feed, post, or subscribe widgets with CSS-variable overrides.</p></article>
+          <article class="card"><span class="num">02</span><h3>Keep publishing local to your host</h3><p class="copy">Posts, uploads, subscribers, settings, RSS, and sitemap data stay in your PHP hosting account by default.</p></article>
+          <article class="card"><span class="num">03</span><h3>Audit the security path</h3><p class="copy">Prepared SQL, escaped templates, CSRF, session timeout, rate limits, upload whitelists, and CORS checks are intentionally visible.</p></article>
         </div>
       </section>
 
-      <section class="grid">
+      <section class="section" id="workflow">
         <div>
-          <h2 class="section-title">Secure by default.</h2>
-          <p class="copy">TinyBlog Widget ships with prepared statements, output escaping, a limited Markdown renderer, CSRF tokens, session timeout, CORS origin checks, rate limiting, upload whitelists, and a privacy note in the app.</p>
+          <p class="section-label">How it flows</p>
+          <h2>One path from upload to embedded update.</h2>
         </div>
-        <div class="actions">
-          <a class="button" href="SECURITY.md">Security checklist</a>
-          <a class="button secondary" href="SETUP.md">Shared hosting setup</a>
+        <div class="cards">
+          <article class="card"><span class="num">1</span><h3>Deploy</h3><p class="copy">Upload the files, enable PHP 8 with PDO SQLite, and let the app create <code>data/tinyblog.db</code>.</p></article>
+          <article class="card"><span class="num">2</span><h3>Write</h3><p class="copy">Create the first admin, publish Markdown posts, upload safe images, and set allowed widget origins.</p></article>
+          <article class="card"><span class="num">3</span><h3>Embed</h3><p class="copy">Paste a one-line script into any allowed site and fetch only the JSON that the widget needs.</p></article>
         </div>
+      </section>
+
+      <section class="section">
+        <div>
+          <p class="section-label">Quick start</p>
+          <h2>Get from cPanel to a live feed fast.</h2>
+        </div>
+        <pre class="code"><code>&lt;script
+  src="https://blog.example.com/tinyblog-widget.js"
+  data-tb-config='{"site":"store-1","endpoint":"https://blog.example.com/api","widgetType":"feed"}'&gt;
+&lt;/script&gt;</code></pre>
       </section>
     </main>
 
     <footer>
-      Repository: <a href="https://github.com/tanzir71/tinyblog-widget">https://github.com/tanzir71/tinyblog-widget</a>. TinyBlog Widget stores subscriber emails only for opt-in delivery and includes no third-party trackers by default.
+      <span>Repository: <a href="https://github.com/tanzir71/tinyblog">https://github.com/tanzir71/tinyblog</a></span>
+      <span><a href="README.md">README</a> / <a href="SETUP.md">Docs</a> / <a href="SECURITY.md">Security</a></span>
     </footer>
   </div>
 </body>

@@ -1,6 +1,6 @@
 # TinyBlog Widget
 
-Repository: https://github.com/tanzir71/tinyblog-widget
+Repository: https://github.com/tanzir71/tinyblog
 
 TinyBlog Widget is an embeddable blog MVP: one JavaScript file renders a feed, a single post, or a subscribe box on any site, while a minimal PHP 8 + SQLite backend gives authors a secure admin UI for publishing.
 
@@ -16,9 +16,11 @@ Top threats are SQL injection, cross-site scripting, cross-site request forgery,
 - `SETUP.md` - shared hosting and cPanel deployment.
 - `SECURITY.md` - safeguards and production checklist.
 - `.htaccess` - Apache rewrite and file protection rules.
+- `.env.example` - optional server-local config keys for paths, logs, and thresholds.
 - `uploads/.htaccess` - denies script execution inside uploads.
 - `data/.htaccess` - denies direct database access when `data/` is public.
-- `tests/smoke.php` and `tests/smoke.ps1` - basic file/security smoke checks.
+- `CHANGELOG.md` - dated security hardening notes.
+- `tests/smoke.php`, `tests/smoke.ps1`, and `tests/security_scan.ps1` - basic file/security checks.
 
 ## Quick Start
 
@@ -32,6 +34,8 @@ Top threats are SQL injection, cross-site scripting, cross-site request forgery,
    - Site id, for example `store-1`
    - Allowed widget origins, for example `https://your-store.example`
 6. Click "Load sample posts" from the dashboard if you want the 3 sample posts.
+
+Optional config: copy `.env.example` to `.env` on the server if you need custom database/upload/log paths or rate-limit thresholds. `.env` is ignored by git.
 
 ## Embed Snippets
 
@@ -143,6 +147,7 @@ Run local smoke checks:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tests\smoke.ps1
+powershell -ExecutionPolicy Bypass -File tests\security_scan.ps1
 ```
 
 On a host or CI machine with PHP:
@@ -174,6 +179,16 @@ curl "https://blog.example.com/feed.xml"
 
 # SQL injection probe: should return normal JSON or no results, not break SQL
 curl "https://blog.example.com/search?q=%27%20OR%201%3D1--"
+
+# CSRF probe: admin POST without a token should return 403
+curl -i -X POST "https://blog.example.com/admin" \
+  -d "admin_action=save_settings&blog_title=Injected"
+
+# Login rate limit probe: after the configured threshold, expect HTTP 429
+for i in $(seq 1 12); do
+  curl -i -X POST "https://blog.example.com/admin" \
+    -d "admin_action=login&csrf_token=PASTE_VALID_TOKEN&email=nope@example.com&password=wrong"
+done
 
 # Non-image upload rejection is checked manually in Admin -> Media
 # by attempting to upload a .txt or .php file; it should be rejected.

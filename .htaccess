@@ -1,6 +1,14 @@
 Options -Indexes
 DirectoryIndex index.html tinyblog.php
 
+<IfModule mod_headers.c>
+  # Keep in sync with tinyblog.php::security_headers(); customize CSP if adding third-party services.
+  Header always set X-Frame-Options "DENY"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -14,6 +22,6 @@ DirectoryIndex index.html tinyblog.php
   RewriteRule ^ tinyblog.php [L]
 </IfModule>
 
-<FilesMatch "^(tinyblog\.db|.*\.sqlite|.*\.log|\.env)$">
+<FilesMatch "^(.*\.db|.*\.sqlite|.*\.sqlite3|.*\.log|\.env)$">
   Require all denied
 </FilesMatch>

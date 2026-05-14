@@ -1,0 +1,10 @@
+.env
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/*.log
+uploads/*
+!uploads/.htaccess
+!uploads/index.html
+tests/*.png
+tests/*-profile/

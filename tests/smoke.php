@@ -9,6 +9,9 @@ $required = [
     'README.md',
     'SETUP.md',
     'SECURITY.md',
+    'CHANGELOG.md',
+    '.gitignore',
+    '.env.example',
     '.htaccess',
     'data/.htaccess',
     'uploads/.htaccess',
@@ -23,7 +26,7 @@ foreach ($required as $file) {
 
 if (is_file($root . '/tinyblog.php')) {
     $php = file_get_contents($root . '/tinyblog.php');
-    foreach (['password_hash', 'hash_equals', 'PDO', 'csrf_token', 'sanitize_markdown', 'check_cors_or_fail'] as $needle) {
+    foreach (['password_hash', 'hash_equals', 'PDO', 'csrf_token', 'sanitize_markdown', 'check_cors_or_fail', 'security_headers', 'Content-Security-Policy', 'require_admin', 'can_manage_post'] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing expected safeguard: {$needle}";
         }
@@ -39,10 +42,10 @@ if (is_file($root . '/tinyblog-widget.js')) {
     }
 }
 
-foreach (['README.md', 'SETUP.md', 'SECURITY.md', 'index.html'] as $doc) {
+foreach (['README.md', 'SETUP.md', 'SECURITY.md', 'CHANGELOG.md', 'index.html'] as $doc) {
     if (is_file($root . '/' . $doc)) {
         $text = file_get_contents($root . '/' . $doc);
-        if (!str_contains($text, 'https://github.com/tanzir71/tinyblog-widget')) {
+        if (!str_contains($text, 'https://github.com/tanzir71/tinyblog')) {
             $failures[] = "{$doc} missing canonical GitHub link";
         }
     }

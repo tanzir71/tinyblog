@@ -8,6 +8,9 @@ $required = @(
   "README.md",
   "SETUP.md",
   "SECURITY.md",
+  "CHANGELOG.md",
+  ".gitignore",
+  ".env.example",
   ".htaccess",
   "data/.htaccess",
   "uploads/.htaccess"
@@ -24,7 +27,7 @@ foreach ($file in $required) {
 $phpPath = Join-Path $root "tinyblog.php"
 if (Test-Path -LiteralPath $phpPath) {
   $php = Get-Content -LiteralPath $phpPath -Raw
-  foreach ($needle in @("password_hash", "hash_equals", "PDO", "csrf_token", "sanitize_markdown", "check_cors_or_fail")) {
+  foreach ($needle in @("password_hash", "hash_equals", "PDO", "csrf_token", "sanitize_markdown", "check_cors_or_fail", "security_headers", "Content-Security-Policy", "require_admin", "can_manage_post")) {
     if (-not $php.Contains($needle)) {
       $failures.Add("tinyblog.php missing expected safeguard: $needle")
     }
@@ -41,11 +44,11 @@ if (Test-Path -LiteralPath $jsPath) {
   }
 }
 
-foreach ($doc in @("README.md", "SETUP.md", "SECURITY.md", "index.html")) {
+foreach ($doc in @("README.md", "SETUP.md", "SECURITY.md", "CHANGELOG.md", "index.html")) {
   $path = Join-Path $root $doc
   if (Test-Path -LiteralPath $path) {
     $text = Get-Content -LiteralPath $path -Raw
-    if (-not $text.Contains("https://github.com/tanzir71/tinyblog-widget")) {
+    if (-not $text.Contains("https://github.com/tanzir71/tinyblog")) {
       $failures.Add("$doc missing canonical GitHub link")
     }
   }

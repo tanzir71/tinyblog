@@ -1,6 +1,6 @@
 # TinyBlog Widget Shared Hosting Setup
 
-Repository: https://github.com/tanzir71/tinyblog-widget
+Repository: https://github.com/tanzir71/tinyblog
 
 This guide targets Namecheap-style cPanel hosting with PHP 8+, PDO, SQLite, and Apache.
 
@@ -15,6 +15,7 @@ Upload these files and folders to your site root or a subfolder such as `/blog`:
 - `assets/`
 - `uploads/`
 - `data/.htaccess`
+- `.env.example`
 - `README.md`, `SETUP.md`, `SECURITY.md` if you want public docs available
 
 ## 2. PHP Version
@@ -55,6 +56,23 @@ data/tinyblog.db
 
 Keep `data/` outside the public web root if your hosting plan allows it. If it must stay in web root, the included `.htaccess` denies direct database downloads.
 
+Optional server-local configuration:
+
+```bash
+cp .env.example .env
+chmod 600 .env
+```
+
+Edit `.env` only if you need custom paths or thresholds:
+
+```text
+TB_DB_PATH=/home/USER/private/tinyblog.db
+TB_UPLOAD_DIR=/home/USER/public_html/blog/uploads
+TB_LOG_FILE=/home/USER/private/tinyblog.log
+TB_SESSION_TIMEOUT=1800
+TB_LOGIN_RATE_LIMIT=10
+```
+
 ## 4. Apache Rewrite
 
 The included `.htaccess` routes clean URLs to `tinyblog.php`:
@@ -62,6 +80,13 @@ The included `.htaccess` routes clean URLs to `tinyblog.php`:
 ```apache
 Options -Indexes
 DirectoryIndex index.html tinyblog.php
+
+<IfModule mod_headers.c>
+  Header always set X-Frame-Options "DENY"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+</IfModule>
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
@@ -74,6 +99,10 @@ DirectoryIndex index.html tinyblog.php
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^ tinyblog.php [L]
 </IfModule>
+
+<FilesMatch "^(.*\.db|.*\.sqlite|.*\.sqlite3|.*\.log|\.env)$">
+  Require all denied
+</FilesMatch>
 ```
 
 If installing in `/blog`, set `RewriteBase /blog/` or leave it as-is on most Apache setups.
@@ -127,6 +156,7 @@ Use your real cPanel home path. Some shared hosts require the full path to `wget
 ## 8. Troubleshooting
 
 - 500 error on first run: check PHP error logs and confirm `data/` is writable.
+- App log: by default, security/runtime errors go to `data/tinyblog.log`; override with `TB_LOG_FILE`.
 - Upload fails: confirm `uploads/` is writable and `fileinfo` is enabled.
 - Widget fails on another domain: add that exact origin to Settings, for example `https://www.example.com`.
 - Clean URLs fail: confirm Apache `mod_rewrite` is enabled, or use `tinyblog.php?route=/api/posts`.

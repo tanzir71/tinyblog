@@ -1,7 +1,7 @@
 /*!
  * TinyBlog Widget v0.1.0
  * One-line embed for TinyBlog feeds, posts, and subscribe boxes.
- * Repository: https://github.com/tanzir71/tinyblog-widget
+ * Repository: https://github.com/tanzir71/tinyblog
  */
 (function () {
   "use strict";

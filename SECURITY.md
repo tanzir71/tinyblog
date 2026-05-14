@@ -1,6 +1,6 @@
 # TinyBlog Widget Security Notes
 
-Repository: https://github.com/tanzir71/tinyblog-widget
+Repository: https://github.com/tanzir71/tinyblog
 
 TinyBlog Widget is intentionally small, but it still treats publishing, embeds, uploads, and subscriber data as security-sensitive.
 
@@ -16,8 +16,11 @@ TinyBlog Widget is intentionally small, but it still treats publishing, embeds, 
 - Rate limiting: admin login and subscribe endpoints are rate-limited by hashed IP.
 - Upload safety: only jpg, png, gif, and webp images are allowed; MIME type is checked with `fileinfo`; filenames are randomized; upload size is limited to 2 MB.
 - Upload execution guard: `uploads/.htaccess` denies common script extensions and disables PHP execution where supported.
+- Security headers: HTML/API responses include CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy`.
+- Authorization: settings, subscriber lists, and sample seeding require admin role; post editing is scoped to the configured site.
+- Config hygiene: `.env` is optional, `.env.example` documents safe keys, and `.gitignore` excludes `.env`, logs, SQLite databases, and uploaded media.
 - Privacy: no third-party analytics or trackers are included by default. Subscriber records store email, opt-in time, status, and a hashed IP for abuse reduction.
-- Error handling: user-facing API errors are generic; PHP errors go to the server log and app log table when possible.
+- Error handling: user-facing API errors are generic; PHP errors go to `TB_LOG_FILE` and the app log table when possible.
 
 ## Production Checklist
 
@@ -31,6 +34,22 @@ TinyBlog Widget is intentionally small, but it still treats publishing, embeds, 
 - Keep PHP patched and remove unused hosting apps from the same account.
 - Consider enabling the public `siteKey` requirement if the widget is embedded in a limited set of controlled sites.
 - Add a real captcha or email verification if subscribe attempts become noisy.
+
+## Rotating Keys
+
+- Public site key: in Admin -> Settings, disable "Require public siteKey", save, then manually update the `public_site_key` value in the SQLite `settings` table with a new random value and re-enable the setting. Update embeds that include `siteKey`.
+- Admin credentials: create a new admin account in the database or reset the password hash with PHP `password_hash()`, then remove the old account.
+- CORS origins: rotate by removing old origins from Admin -> Settings -> Allowed widget origins and saving.
+
+## Logging
+
+Runtime/security errors are written to `data/tinyblog.log` by default. To move or reduce exposure, copy `.env.example` to `.env` and set:
+
+```text
+TB_LOG_FILE=/home/USER/private/tinyblog.log
+```
+
+To disable extra app-file logging, set `TB_LOG_FILE` to a path handled by your host's private logs and keep PHP display errors disabled. Do not enable public stack traces in production.
 
 ## Markdown Sanitization
 
