@@ -1,0 +1,19 @@
+Options -Indexes
+DirectoryIndex index.html tinyblog.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^uploads/ - [L]
+  RewriteRule ^assets/ - [L]
+  RewriteRule ^tinyblog-widget\.js$ - [L]
+  RewriteRule ^index\.html$ - [L]
+  RewriteRule ^(README|SETUP|SECURITY)\.md$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ tinyblog.php [L]
+</IfModule>
+
+<FilesMatch "^(tinyblog\.db|.*\.sqlite|.*\.log|\.env)$">
+  Require all denied
+</FilesMatch>
