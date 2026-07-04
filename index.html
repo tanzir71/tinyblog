@@ -3,468 +3,272 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TinyBlog Widget | Secure embeddable publishing</title>
-  <meta name="description" content="TinyBlog Widget is a secure PHP and SQLite backend with a one-line embeddable blog widget.">
-  <meta property="og:title" content="TinyBlog Widget">
-  <meta property="og:description" content="A small shared-hosting blog backend and one-line embed widget.">
+  <title>TinyBlog Widget — Self-hosted embeddable blog in one script tag</title>
+  <meta name="description" content="TinyBlog is a free, self-hosted blog backend: one PHP file, SQLite, and a one-line JavaScript embed for feeds, posts, and subscribers. No trackers, no build step, MIT licensed.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tanzir71.github.io/tinyblog/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="TinyBlog Widget — Self-hosted embeddable blog">
+  <meta property="og:description" content="One PHP file + SQLite + a one-line embed. Feeds, posts, and subscribers on any site. No trackers, no build step, MIT licensed.">
   <meta property="og:image" content="assets/og.png">
+  <meta property="og:url" content="https://tanzir71.github.io/tinyblog/">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TinyBlog Widget — Self-hosted embeddable blog">
+  <meta name="twitter:description" content="One PHP file + SQLite + a one-line embed. No trackers, MIT licensed.">
   <meta name="twitter:image" content="assets/og.png">
   <link rel="icon" href="assets/logo.svg">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      /* Palette */
-      --bg: #ffffff;
-      --text: #0a0a0a;
-      --muted: #6b6b6b;
-      --line: #e4e4e4;
-      --line-strong: #0a0a0a;
-      --soft: #f6f6f6;
-      --surface: #ffffff;
-      --copy: #2b2b2b;
-      --lede: #1c1c1c;
-      --button-bg: var(--text);
-      --button-text: #ffffff;
-      --max: 1120px;
-
-      /* Type scale (1.25 major-third, fluid where it earns it) */
-      --fs-display: clamp(2.75rem, 5vw + 1.25rem, 6rem); /* h1 */
-      --fs-h2:      clamp(2rem, 2.4vw + 1.1rem, 3.25rem);
-      --fs-h3:      1.25rem;
-      --fs-lede:    clamp(1.125rem, 0.8vw + 0.95rem, 1.375rem);
-      --fs-body:    1rem;
-      --fs-small:   0.8125rem;
-      --fs-label:   0.75rem;
-
-      /* Line heights */
-      --lh-tight: 0.98;
-      --lh-snug: 1.15;
-      --lh-body: 1.7;
-
-      /* Spacing scale (8px base) */
-      --s-1: 0.25rem;  /* 4  */
-      --s-2: 0.5rem;   /* 8  */
-      --s-3: 0.75rem;  /* 12 */
-      --s-4: 1rem;     /* 16 */
-      --s-5: 1.5rem;   /* 24 */
-      --s-6: 2rem;     /* 32 */
-      --s-7: 3rem;     /* 48 */
-      --s-8: 4.5rem;   /* 72 */
-      --s-9: 6rem;     /* 96 */
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #050505;
-        --text: #f5f5f5;
-        --muted: #b8b8b8;
-        --line: #303030;
-        --line-strong: #f5f5f5;
-        --soft: #121212;
-        --surface: #050505;
-        --copy: #dedede;
-        --lede: #e8e8e8;
-        --button-bg: #f5f5f5;
-        --button-text: #050505;
-      }
-    }
-
-    * { box-sizing: border-box; }
-    html { -webkit-text-size-adjust: 100%; }
-    html, body { max-width: 100%; overflow-x: hidden; }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: var(--fs-body);
-      line-height: var(--lh-body);
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
-    a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-    :focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
-    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-
-    .wrap { width: min(var(--max), calc(100% - 2 * var(--s-5))); margin: 0 auto; }
-    .skip {
-      position: fixed;
-      left: var(--s-4);
-      top: var(--s-4);
-      z-index: 10;
-      transform: translateY(calc(-100% - var(--s-4)));
-      border: 1px solid var(--line-strong);
-      background: var(--surface);
-      color: var(--text);
-      padding: var(--s-2) var(--s-3);
-      font-size: var(--fs-small);
-      font-weight: 700;
-      text-decoration: none;
-      transition: transform .15s ease;
-    }
-    .skip:focus-visible { transform: translateY(0); }
-
-    /* ---- Header ---- */
-    .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--s-5);
-      padding: var(--s-5) 0;
-      border-bottom: 1px solid var(--line-strong);
-      font-size: var(--fs-small);
-    }
-    .brand { font-weight: 800; letter-spacing: -0.01em; text-decoration: none; }
-    nav { display: flex; flex-wrap: wrap; gap: var(--s-5); }
-    nav a { text-decoration: none; color: var(--muted); transition: color .15s ease; }
-    nav a:hover { color: var(--text); text-decoration: underline; }
-
-    /* ---- Shared type ---- */
-    .kicker, .section-label {
-      margin: 0 0 var(--s-4);
-      font-size: var(--fs-label);
-      line-height: 1;
-      font-weight: 700;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    h1 {
-      max-width: 15ch;
-      margin: 0;
-      font-size: var(--fs-display);
-      font-weight: 800;
-      line-height: var(--lh-tight);
-      letter-spacing: -0.035em;
-    }
-    h2 {
-      max-width: 20ch;
-      margin: 0;
-      font-size: var(--fs-h2);
-      font-weight: 800;
-      line-height: 1.02;
-      letter-spacing: -0.025em;
-    }
-    h3 {
-      margin: 0 0 var(--s-2);
-      font-size: var(--fs-h3);
-      font-weight: 700;
-      line-height: var(--lh-snug);
-      letter-spacing: -0.01em;
-    }
-    p { margin: 0; }
-    .lede {
-      max-width: 46ch;
-      margin: var(--s-5) 0 0;
-      color: var(--lede);
-      font-size: var(--fs-lede);
-      line-height: 1.5;
-    }
-    .copy { max-width: 62ch; color: var(--copy); font-size: var(--fs-body); line-height: var(--lh-body); }
-
-    /* ---- Hero ---- */
-    .hero {
-      padding: var(--s-9) 0 var(--s-8);
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--s-8);
-    }
-    .hero > *, .section > * { min-width: 0; }
-    .actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-6); }
-    .button {
-      display: inline-flex;
-      min-height: 46px;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--line-strong);
-      padding: 0 var(--s-5);
-      background: var(--button-bg);
-      color: var(--button-text);
-      text-decoration: none;
-      font-size: var(--fs-small);
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      transition: background .15s ease, color .15s ease;
-    }
-    .button:hover { background: var(--surface); color: var(--text); }
-    .button.secondary { background: var(--surface); color: var(--text); }
-    .button.secondary:hover { background: var(--button-bg); color: var(--button-text); }
-    .bullets {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--s-2) var(--s-5);
-      padding: 0;
-      margin: var(--s-6) 0 0;
-      color: var(--muted);
-      list-style: none;
-      font-size: var(--fs-small);
-    }
-    .bullets li::before { content: "- "; color: var(--text); }
-
-    /* ---- Preview surface ---- */
-    .surface { border: 1px solid var(--line-strong); background: var(--surface); min-width: 0; align-self: start; }
-    .surface-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--s-3);
-      padding: var(--s-4) var(--s-5);
-      border-bottom: 1px solid var(--line-strong);
-      font-size: var(--fs-small);
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-    .surface-head a { color: var(--muted); text-decoration: none; font-weight: 600; }
-    .surface-head a:hover { color: var(--text); text-decoration: underline; }
-    .surface-body { padding: 0 var(--s-5); }
-    .surface-demo { padding: var(--s-5); }
-    .surface-demo:empty { display: none; }
-    .feed-row {
-      display: grid;
-      gap: var(--s-1);
-      padding: var(--s-4) 0;
-      border-bottom: 1px solid var(--line);
-    }
-    .feed-row:last-child { border-bottom: 0; }
-    .feed-row strong { font-size: 1.0625rem; line-height: 1.25; letter-spacing: -0.01em; }
-    .feed-row span { color: var(--muted); font-size: var(--fs-small); line-height: 1.5; }
-
-    /* ---- Sections ---- */
-    .section {
-      border-top: 1px solid var(--line);
-      padding: var(--s-8) 0;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--s-6);
-    }
-    .section-head { display: grid; gap: var(--s-3); }
-
-    /* ---- Cards ---- */
-    .cards {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0;
-      border-top: 1px solid var(--line);
-    }
-    .card { padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
-    .card:last-child { border-bottom: 0; }
-    .num {
-      display: block;
-      margin-bottom: var(--s-4);
-      font-size: var(--fs-small);
-      font-weight: 700;
-      color: var(--muted);
-      font-variant-numeric: tabular-nums;
-    }
-    .card .copy { color: var(--muted); }
-
-    /* ---- Code ---- */
-    .code {
-      width: 100%;
-      min-width: 0;
-      margin: 0;
-      padding: var(--s-5);
-      overflow-x: auto;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      border: 1px solid var(--line-strong);
-      background: var(--soft);
-      font-size: var(--fs-small);
-      line-height: 1.7;
-    }
-    .code-wrap { display: grid; gap: var(--s-3); }
-    .copy-code {
-      justify-self: start;
-      min-height: 36px;
-      border: 1px solid var(--line-strong);
-      background: var(--surface);
-      color: var(--text);
-      padding: 0 var(--s-4);
-      font: inherit;
-      font-size: var(--fs-small);
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    /* ---- Footer ---- */
-    footer {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: var(--s-4);
-      margin-top: var(--s-8);
-      padding: var(--s-6) 0 var(--s-8);
-      border-top: 1px solid var(--line-strong);
-      color: var(--muted);
-      font-size: var(--fs-small);
-    }
-    footer a { color: var(--text); }
-
-    /* ---- Responsive ---- */
-    @media (min-width: 860px) {
-      .hero {
-        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.75fr);
-        align-items: start;
-        gap: var(--s-9);
-      }
-      .section { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: var(--s-8); }
-      .cards { grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
-      .card { padding: var(--s-5) var(--s-5) var(--s-5) 0; border-right: 1px solid var(--line); border-bottom: 0; }
-      .card + .card { padding-left: var(--s-5); }
-      .card:last-child { border-right: 0; padding-right: 0; }
-    }
-    @media (max-width: 560px) {
-      .top { flex-direction: column; align-items: flex-start; gap: var(--s-3); }
-      nav { gap: var(--s-3) var(--s-4); }
-      .surface { width: 100%; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      * { transition: none !important; }
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-  <a class="skip" href="#overview">Skip to content</a>
+  <a class="skip" href="#main">Skip to content</a>
   <div class="wrap">
     <header class="top">
-      <a class="brand" href="https://github.com/tanzir71/tinyblog">TinyBlog Widget</a>
-      <nav aria-label="Primary">
-        <a href="#overview">Overview</a>
-        <a href="#workflow">Workflow</a>
-        <a href="SETUP.md">Setup</a>
-        <a href="SECURITY.md">Security</a>
-        <a href="https://github.com/tanzir71/tinyblog">GitHub</a>
+      <a class="brand" href="/">
+        <span class="mark" aria-hidden="true">TB</span>
+        <span>TinyBlog</span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#system">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#setup">Setup</a>
+        <a href="#compare">Compare</a>
+        <a href="SETUP.md">Docs</a>
+        <a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a>
       </nav>
     </header>
 
-    <main>
-      <section class="hero" id="overview">
-        <div>
-          <p class="kicker">Secure embeds for small publishers</p>
-          <h1>Show the updates worth opening.</h1>
-          <p class="lede">TinyBlog Widget is a PHP and SQLite backend with a one-line JavaScript embed for feeds, single posts, and subscriber capture. It stays small enough for shared hosting and clear enough to audit.</p>
+    <main id="main">
+      <!-- Hero -->
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="sq" aria-hidden="true"></span>v1.0 · PHP + SQLite · MIT · No trackers</p>
+          <h1>A self-hosted blog in one script tag.</h1>
+          <p class="lede">TinyBlog is a single PHP file with a SQLite database and a one-line JavaScript embed. Render a feed, a single post, or a subscribe box on any site — publishing and data stay on <em>your</em> host, not a vendor cloud.</p>
           <div class="actions">
-            <a class="button" href="README.md">Read the Docs</a>
-            <a class="button secondary" href="https://github.com/tanzir71/tinyblog">View on GitHub</a>
+            <a class="btn" href="README.md">Read the docs</a>
+            <a class="btn ghost" href="https://github.com/tanzir71/tinyblog">View on GitHub</a>
           </div>
-          <ul class="bullets" aria-label="Project attributes">
-            <li>PHP 8 + SQLite</li>
-            <li>Prepared statements</li>
-            <li>CORS allowlist</li>
-            <li>No third-party trackers</li>
-          </ul>
         </div>
 
-        <aside class="surface" aria-label="TinyBlog widget preview" data-demo-endpoint="" data-demo-site="store-1">
-          <div class="surface-head"><span>Review Surface</span><a href="README.md">View all</a></div>
-          <div class="surface-demo" id="landing-widget-demo"></div>
-          <div class="surface-body">
-            <div class="feed-row"><strong>Why TinyBlog Widget exists</strong><span>A tiny publishing feed for stores, portfolios, docs, and product updates.</span></div>
-            <div class="feed-row"><strong>A secure default for shared hosting</strong><span>PDO, CSRF, CORS allowlists, safe uploads, and no default credentials.</span></div>
-            <div class="feed-row"><strong>Embedding a feed on any page</strong><span>Feed, post, and subscribe modes from one script tag.</span></div>
+        <div class="code-card" aria-label="Embed snippet">
+          <div class="code-bar">
+            <span>store-page.html</span>
+            <button class="copy-btn" type="button" data-copy="#snippet-hero">Copy</button>
           </div>
-        </aside>
+<pre id="snippet-hero"><code><span class="tok-tag">&lt;script</span>
+  <span class="tok-attr">src</span>=<span class="tok-str">"https://blog.example.com/tinyblog-widget.js"</span>
+  <span class="tok-attr">data-tb-config</span>=<span class="tok-str">'{"site":"store-1",
+    "endpoint":"https://blog.example.com/api",
+    "widgetType":"feed","maxItems":5}'</span><span class="tok-tag">&gt;</span>
+<span class="tok-tag">&lt;/script&gt;</span>
+
+<span class="tok-com">// That's the whole client-side integration.</span>
+<span class="tok-com">// Posts render from JSON your PHP host serves —</span>
+<span class="tok-com">// prepared SQL, CORS allowlist, no third parties.</span></code></pre>
+        </div>
       </section>
 
+      <!-- Stats -->
+      <div class="stats" role="group" aria-label="At a glance">
+        <div class="stat"><div class="stat-num">1 file</div><div class="stat-label">Drop-in PHP backend</div></div>
+        <div class="stat"><div class="stat-num">3 modes</div><div class="stat-label">Feed · Post · Subscribe</div></div>
+        <div class="stat"><div class="stat-num">$0</div><div class="stat-label">MIT · Commercial ok</div></div>
+        <div class="stat"><div class="stat-num">0</div><div class="stat-label">Third-party trackers</div></div>
+      </div>
+
+      <!-- SYS 01 — system -->
+      <section class="section" id="system">
+        <p class="sys">SYS · 01</p>
+        <div class="section-head">
+          <h2>The whole system, on one sheet.</h2>
+          <p class="copy muted">No CMS fleet, no vendor cloud. One PHP app writes to SQLite, renders canonical pages and RSS, and serves the JSON the embed reads.</p>
+        </div>
+        <div class="flow">
+          <div class="flow-node">
+            <span class="label">Node 01</span>
+            <h3>Any site</h3>
+            <p>One <code>&lt;script&gt;</code> tag renders feed, post, or subscribe. Zero dependencies, no build step.</p>
+          </div>
+          <div class="flow-node">
+            <span class="label">Node 02</span>
+            <h3>Your PHP host</h3>
+            <p><code>tinyblog.php</code> + SQLite: admin, posts, uploads, subscribers, settings. Data never leaves your account.</p>
+          </div>
+          <div class="flow-node">
+            <span class="label">Node 03</span>
+            <h3>Reader surface</h3>
+            <p>Canonical post pages, tag &amp; search, RSS and sitemap, plus a CORS-allowlisted JSON API for the widget.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SYS 02 — setup -->
+      <section class="section" id="setup">
+        <p class="sys">SYS · 02</p>
+        <div class="section-head">
+          <h2>From cPanel to a live feed in minutes.</h2>
+          <p class="copy muted">Upload one folder, enable PHP 8, and the app creates its own database. Then write and embed.</p>
+        </div>
+        <div class="grid">
+          <article class="cell"><span class="num">01 / Deploy</span><h3>Upload &amp; go</h3><p>Drop the files on any PHP 8 host with PDO SQLite. The app creates <code>data/tinyblog.db</code> on first run — no migrations to run by hand.</p></article>
+          <article class="cell"><span class="num">02 / Write</span><h3>Publish in Markdown</h3><p>Create the first admin, write Markdown posts, upload image-only media, and set your allowed widget origins.</p></article>
+          <article class="cell"><span class="num">03 / Embed</span><h3>One tag, any page</h3><p>Paste the script on an allowed site. It fetches only the JSON the widget needs and renders it inline.</p></article>
+          <article class="cell"><span class="num">04 / Audit</span><h3>Read the whole path</h3><p>Prepared SQL, escaped output, CSRF, rate limits, upload whitelists and CORS checks stay visible in one readable file.</p></article>
+        </div>
+      </section>
+
+      <!-- SYS 03 — features -->
+      <section class="section" id="features">
+        <p class="sys">SYS · 03</p>
+        <div class="section-head">
+          <h2>Everything a small blog needs — nothing it doesn't.</h2>
+          <p class="copy muted">Feature-rich where it counts for readers and SEO, deliberately narrow everywhere else.</p>
+        </div>
+        <div class="grid">
+          <article class="cell"><span class="num">Publish</span><h3>Markdown posts</h3><p>Server-sanitized Markdown with tags, slugs, and auto excerpts. Raw HTML is escaped, never executed.</p><span class="sig">save_post()</span></article>
+          <article class="cell"><span class="num">Discover</span><h3>Canonical SEO pages</h3><p>Static-style post pages with Open Graph and social meta, plus tag listings and prepared-statement search.</p><span class="sig">/post/{slug}</span></article>
+          <article class="cell"><span class="num">Syndicate</span><h3>RSS + sitemap</h3><p>Standards-compliant <code>feed.xml</code> and <code>sitemap.xml</code> generated straight from your posts.</p><span class="sig">/feed.xml</span></article>
+          <article class="cell"><span class="num">Embed</span><h3>One widget, three modes</h3><p>Feed, single post, or subscribe box from one script tag, themeable with CSS-variable overrides.</p><span class="sig">widgetType</span></article>
+          <article class="cell"><span class="num">Capture</span><h3>Subscribers</h3><p>Site-scoped subscribe endpoint with rate limiting, ready for double opt-in on the roadmap.</p><span class="sig">/api/subscribe</span></article>
+          <article class="cell"><span class="num">Host</span><h3>Media uploads</h3><p>Image-only uploads with an execution-denied uploads directory. No object storage required.</p><span class="sig">uploads/</span></article>
+          <article class="cell"><span class="num">Protect</span><h3>Secure by default</h3><p>PDO prepared statements, CSRF tokens, session timeout, password hashing, and a CORS origin allowlist.</p><span class="sig">check_cors()</span></article>
+          <article class="cell"><span class="num">Own</span><h3>No third parties</h3><p>No analytics scripts, no external fonts on your blog, no phone-home. Your data stays in your hosting account.</p><span class="sig">0 trackers</span></article>
+        </div>
+      </section>
+
+      <!-- SYS 04 — compare -->
+      <section class="section" id="compare">
+        <p class="sys">SYS · 04</p>
+        <div class="section-head">
+          <h2>Why teams pick it over hosted blogs.</h2>
+          <p class="copy muted">For a store, portfolio, docs site, or product-updates feed, a full CMS or a hosted platform is often too much — and lock-in and per-seat pricing punish you later.</p>
+        </div>
+        <div class="vs-grid">
+          <div class="vs">
+            <span class="label">vs Substack</span>
+            <h3>Own the feed, skip the lock-in</h3>
+            <p>No platform lock-in, no revenue cut, and the archive lives on your domain instead of someone else's subdomain.</p>
+            <a href="tinyblog-vs-substack.html">Compare TinyBlog vs Substack &rarr;</a>
+          </div>
+          <div class="vs">
+            <span class="label">vs Ghost</span>
+            <h3>No Node server to babysit</h3>
+            <p>Runs on the cheapest PHP shared hosting — no Node process, no reverse proxy, no monthly Ghost(Pro) bill.</p>
+            <a href="tinyblog-vs-ghost.html">Compare TinyBlog vs Ghost &rarr;</a>
+          </div>
+          <div class="vs">
+            <span class="label">vs WordPress</span>
+            <h3>One file vs plugin sprawl</h3>
+            <p>A readable single file instead of a plugin-and-update treadmill and a database you can't fit in your head.</p>
+            <a href="tinyblog-vs-wordpress.html">Compare TinyBlog vs WordPress &rarr;</a>
+          </div>
+          <div class="vs">
+            <span class="label">vs Embeds</span>
+            <h3>No trackers on your readers</h3>
+            <p>Unlike third-party embed widgets, TinyBlog serves its own JSON from your host — no cross-site cookies or tracking.</p>
+            <a href="tinyblog-vs-disqus-embed.html">Compare TinyBlog vs Disqus &rarr;</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- SYS 05 — scope -->
       <section class="section">
+        <p class="sys">SYS · 05</p>
         <div class="section-head">
-          <p class="section-label">Built for the real bottleneck</p>
-          <h2>The job is to publish clearly, not run a CMS fleet.</h2>
+          <h2>What it deliberately doesn't do.</h2>
+          <p class="copy muted">Honest scope beats an inflated feature list. When you outgrow these limits, the README's "How to scale" section points the way.</p>
         </div>
-        <p class="copy">TinyBlog narrows the stack to a single PHP app, a SQLite database, and one embed script. Authors get a minimal admin writing surface; readers get static-style canonical pages, RSS, and an accessible widget that can live inside any existing site.</p>
+        <div class="choose">
+          <div>
+            <h3>Not a CMS fleet</h3>
+            <p>No multi-tenant admin, no page builder, no theme marketplace, no plugin API. One app, one blog, one readable file.</p>
+          </div>
+          <div>
+            <h3>Not a heavy stack</h3>
+            <p>No Node runtime, no build step, no Composer dependencies, no background job queue. SQLite until you genuinely outgrow it.</p>
+          </div>
+        </div>
       </section>
 
+      <!-- Quick start + CTA -->
       <section class="section">
+        <p class="sys">SYS · 06</p>
         <div class="section-head">
-          <p class="section-label">What the tool actually does</p>
-          <h2>Three ways TinyBlog helps before the next deploy.</h2>
+          <h2>Grab the file, add the tag.</h2>
+          <p class="copy muted">The library is a single static file. Download it into your project, then drop in the embed.</p>
         </div>
-        <div class="cards">
-          <article class="card"><span class="num">01</span><h3>Render blog feeds anywhere</h3><p class="copy">Drop in the script, set an endpoint, and render feed, post, or subscribe widgets with CSS-variable overrides.</p></article>
-          <article class="card"><span class="num">02</span><h3>Keep publishing local to your host</h3><p class="copy">Posts, uploads, subscribers, settings, RSS, and sitemap data stay in your PHP hosting account by default.</p></article>
-          <article class="card"><span class="num">03</span><h3>Audit the security path</h3><p class="copy">Prepared SQL, escaped templates, CSRF, session timeout, rate limits, upload whitelists, and CORS checks are intentionally visible.</p></article>
+        <div class="code-card" style="margin-top: var(--s-6);" aria-label="Quick start commands">
+          <div class="code-bar">
+            <span>terminal</span>
+            <button class="copy-btn" type="button" data-copy="#snippet-quick">Copy</button>
+          </div>
+<pre id="snippet-quick"><code><span class="tok-com"># clone the repo (backend + widget + docs)</span>
+git clone https://github.com/tanzir71/tinyblog
+
+<span class="tok-com"># or grab just the widget for the client side</span>
+curl -LO https://blog.example.com/tinyblog-widget.js</code></pre>
         </div>
       </section>
 
-      <section class="section" id="workflow">
-        <div class="section-head">
-          <p class="section-label">How it flows</p>
-          <h2>One path from upload to embedded update.</h2>
+      <div class="cta">
+        <h2>Publish updates worth opening.</h2>
+        <div class="actions" style="margin-top:0;">
+          <a class="btn" href="README.md">Read the docs</a>
+          <a class="btn ghost" href="https://github.com/tanzir71/tinyblog">Star on GitHub</a>
         </div>
-        <div class="cards">
-          <article class="card"><span class="num">01</span><h3>Deploy</h3><p class="copy">Upload the files, enable PHP 8 with PDO SQLite, and let the app create <code>data/tinyblog.db</code>.</p></article>
-          <article class="card"><span class="num">02</span><h3>Write</h3><p class="copy">Create the first admin, publish Markdown posts, upload safe images, and set allowed widget origins.</p></article>
-          <article class="card"><span class="num">03</span><h3>Embed</h3><p class="copy">Paste a one-line script into any allowed site and fetch only the JSON that the widget needs.</p></article>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="section-head">
-          <p class="section-label">Quick start</p>
-          <h2>Get from cPanel to a live feed fast.</h2>
-        </div>
-        <div class="code-wrap">
-          <button class="copy-code" type="button" data-copy-target="embedSnippet">Copy</button>
-          <pre class="code"><code id="embedSnippet">&lt;script
-  src="https://blog.example.com/tinyblog-widget.js"
-  data-tb-config='{"site":"store-1","endpoint":"https://blog.example.com/api","widgetType":"feed"}'&gt;
-&lt;/script&gt;</code></pre>
-        </div>
-      </section>
+      </div>
     </main>
 
     <footer>
-      <span>Repository: <a href="https://github.com/tanzir71/tinyblog">https://github.com/tanzir71/tinyblog</a></span>
-      <span><a href="README.md">README</a> / <a href="SETUP.md">Docs</a> / <a href="SECURITY.md">Security</a></span>
+      <div class="foot-cols">
+        <div class="foot-col">
+          <span class="label">TinyBlog</span>
+          <p class="copy muted" style="font-size:var(--fs-small); max-width:34ch;">A free, self-hosted, single-file blog backend with a one-line embed. MIT licensed.</p>
+        </div>
+        <div class="foot-col">
+          <span class="label">Product</span>
+          <a href="#features">Features</a>
+          <a href="#setup">Setup</a>
+          <a href="README.md">README</a>
+          <a href="SECURITY.md">Security</a>
+        </div>
+        <div class="foot-col">
+          <span class="label">Compare</span>
+          <a href="tinyblog-vs-substack.html">vs Substack</a>
+          <a href="tinyblog-vs-ghost.html">vs Ghost</a>
+          <a href="tinyblog-vs-wordpress.html">vs WordPress</a>
+          <a href="tinyblog-vs-disqus-embed.html">vs Disqus</a>
+        </div>
+        <div class="foot-col">
+          <span class="label">Project</span>
+          <a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a>
+          <a href="SETUP.md">Deployment</a>
+          <a href="CHANGELOG.md">Changelog</a>
+        </div>
+      </div>
+      <div class="foot-bottom">
+        TinyBlog Widget — free &amp; open source, MIT licensed. Repository: <a href="https://github.com/tanzir71/tinyblog">github.com/tanzir71/tinyblog</a>
+      </div>
     </footer>
   </div>
-  <script src="tinyblog-widget.js"></script>
-  <script>
-    (function () {
-      var surface = document.querySelector("[data-demo-endpoint]");
-      var mount = document.getElementById("landing-widget-demo");
-      if (surface && mount && surface.dataset.demoEndpoint && window.TinyBlogWidget) {
-        var fallback = surface.querySelector(".surface-body");
-        if (fallback) fallback.hidden = true;
-        window.TinyBlogWidget.init({
-          container: "#landing-widget-demo",
-          endpoint: surface.dataset.demoEndpoint,
-          site: surface.dataset.demoSite || "store-1",
-          widgetType: "feed",
-          maxItems: 3,
-          showExcerpt: true
-        });
-      }
 
-      var button = document.querySelector("[data-copy-target]");
-      if (!button) return;
-      button.addEventListener("click", function () {
-        var target = document.getElementById(button.dataset.copyTarget);
-        var text = target ? target.textContent : "";
-        var done = function () {
-          var original = button.textContent;
-          button.textContent = "Copied";
-          setTimeout(function () { button.textContent = original; }, 1000);
-        };
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(done);
-          return;
-        }
-        var helper = document.createElement("textarea");
-        helper.value = text;
-        helper.setAttribute("readonly", "");
-        helper.style.position = "fixed";
-        helper.style.left = "-9999px";
-        document.body.appendChild(helper);
-        helper.select();
-        document.execCommand("copy");
-        document.body.removeChild(helper);
-        done();
+  <script>
+    document.querySelectorAll('.copy-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var el = document.querySelector(btn.getAttribute('data-copy'));
+        if (!el) return;
+        var text = el.innerText;
+        navigator.clipboard.writeText(text).then(function () {
+          var prev = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(function () { btn.textContent = prev; }, 1200);
+        });
       });
-    })();
+    });
   </script>
 </body>
 </html>
