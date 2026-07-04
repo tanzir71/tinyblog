@@ -1,0 +1,20 @@
+title: TinyBlog
+description: Self-hosted embeddable blog in one script tag.
+
+# GitHub Pages uses the legacy Jekyll builder for this repo. Publish only the
+# marketing/docs surface, not maintainer docs, backend source, tests, or runtime
+# folders that are useful in the repo but should not be part of the Pages site.
+exclude:
+  - CHANGELOG.md
+  - PLAN.md
+  - README.md
+  - SECURITY.md
+  - SETUP.md
+  - tinyblog.php
+  - tests/
+  - data/
+  - uploads/
+  - .env.example
+  - .gitattributes
+  - .gitignore
+  - .htaccess

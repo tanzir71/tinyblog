@@ -5,6 +5,8 @@ $required = @(
   "tinyblog.php",
   "tinyblog-widget.js",
   "index.html",
+  "docs.html",
+  "_config.yml",
   "README.md",
   "SETUP.md",
   "SECURITY.md",
@@ -85,9 +87,45 @@ if (Test-Path -LiteralPath $jsPath) {
 $landingPath = Join-Path $root "index.html"
 if (Test-Path -LiteralPath $landingPath) {
   $landing = Get-Content -LiteralPath $landingPath -Raw
-  foreach ($needle in @("<link rel=`"icon`" href=`"assets/logo.svg`">", "rel=`"apple-touch-icon`"", "assets/og.png", "twitter:card", "twitter:image", "class=`"skip`"", "data-demo-endpoint", "navigator.clipboard", "prefers-color-scheme")) {
+  foreach ($needle in @("<link rel=`"icon`" href=`"assets/logo.svg`">", "rel=`"apple-touch-icon`"", "assets/og.png", "twitter:card", "twitter:image", "class=`"skip`"", "navigator.clipboard", "href=`"docs.html`"")) {
     if (-not $landing.Contains($needle)) {
       $failures.Add("index.html missing expected landing polish: $needle")
+    }
+  }
+  if ($landing -match 'href="[^"]+\.md(?:#[^"]*)?"') {
+    $failures.Add("index.html should link to docs.html instead of raw Markdown docs.")
+  }
+}
+
+$docsPath = Join-Path $root "docs.html"
+if (Test-Path -LiteralPath $docsPath) {
+  $docs = Get-Content -LiteralPath $docsPath -Raw
+  foreach ($needle in @("class=`"docs-toc`"", "id=`"quick-start`"", "id=`"deployment`"", "id=`"embed`"", "id=`"security`"", "id=`"changelog`"", "data-copy=`"#snippet-feed`"")) {
+    if (-not $docs.Contains($needle)) {
+      $failures.Add("docs.html missing expected docs surface: $needle")
+    }
+  }
+  if ($docs -match 'href="[^"]+\.md(?:#[^"]*)?"') {
+    $failures.Add("docs.html should not link to raw Markdown docs.")
+  }
+}
+
+$cssPath = Join-Path $root "assets/site.css"
+if (Test-Path -LiteralPath $cssPath) {
+  $css = Get-Content -LiteralPath $cssPath -Raw
+  foreach ($needle in @("prefers-color-scheme", ".docs-shell", ".docs-toc", ".docs-table")) {
+    if (-not $css.Contains($needle)) {
+      $failures.Add("assets/site.css missing expected site styling: $needle")
+    }
+  }
+}
+
+$pagesConfigPath = Join-Path $root "_config.yml"
+if (Test-Path -LiteralPath $pagesConfigPath) {
+  $pagesConfig = Get-Content -LiteralPath $pagesConfigPath -Raw
+  foreach ($needle in @("exclude:", "README.md", "tinyblog.php", "tests/", "data/", "uploads/")) {
+    if (-not $pagesConfig.Contains($needle)) {
+      $failures.Add("_config.yml missing Pages exclude: $needle")
     }
   }
 }

@@ -6,6 +6,8 @@ $required = [
     'tinyblog.php',
     'tinyblog-widget.js',
     'index.html',
+    'docs.html',
+    '_config.yml',
     'README.md',
     'SETUP.md',
     'SECURITY.md',
@@ -82,9 +84,42 @@ if (is_file($root . '/tinyblog-widget.js')) {
 
 if (is_file($root . '/index.html')) {
     $landing = file_get_contents($root . '/index.html');
-    foreach (['<link rel="icon" href="assets/logo.svg">', 'rel="apple-touch-icon"', 'assets/og.png', 'twitter:card', 'twitter:image', 'class="skip"', 'data-demo-endpoint', 'navigator.clipboard', 'prefers-color-scheme'] as $needle) {
+    foreach (['<link rel="icon" href="assets/logo.svg">', 'rel="apple-touch-icon"', 'assets/og.png', 'twitter:card', 'twitter:image', 'class="skip"', 'navigator.clipboard', 'href="docs.html"'] as $needle) {
         if (!str_contains($landing, $needle)) {
             $failures[] = "index.html missing expected landing polish: {$needle}";
+        }
+    }
+    if (preg_match('/href="[^"]+\.md(?:#[^"]*)?"/', $landing)) {
+        $failures[] = 'index.html should link to docs.html instead of raw Markdown docs.';
+    }
+}
+
+if (is_file($root . '/docs.html')) {
+    $docs = file_get_contents($root . '/docs.html');
+    foreach (['class="docs-toc"', 'id="quick-start"', 'id="deployment"', 'id="embed"', 'id="security"', 'id="changelog"', 'data-copy="#snippet-feed"'] as $needle) {
+        if (!str_contains($docs, $needle)) {
+            $failures[] = "docs.html missing expected docs surface: {$needle}";
+        }
+    }
+    if (preg_match('/href="[^"]+\.md(?:#[^"]*)?"/', $docs)) {
+        $failures[] = 'docs.html should not link to raw Markdown docs.';
+    }
+}
+
+if (is_file($root . '/assets/site.css')) {
+    $css = file_get_contents($root . '/assets/site.css');
+    foreach (['prefers-color-scheme', '.docs-shell', '.docs-toc', '.docs-table'] as $needle) {
+        if (!str_contains($css, $needle)) {
+            $failures[] = "assets/site.css missing expected site styling: {$needle}";
+        }
+    }
+}
+
+if (is_file($root . '/_config.yml')) {
+    $config = file_get_contents($root . '/_config.yml');
+    foreach (['exclude:', 'README.md', 'tinyblog.php', 'tests/', 'data/', 'uploads/'] as $needle) {
+        if (!str_contains($config, $needle)) {
+            $failures[] = "_config.yml missing Pages exclude: {$needle}";
         }
     }
 }

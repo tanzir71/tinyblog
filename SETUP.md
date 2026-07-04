@@ -12,6 +12,7 @@ Upload these files and folders to your site root or a subfolder such as `/blog`:
 - `tinyblog-widget.js`
 - `index.html`
 - `docs.html`
+- `_config.yml` if deploying the static marketing/docs site with GitHub Pages
 - `.htaccess`
 - `assets/`
 - `uploads/`

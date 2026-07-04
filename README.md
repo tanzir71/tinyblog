@@ -14,6 +14,7 @@ Top threats are SQL injection, cross-site scripting, cross-site request forgery,
 - `tinyblog-widget.js` - dependency-free embed script.
 - `index.html` - minimal black-and-white landing page.
 - `docs.html` - public HTML documentation page linked from the marketing site.
+- `_config.yml` - GitHub Pages/Jekyll publish exclusions for source and runtime files.
 - `SETUP.md` - shared hosting and cPanel deployment.
 - `SECURITY.md` - safeguards and production checklist.
 - `.htaccess` - Apache rewrite and file protection rules.
