@@ -13,6 +13,7 @@ Top threats are SQL injection, cross-site scripting, cross-site request forgery,
 - `tinyblog.php` - backend, admin, public canonical pages, JSON API, RSS, sitemap.
 - `tinyblog-widget.js` - dependency-free embed script.
 - `index.html` - minimal black-and-white landing page.
+- `docs.html` - public HTML documentation page linked from the marketing site.
 - `SETUP.md` - shared hosting and cPanel deployment.
 - `SECURITY.md` - safeguards and production checklist.
 - `.htaccess` - Apache rewrite and file protection rules.
@@ -231,7 +232,7 @@ Manual QA checklist:
 - Search for normal terms and an injection probe such as `' OR 1=1--`; FTS5 hosts should rank results and non-FTS hosts should fall back safely.
 - Confirm widget feed renders from an allowed origin.
 - Confirm widget empty feeds show "No posts yet" and blocked/failed fetches show "Couldn't load posts" while firing the `error` event.
-- Confirm the landing page favicon uses `assets/logo.svg`, social cards use `assets/og.png`, the skip link is first in keyboard tab order, the embed snippet copies, and dark mode remains legible.
+- Confirm the landing page favicon uses `assets/logo.svg`, social cards use `assets/og.png`, the skip link is first in keyboard tab order, the embed snippet copies, Docs links open `docs.html`, and dark mode remains legible.
 - Confirm a blocked Origin receives 403 from `/api/posts`.
 - Upload jpg/png/webp/gif with alt text, confirm a `.txt` or `.php` upload is rejected, then delete an uploaded image and confirm the DB row and file are removed.
 - Submit subscribe form and verify rate limit after repeated attempts.

@@ -11,12 +11,13 @@ Upload these files and folders to your site root or a subfolder such as `/blog`:
 - `tinyblog.php`
 - `tinyblog-widget.js`
 - `index.html`
+- `docs.html`
 - `.htaccess`
 - `assets/`
 - `uploads/`
 - `data/.htaccess`
 - `.env.example`
-- `README.md`, `SETUP.md`, `SECURITY.md` if you want public docs available
+- `README.md`, `SETUP.md`, `SECURITY.md` if you want source docs available
 
 ## 2. PHP Version
 
