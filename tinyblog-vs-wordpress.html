@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minimal WordPress Alternative — One File, No Plugins — TinyBlog</title>
+  <meta name="description" content="Want a WordPress alternative without plugin sprawl, constant updates, and a security surface? TinyBlog is a free, open-source, single-file PHP + SQLite blog with a one-line embed — readable, secure by default, no maintenance treadmill.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tanzir71.github.io/tinyblog/tinyblog-vs-wordpress.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Minimal WordPress Alternative — TinyBlog">
+  <meta property="og:description" content="A single readable PHP file instead of a plugin-and-update treadmill. Self-hosted, secure by default, MIT licensed.">
+  <meta property="og:url" content="https://tanzir71.github.io/tinyblog/tinyblog-vs-wordpress.html">
+  <meta property="og:image" content="assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"Is TinyBlog lighter than WordPress?","acceptedAnswer":{"@type":"Answer","text":"Considerably. TinyBlog is a single PHP file with a SQLite database and no plugins or themes to install. WordPress is a full CMS with a MySQL database and an ecosystem of plugins and themes that add capability but also maintenance and a larger attack surface."}},
+      {"@type":"Question","name":"Does TinyBlog need constant updates like WordPress plugins?","acceptedAnswer":{"@type":"Answer","text":"There are no third-party plugins to update. Security is built into the single file — prepared statements, CSRF, escaping, rate limits, and an upload whitelist — so there is no plugin-and-update treadmill, just the app itself."}},
+      {"@type":"Question","name":"Can TinyBlog replace WordPress for a whole website?","acceptedAnswer":{"@type":"Answer","text":"No. TinyBlog is a focused blog and updates feed, not a general-purpose CMS with pages, e-commerce, and page builders. If you need those, keep WordPress; if you only need a secure, embeddable blog, TinyBlog is far smaller."}}
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="index.html"><span class="mark" aria-hidden="true">TB</span><span>TinyBlog</span></a>
+      <nav class="nav" aria-label="Primary">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#setup">Setup</a>
+        <a href="index.html#compare">Compare</a>
+        <a href="README.md">Docs</a>
+        <a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" style="grid-template-columns:1fr; padding-bottom:var(--s-6);">
+        <div>
+          <p class="eyebrow"><span class="sq" aria-hidden="true"></span>Comparison · TinyBlog vs WordPress</p>
+          <h1>A WordPress alternative that fits in one file.</h1>
+          <p class="lede">Tired of plugin sprawl, weekly updates, and a database you can't fit in your head — just to run a blog? TinyBlog is a free, open-source, single-file PHP + SQLite blog with a one-line embed. Secure by default, readable in one sitting, no maintenance treadmill.</p>
+          <div class="actions">
+            <a class="btn" href="README.md">Read the docs</a>
+            <a class="btn ghost" href="index.html">Back to overview</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">Context · 01</p>
+        <div class="section-head">
+          <h2>What WordPress is.</h2>
+          <p class="copy">WordPress is the most widely used content management system on the web. Self-hosted WordPress (wordpress.org) runs on PHP and MySQL and is extended through a vast ecosystem of themes and plugins that can turn it into almost anything — a blog, a shop, a forum, a full site. That flexibility is its strength, but it also means ongoing core, theme, and plugin updates, a broad security surface, and performance tuning as the install grows.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">Context · 02</p>
+        <div class="section-head">
+          <h2>How TinyBlog differs.</h2>
+          <p class="copy">TinyBlog does one thing: a secure, embeddable blog. It is a single PHP file with SQLite — no plugins, no themes, no MySQL server, no build step. The security path is intentionally visible in one file: prepared statements, CSRF tokens, output escaping, session timeout, rate limits, an image-only upload whitelist, and a CORS allowlist. You give up WordPress's universe of plugins and page builders; you gain something you can audit end to end and forget about between posts.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">Side by side</p>
+        <div class="section-head"><h2>TinyBlog vs WordPress, at a glance.</h2></div>
+        <div class="table-scroll">
+          <table class="cmp">
+            <colgroup><col><col class="self"><col></colgroup>
+            <thead><tr><th scope="col">Dimension</th><th scope="col">TinyBlog</th><th scope="col">WordPress (self-hosted)</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Footprint</th><td>One PHP file + SQLite</td><td>Full CMS + MySQL</td></tr>
+              <tr><th scope="row">Extensibility</th><td>Read/modify the source</td><td>Themes &amp; thousands of plugins</td></tr>
+              <tr><th scope="row">Scope</th><td>Blog &amp; updates feed</td><td>Anything — blog, shop, full site</td></tr>
+              <tr><th scope="row">Maintenance</th><td>No plugin update treadmill</td><td>Core + theme + plugin updates</td></tr>
+              <tr><th scope="row">Security surface</th><td>Small, single-file, auditable</td><td>Broad; depends on plugins</td></tr>
+              <tr><th scope="row">Embeds on other sites</th><td>One-line feed / post / subscribe</td><td>Via plugins / REST API</td></tr>
+              <tr><th scope="row">Cost</th><td>Free, MIT license</td><td>Free core; paid themes/plugins/hosting vary</td></tr>
+              <tr><th scope="row">Best for</th><td>Stores, portfolios, docs, product updates</td><td>Full-featured sites &amp; large content teams</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">Comparison reflects typical self-hosted WordPress setups as of June 2026; configurations vary widely — verify current details before deciding.</p>
+      </section>
+
+      <section class="section">
+        <p class="sys">Decision</p>
+        <div class="section-head"><h2>Which should you choose?</h2></div>
+        <div class="choose">
+          <div>
+            <h3>Choose WordPress if…</h3>
+            <p>you need a full website or store, want a specific plugin or theme ecosystem, or have non-technical editors who expect the familiar WordPress admin — and you're prepared to maintain updates and hosting.</p>
+          </div>
+          <div>
+            <h3>Choose TinyBlog if…</h3>
+            <p>you only need a secure, embeddable blog or updates feed, you value a tiny auditable codebase over infinite extensibility, and you'd rather not run a CMS and its plugin maintenance for a handful of posts a month.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">FAQ</p>
+        <div class="section-head"><h2>Frequently asked questions.</h2></div>
+        <div class="faq">
+          <div class="faq-item"><h3>Is TinyBlog lighter than WordPress?</h3><p>Considerably. TinyBlog is a single PHP file with a SQLite database and no plugins or themes to install. WordPress is a full CMS with a MySQL database and an ecosystem of plugins and themes that add capability but also maintenance and a larger attack surface.</p></div>
+          <div class="faq-item"><h3>Does TinyBlog need constant updates like WordPress plugins?</h3><p>There are no third-party plugins to update. Security is built into the single file — prepared statements, CSRF, escaping, rate limits, and an upload whitelist — so there is no plugin-and-update treadmill, just the app itself.</p></div>
+          <div class="faq-item"><h3>Can TinyBlog replace WordPress for a whole website?</h3><p>No. TinyBlog is a focused blog and updates feed, not a general-purpose CMS with pages, e-commerce, and page builders. If you need those, keep WordPress; if you only need a secure, embeddable blog, TinyBlog is far smaller.</p></div>
+        </div>
+      </section>
+
+      <div class="cta">
+        <h2>A whole blog, minus the plugin sprawl.</h2>
+        <div class="actions" style="margin-top:0;">
+          <a class="btn" href="README.md">Read the docs</a>
+          <a class="btn ghost" href="https://github.com/tanzir71/tinyblog">View on GitHub</a>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-cols">
+        <div class="foot-col"><span class="label">TinyBlog</span><p class="copy muted" style="font-size:var(--fs-small); max-width:34ch;">A free, self-hosted, single-file blog backend with a one-line embed. MIT licensed.</p></div>
+        <div class="foot-col"><span class="label">Product</span><a href="index.html#features">Features</a><a href="index.html#setup">Setup</a><a href="README.md">README</a><a href="SECURITY.md">Security</a></div>
+        <div class="foot-col"><span class="label">Compare</span><a href="tinyblog-vs-substack.html">vs Substack</a><a href="tinyblog-vs-ghost.html">vs Ghost</a><a href="tinyblog-vs-wordpress.html">vs WordPress</a><a href="tinyblog-vs-disqus-embed.html">vs Disqus</a></div>
+        <div class="foot-col"><span class="label">Project</span><a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a><a href="SETUP.md">Deployment</a><a href="CHANGELOG.md">Changelog</a></div>
+      </div>
+      <div class="foot-bottom">TinyBlog Widget — free &amp; open source, MIT licensed. Repository: <a href="https://github.com/tanzir71/tinyblog">github.com/tanzir71/tinyblog</a></div>
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lightweight Ghost Alternative for Shared Hosting — TinyBlog</title>
+  <meta name="description" content="Want a Ghost alternative that runs on cheap shared hosting with no Node server? TinyBlog is a free, open-source, single-file PHP + SQLite blog with a one-line embed — no Node, no reverse proxy, no monthly bill.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tanzir71.github.io/tinyblog/tinyblog-vs-ghost.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Lightweight Ghost Alternative — TinyBlog">
+  <meta property="og:description" content="A single-file PHP + SQLite alternative to Ghost. Runs on the cheapest shared hosting — no Node process, no reverse proxy, no Ghost(Pro) bill.">
+  <meta property="og:url" content="https://tanzir71.github.io/tinyblog/tinyblog-vs-ghost.html">
+  <meta property="og:image" content="assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"Can TinyBlog run without a Node.js server?","acceptedAnswer":{"@type":"Answer","text":"Yes. TinyBlog is a single PHP file backed by SQLite. It runs on ordinary PHP 8 shared hosting with no Node process, no reverse proxy, and no separate database server to provision."}},
+      {"@type":"Question","name":"Is TinyBlog a free alternative to Ghost(Pro)?","acceptedAnswer":{"@type":"Answer","text":"Yes. TinyBlog is MIT-licensed and free. Ghost itself is open source and free to self-host, but self-hosting Ghost typically needs Node, a database, and a reverse proxy; Ghost(Pro) is the paid managed option. TinyBlog trades Ghost's feature depth for near-zero operational overhead."}},
+      {"@type":"Question","name":"Does TinyBlog have memberships and newsletters like Ghost?","acceptedAnswer":{"@type":"Answer","text":"Not as a full membership platform. TinyBlog captures subscribers and publishes posts, RSS, and an embeddable feed. Ghost offers built-in memberships, paid tiers, and newsletter sending; choose Ghost if those are core to your product."}}
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="index.html"><span class="mark" aria-hidden="true">TB</span><span>TinyBlog</span></a>
+      <nav class="nav" aria-label="Primary">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#setup">Setup</a>
+        <a href="index.html#compare">Compare</a>
+        <a href="README.md">Docs</a>
+        <a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" style="grid-template-columns:1fr; padding-bottom:var(--s-6);">
+        <div>
+          <p class="eyebrow"><span class="sq" aria-hidden="true"></span>Comparison · TinyBlog vs Ghost</p>
+          <h1>A Ghost alternative with no Node server to babysit.</h1>
+          <p class="lede">Love Ghost's simplicity but not the Node process, the database, and the reverse proxy? TinyBlog is a free, open-source, single-file PHP + SQLite blog with a one-line embed. It runs on the cheapest shared hosting — nothing to provision, nothing to keep alive.</p>
+          <div class="actions">
+            <a class="btn" href="README.md">Read the docs</a>
+            <a class="btn ghost" href="index.html">Back to overview</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">Context · 01</p>
+        <div class="section-head">
+          <h2>What Ghost is.</h2>
+          <p class="copy">Ghost is a modern, open-source publishing platform built on Node.js. It offers a polished editor, built-in memberships and paid subscriptions, newsletters, and themes. You can self-host it for free, but a production install generally means running a Node process, a database (MySQL is recommended in production), and a reverse proxy — or paying for Ghost(Pro), the managed hosting from the Ghost team.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">Context · 02</p>
+        <div class="section-head">
+          <h2>How TinyBlog differs.</h2>
+          <p class="copy">TinyBlog is deliberately smaller. It is one PHP file plus a SQLite file — no Node runtime, no separate database server, no build step, no reverse proxy. You upload it to any PHP 8 host and it creates its own database on first run. You lose Ghost's membership system and newsletter engine; you gain an app you can deploy on a $3/month plan, read in one sitting, and embed on any site with a single script tag.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">Side by side</p>
+        <div class="section-head"><h2>TinyBlog vs Ghost, at a glance.</h2></div>
+        <div class="table-scroll">
+          <table class="cmp">
+            <colgroup><col><col class="self"><col></colgroup>
+            <thead><tr><th scope="col">Dimension</th><th scope="col">TinyBlog</th><th scope="col">Ghost</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Runtime</th><td>PHP 8 (shared hosting)</td><td>Node.js process</td></tr>
+              <tr><th scope="row">Database</th><td>SQLite (auto-created)</td><td>MySQL recommended in production</td></tr>
+              <tr><th scope="row">Extra infra</th><td>None</td><td>Reverse proxy, process manager</td></tr>
+              <tr><th scope="row">Cost to run</th><td>Free; cheap shared hosting</td><td>Free to self-host; Ghost(Pro) paid</td></tr>
+              <tr><th scope="row">Memberships / paid tiers</th><td>Not built in</td><td>Built in</td></tr>
+              <tr><th scope="row">Newsletters</th><td>Subscriber capture only</td><td>Built-in newsletter sending</td></tr>
+              <tr><th scope="row">Embeds on other sites</th><td>One-line feed / post / subscribe</td><td>Not the primary model</td></tr>
+              <tr><th scope="row">Codebase size</th><td>One readable file</td><td>Full application &amp; ecosystem</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">Comparison reflects publicly documented behavior and typical setups as of June 2026; project requirements and pricing change — verify current details before deciding.</p>
+      </section>
+
+      <section class="section">
+        <p class="sys">Decision</p>
+        <div class="section-head"><h2>Which should you choose?</h2></div>
+        <div class="choose">
+          <div>
+            <h3>Choose Ghost if…</h3>
+            <p>you're building a membership business — paid subscriptions, member-only posts, and newsletters are core — and you're comfortable running (or paying to host) a Node application with its database and proxy.</p>
+          </div>
+          <div>
+            <h3>Choose TinyBlog if…</h3>
+            <p>you want a blog or updates feed on the simplest possible stack — cheap shared hosting, one file, no moving parts — and you'd rather embed posts on an existing site than run a full publishing platform.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">FAQ</p>
+        <div class="section-head"><h2>Frequently asked questions.</h2></div>
+        <div class="faq">
+          <div class="faq-item"><h3>Can TinyBlog run without a Node.js server?</h3><p>Yes. TinyBlog is a single PHP file backed by SQLite. It runs on ordinary PHP 8 shared hosting with no Node process, no reverse proxy, and no separate database server to provision.</p></div>
+          <div class="faq-item"><h3>Is TinyBlog a free alternative to Ghost(Pro)?</h3><p>Yes. TinyBlog is MIT-licensed and free. Ghost is also open source and free to self-host, but self-hosting Ghost typically needs Node, a database, and a reverse proxy; Ghost(Pro) is the paid managed option. TinyBlog trades feature depth for near-zero operational overhead.</p></div>
+          <div class="faq-item"><h3>Does TinyBlog have memberships and newsletters like Ghost?</h3><p>Not as a full membership platform. TinyBlog captures subscribers and publishes posts, RSS, and an embeddable feed. Ghost offers built-in memberships, paid tiers, and newsletter sending; choose Ghost if those are core to your product.</p></div>
+        </div>
+      </section>
+
+      <div class="cta">
+        <h2>Blog on shared hosting, no Node required.</h2>
+        <div class="actions" style="margin-top:0;">
+          <a class="btn" href="README.md">Read the docs</a>
+          <a class="btn ghost" href="https://github.com/tanzir71/tinyblog">View on GitHub</a>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-cols">
+        <div class="foot-col"><span class="label">TinyBlog</span><p class="copy muted" style="font-size:var(--fs-small); max-width:34ch;">A free, self-hosted, single-file blog backend with a one-line embed. MIT licensed.</p></div>
+        <div class="foot-col"><span class="label">Product</span><a href="index.html#features">Features</a><a href="index.html#setup">Setup</a><a href="README.md">README</a><a href="SECURITY.md">Security</a></div>
+        <div class="foot-col"><span class="label">Compare</span><a href="tinyblog-vs-substack.html">vs Substack</a><a href="tinyblog-vs-ghost.html">vs Ghost</a><a href="tinyblog-vs-wordpress.html">vs WordPress</a><a href="tinyblog-vs-disqus-embed.html">vs Disqus</a></div>
+        <div class="foot-col"><span class="label">Project</span><a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a><a href="SETUP.md">Deployment</a><a href="CHANGELOG.md">Changelog</a></div>
+      </div>
+      <div class="foot-bottom">TinyBlog Widget — free &amp; open source, MIT licensed. Repository: <a href="https://github.com/tanzir71/tinyblog">github.com/tanzir71/tinyblog</a></div>
+    </footer>
+  </div>
+</body>
+</html>

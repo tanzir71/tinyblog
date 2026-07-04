@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Self-Hosted Substack Alternative (Own Your Blog) — TinyBlog</title>
+  <meta name="description" content="Looking for a self-hosted Substack alternative with no platform lock-in and no revenue cut? TinyBlog is a free, open-source, single-file blog you own — publish from your own domain with a one-line embed.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://tanzir71.github.io/tinyblog/tinyblog-vs-substack.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Self-Hosted Substack Alternative — TinyBlog">
+  <meta property="og:description" content="A free, open-source, self-hosted alternative to Substack. Own your archive on your own domain — no lock-in, no revenue cut.">
+  <meta property="og:url" content="https://tanzir71.github.io/tinyblog/tinyblog-vs-substack.html">
+  <meta property="og:image" content="assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="assets/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"Is TinyBlog a free alternative to Substack?","acceptedAnswer":{"@type":"Answer","text":"Yes. TinyBlog is MIT-licensed and free for commercial use. It has no per-subscriber fees and takes no cut of paid subscriptions, because it never handles payments — you run it on hosting you already pay for."}},
+      {"@type":"Question","name":"Can I move my content off Substack to TinyBlog?","acceptedAnswer":{"@type":"Answer","text":"Substack lets you export posts and your subscriber list as CSV/HTML. TinyBlog stores posts as Markdown in a SQLite database on your own server, so once imported your archive lives on your domain with no platform lock-in."}},
+      {"@type":"Question","name":"Does TinyBlog send newsletters like Substack?","acceptedAnswer":{"@type":"Answer","text":"TinyBlog captures subscribers and is built to publish a blog feed and RSS. It is not a full email-sending platform. If email delivery is central to your work, Substack or a dedicated newsletter tool may fit better, or you can pair TinyBlog's subscriber capture with your own mailer."}}
+    ]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="index.html"><span class="mark" aria-hidden="true">TB</span><span>TinyBlog</span></a>
+      <nav class="nav" aria-label="Primary">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#setup">Setup</a>
+        <a href="index.html#compare">Compare</a>
+        <a href="README.md">Docs</a>
+        <a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" style="grid-template-columns:1fr; padding-bottom:var(--s-6);">
+        <div>
+          <p class="eyebrow"><span class="sq" aria-hidden="true"></span>Comparison · TinyBlog vs Substack</p>
+          <h1>A self-hosted Substack alternative you actually own.</h1>
+          <p class="lede">Want a Substack alternative with no platform lock-in, no revenue cut, and your archive on your own domain? TinyBlog is a free, open-source, single-file blog backend with a one-line embed — you host it, you own the data, you keep 100%.</p>
+          <div class="actions">
+            <a class="btn" href="README.md">Read the docs</a>
+            <a class="btn ghost" href="index.html">Back to overview</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">Context · 01</p>
+        <div class="section-head">
+          <h2>What Substack is.</h2>
+          <p class="copy">Substack is a hosted publishing platform built around email newsletters. It handles hosting, email delivery, payments, and a built-in discovery network, and it is free to start — Substack instead takes a percentage of any paid-subscription revenue. Your publication lives on a Substack subdomain by default, with custom domains available as a paid add-on.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">Context · 02</p>
+        <div class="section-head">
+          <h2>How TinyBlog differs.</h2>
+          <p class="copy">TinyBlog takes the opposite trade. There is no platform, no network, and no payment processing — just a single PHP file plus SQLite that you drop onto hosting you already own. It renders canonical post pages, RSS, and an embeddable feed for any site. You give up Substack's built-in email delivery and discovery in exchange for full ownership: your content, your domain, your data, zero fees, and code you can read end to end.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">Side by side</p>
+        <div class="section-head"><h2>TinyBlog vs Substack, at a glance.</h2></div>
+        <div class="table-scroll">
+          <table class="cmp">
+            <colgroup><col><col class="self"><col></colgroup>
+            <thead><tr><th scope="col">Dimension</th><th scope="col">TinyBlog</th><th scope="col">Substack</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Hosting model</th><td>Self-hosted on your PHP host</td><td>Fully hosted by Substack</td></tr>
+              <tr><th scope="row">Where content lives</th><td>Your server &amp; domain</td><td>Substack (custom domain is an add-on)</td></tr>
+              <tr><th scope="row">Cost</th><td>Free, MIT license</td><td>Free tier; ~10% of paid-subscription revenue</td></tr>
+              <tr><th scope="row">Lock-in</th><td>None — plain Markdown in SQLite</td><td>Export available; distribution stays on-platform</td></tr>
+              <tr><th scope="row">Email delivery</th><td>Subscriber capture; bring your own mailer</td><td>Built-in newsletter sending</td></tr>
+              <tr><th scope="row">Discovery network</th><td>None — you drive your own traffic</td><td>Built-in recommendations &amp; network</td></tr>
+              <tr><th scope="row">Embeds on other sites</th><td>One-line feed / post / subscribe widget</td><td>Embed widgets tied to the platform</td></tr>
+              <tr><th scope="row">Trackers</th><td>None by default</td><td>Platform analytics &amp; scripts</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-note">Comparison reflects publicly documented behavior and typical plans as of June 2026; platform features and pricing change — verify current details before deciding.</p>
+      </section>
+
+      <section class="section">
+        <p class="sys">Decision</p>
+        <div class="section-head"><h2>Which should you choose?</h2></div>
+        <div class="choose">
+          <div>
+            <h3>Choose Substack if…</h3>
+            <p>email delivery and a built-in audience network are the point — you want to send newsletters, take payments, and tap discovery without running any infrastructure, and you accept a revenue share and platform hosting in return.</p>
+          </div>
+          <div>
+            <h3>Choose TinyBlog if…</h3>
+            <p>you want a blog you fully own on your own domain — for a store, portfolio, docs, or product updates — with no fees, no lock-in, and a readable codebase, and you're fine bringing your own email tool if you need one.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="sys">FAQ</p>
+        <div class="section-head"><h2>Frequently asked questions.</h2></div>
+        <div class="faq">
+          <div class="faq-item"><h3>Is TinyBlog a free alternative to Substack?</h3><p>Yes. TinyBlog is MIT-licensed and free for commercial use. It has no per-subscriber fees and takes no cut of paid subscriptions, because it never handles payments — you run it on hosting you already pay for.</p></div>
+          <div class="faq-item"><h3>Can I move my content off Substack to TinyBlog?</h3><p>Substack lets you export posts and your subscriber list. TinyBlog stores posts as Markdown in a SQLite database on your own server, so once imported your archive lives on your domain with no platform lock-in.</p></div>
+          <div class="faq-item"><h3>Does TinyBlog send newsletters like Substack?</h3><p>TinyBlog captures subscribers and publishes a blog feed and RSS, but it is not a full email-sending platform. If email delivery is central, pair TinyBlog's subscriber capture with your own mailer, or keep Substack for email.</p></div>
+        </div>
+      </section>
+
+      <div class="cta">
+        <h2>Own your blog in one script tag.</h2>
+        <div class="actions" style="margin-top:0;">
+          <a class="btn" href="README.md">Read the docs</a>
+          <a class="btn ghost" href="https://github.com/tanzir71/tinyblog">View on GitHub</a>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="foot-cols">
+        <div class="foot-col"><span class="label">TinyBlog</span><p class="copy muted" style="font-size:var(--fs-small); max-width:34ch;">A free, self-hosted, single-file blog backend with a one-line embed. MIT licensed.</p></div>
+        <div class="foot-col"><span class="label">Product</span><a href="index.html#features">Features</a><a href="index.html#setup">Setup</a><a href="README.md">README</a><a href="SECURITY.md">Security</a></div>
+        <div class="foot-col"><span class="label">Compare</span><a href="tinyblog-vs-substack.html">vs Substack</a><a href="tinyblog-vs-ghost.html">vs Ghost</a><a href="tinyblog-vs-wordpress.html">vs WordPress</a><a href="tinyblog-vs-disqus-embed.html">vs Disqus</a></div>
+        <div class="foot-col"><span class="label">Project</span><a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a><a href="SETUP.md">Deployment</a><a href="CHANGELOG.md">Changelog</a></div>
+      </div>
+      <div class="foot-bottom">TinyBlog Widget — free &amp; open source, MIT licensed. Repository: <a href="https://github.com/tanzir71/tinyblog">github.com/tanzir71/tinyblog</a></div>
+    </footer>
+  </div>
+</body>
+</html>
