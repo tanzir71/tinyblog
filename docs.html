@@ -41,19 +41,7 @@
       </nav>
     </header>
 
-    <main id="main">
-      <section class="hero docs-hero">
-        <div class="hero-copy">
-          <p class="eyebrow"><span class="sq" aria-hidden="true"></span>Documentation</p>
-          <h1>Implementation guide.</h1>
-          <p class="lede">Everything needed to run TinyBlog on ordinary PHP hosting: upload the files, create the first admin, embed a feed or subscribe box, and keep the security path visible.</p>
-          <div class="actions">
-            <a class="btn" href="#quick-start">Start setup</a>
-            <a class="btn ghost" href="#embed">Copy embed</a>
-          </div>
-        </div>
-      </section>
-
+    <main id="main" class="docs-main">
       <div class="docs-shell">
         <aside class="docs-toc" aria-label="On this page">
           <span class="label">On this page</span>
@@ -72,6 +60,16 @@
         </aside>
 
         <div class="docs-content">
+          <section class="docs-intro" aria-labelledby="docs-title">
+            <p class="eyebrow"><span class="sq" aria-hidden="true"></span>Documentation</p>
+            <h1 id="docs-title">Implementation guide.</h1>
+            <p class="lede">Everything needed to run TinyBlog on ordinary PHP hosting: upload the files, create the first admin, embed a feed or subscribe box, and keep the security path visible.</p>
+            <div class="actions">
+              <a class="btn" href="#quick-start">Start setup</a>
+              <a class="btn ghost" href="#embed">Copy embed</a>
+            </div>
+          </section>
+
           <section class="docs-section" id="quick-start">
             <p class="sys">Docs 01</p>
             <h2>Quick start</h2>
@@ -344,6 +342,35 @@ curl -X POST "https://blog.example.com/api/subscribe" \
         });
       });
     });
+
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('.docs-toc a'));
+      var sections = links.map(function (link) {
+        return document.querySelector(link.getAttribute('href'));
+      }).filter(Boolean);
+      if (!links.length || !sections.length) return;
+
+      function setActive() {
+        var current = sections[0];
+        sections.forEach(function (section) {
+          if (section.getBoundingClientRect().top <= 140) {
+            current = section;
+          }
+        });
+        links.forEach(function (link) {
+          var isActive = link.getAttribute('href') === '#' + current.id;
+          if (isActive) {
+            link.setAttribute('aria-current', 'true');
+          } else {
+            link.removeAttribute('aria-current');
+          }
+        });
+      }
+
+      setActive();
+      window.addEventListener('scroll', setActive, { passive: true });
+      window.addEventListener('hashchange', setActive);
+    })();
   </script>
 </body>
 </html>
