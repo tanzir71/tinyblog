@@ -15,6 +15,7 @@ $required = [
     '.htaccess',
     'data/.htaccess',
     'uploads/.htaccess',
+    'assets/og.png',
 ];
 
 $failures = [];
@@ -31,6 +32,38 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing expected safeguard: {$needle}";
         }
     }
+    foreach (['function visible_post_where', 'publish_at <= :now', 'reading_minutes', "'hasMore'", 'application/ld+json', 'BlogPosting', 'rel="next"', 'rel="prev"'] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing expected feature hook: {$needle}";
+        }
+    }
+    foreach ([
+        'confirm_token',
+        'unsub_token',
+        '/subscribe/confirm/',
+        '/unsubscribe/',
+        'function fts5_available',
+        'posts_fts',
+        'bm25',
+        'function related_posts',
+        'pinned',
+        'alt_text',
+        'delete_media',
+        'function track_post_view',
+        'post_views',
+        'function render_json_feed',
+        '/feed.json',
+        'function export_data',
+        'function import_data',
+        'language-',
+        'data-copy-code',
+        'function maybe_not_modified',
+        'ETag',
+    ] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing expected backlog hook: {$needle}";
+        }
+    }
 }
 
 if (is_file($root . '/tinyblog-widget.js')) {
@@ -39,6 +72,27 @@ if (is_file($root . '/tinyblog-widget.js')) {
         if (!str_contains($js, $needle)) {
             $failures[] = "tinyblog-widget.js missing expected feature: {$needle}";
         }
+    }
+    foreach (['No posts yet', "Couldn't load posts", 'role="status"', 'reading_minutes', "data-theme='dark'"] as $needle) {
+        if (!str_contains($js, $needle)) {
+            $failures[] = "tinyblog-widget.js missing expected polish: {$needle}";
+        }
+    }
+}
+
+if (is_file($root . '/index.html')) {
+    $landing = file_get_contents($root . '/index.html');
+    foreach (['<link rel="icon" href="assets/logo.svg">', 'rel="apple-touch-icon"', 'assets/og.png', 'twitter:card', 'twitter:image', 'class="skip"', 'data-demo-endpoint', 'navigator.clipboard', 'prefers-color-scheme'] as $needle) {
+        if (!str_contains($landing, $needle)) {
+            $failures[] = "index.html missing expected landing polish: {$needle}";
+        }
+    }
+}
+
+if (is_file($root . '/assets/og.png')) {
+    $info = getimagesize($root . '/assets/og.png');
+    if ($info === false || (int) $info[0] !== 1200 || (int) $info[1] !== 630) {
+        $failures[] = 'assets/og.png must be a 1200x630 PNG.';
     }
 }
 

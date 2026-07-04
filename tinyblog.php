@@ -162,10 +162,13 @@ function init_db(PDO $pdo): void
             excerpt TEXT NOT NULL,
             hero_image_url TEXT,
             tags TEXT NOT NULL DEFAULT '',
-            status TEXT NOT NULL CHECK(status IN ('draft','published')),
+            status TEXT NOT NULL DEFAULT 'published' CHECK(status IN ('draft','published')),
             published_at TEXT,
+            publish_at TEXT,
+            pinned INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
+            reading_minutes INTEGER NOT NULL DEFAULT 0,
             view_count INTEGER NOT NULL DEFAULT 0,
             UNIQUE(site, slug)
         );
@@ -176,6 +179,7 @@ function init_db(PDO $pdo): void
             mime TEXT NOT NULL,
             size INTEGER NOT NULL,
             url TEXT NOT NULL,
+            alt_text TEXT NOT NULL DEFAULT '',
             user_id INTEGER,
             created_at TEXT NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -184,11 +188,22 @@ function init_db(PDO $pdo): void
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             site TEXT NOT NULL,
             email TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'active',
+            status TEXT NOT NULL DEFAULT 'unconfirmed',
             consent_at TEXT NOT NULL,
+            confirm_token TEXT,
+            confirmed_at TEXT,
+            unsub_token TEXT,
             ip_hash TEXT,
             user_agent TEXT,
             UNIQUE(site, email)
+        );
+        CREATE TABLE IF NOT EXISTS post_views (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER NOT NULL,
+            token_hash TEXT NOT NULL,
+            viewed_at TEXT NOT NULL,
+            UNIQUE(post_id, token_hash),
+            FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
         );
         CREATE TABLE IF NOT EXISTS rate_limits (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -206,15 +221,21 @@ function init_db(PDO $pdo): void
             created_at TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_posts_status_date ON posts(status, published_at);
+        CREATE INDEX IF NOT EXISTS idx_posts_publish_at ON posts(status, publish_at, pinned);
         CREATE INDEX IF NOT EXISTS idx_posts_site_slug ON posts(site, slug);
+        CREATE INDEX IF NOT EXISTS idx_post_views_token ON post_views(post_id, token_hash);
         CREATE INDEX IF NOT EXISTS idx_rate_limits_reset ON rate_limits(reset_at);
     ");
+    migrate_schema($pdo);
+    setup_fts($pdo);
 
     $defaults = [
         'blog_title' => 'TinyBlog Widget',
         'site_key' => 'store-1',
         'public_site_key' => bin2hex(random_bytes(16)),
         'require_site_key' => '0',
+        'posts_per_page' => '10',
+        'subscribe_mail_enabled' => '0',
         'allowed_origins' => '',
         'accent_color' => '#000000',
         'canonical_base' => base_url(),
@@ -224,6 +245,120 @@ function init_db(PDO $pdo): void
     foreach ($defaults as $key => $value) {
         $stmt->execute([':key' => $key, ':value' => $value]);
     }
+}
+
+function migrate_schema(PDO $pdo): void
+{
+    if (!column_exists($pdo, 'posts', 'status')) {
+        $pdo->exec("ALTER TABLE posts ADD COLUMN status TEXT NOT NULL DEFAULT 'published'");
+    }
+    if (!column_exists($pdo, 'posts', 'published_at')) {
+        $pdo->exec('ALTER TABLE posts ADD COLUMN published_at TEXT');
+    }
+    if (!column_exists($pdo, 'posts', 'publish_at')) {
+        $pdo->exec('ALTER TABLE posts ADD COLUMN publish_at TEXT');
+    }
+    if (!column_exists($pdo, 'posts', 'pinned')) {
+        $pdo->exec('ALTER TABLE posts ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!column_exists($pdo, 'posts', 'reading_minutes')) {
+        $pdo->exec('ALTER TABLE posts ADD COLUMN reading_minutes INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!column_exists($pdo, 'posts', 'view_count')) {
+        $pdo->exec('ALTER TABLE posts ADD COLUMN view_count INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!column_exists($pdo, 'media', 'alt_text')) {
+        $pdo->exec("ALTER TABLE media ADD COLUMN alt_text TEXT NOT NULL DEFAULT ''");
+    }
+    if (!column_exists($pdo, 'subscribers', 'confirm_token')) {
+        $pdo->exec('ALTER TABLE subscribers ADD COLUMN confirm_token TEXT');
+    }
+    if (!column_exists($pdo, 'subscribers', 'confirmed_at')) {
+        $pdo->exec('ALTER TABLE subscribers ADD COLUMN confirmed_at TEXT');
+    }
+    if (!column_exists($pdo, 'subscribers', 'unsub_token')) {
+        $pdo->exec('ALTER TABLE subscribers ADD COLUMN unsub_token TEXT');
+    }
+
+    $now = now_utc();
+    $stmt = $pdo->prepare("
+        UPDATE posts
+        SET status = COALESCE(NULLIF(status, ''), 'published'),
+            published_at = COALESCE(NULLIF(published_at, ''), created_at, updated_at, :now),
+            publish_at = COALESCE(NULLIF(publish_at, ''), NULLIF(published_at, ''), created_at, updated_at, :now)
+    ");
+    $stmt->execute([':now' => $now]);
+    $subscribers = $pdo->query("SELECT id FROM subscribers WHERE unsub_token IS NULL OR unsub_token = ''")->fetchAll();
+    $updateSubscriber = $pdo->prepare('UPDATE subscribers SET unsub_token = :unsub_token, confirmed_at = COALESCE(confirmed_at, CASE WHEN status = :active THEN consent_at ELSE NULL END) WHERE id = :id');
+    foreach ($subscribers as $subscriber) {
+        $updateSubscriber->execute([
+            ':unsub_token' => random_token(),
+            ':active' => 'active',
+            ':id' => (int) $subscriber['id'],
+        ]);
+    }
+    $pdo->exec('PRAGMA user_version = 3');
+}
+
+function column_exists(PDO $pdo, string $table, string $column): bool
+{
+    $stmt = $pdo->query('PRAGMA table_info(' . $table . ')');
+    foreach ($stmt->fetchAll() as $row) {
+        if (($row['name'] ?? '') === $column) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function random_token(): string
+{
+    return bin2hex(random_bytes(32));
+}
+
+function fts5_available(PDO $pdo): bool
+{
+    static $available = null;
+    if ($available !== null) {
+        return $available;
+    }
+    try {
+        $options = $pdo->query('PRAGMA compile_options')->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($options as $option) {
+            if (stripos((string) $option, 'ENABLE_FTS5') !== false) {
+                return $available = true;
+            }
+        }
+        $pdo->exec("CREATE VIRTUAL TABLE IF NOT EXISTS temp.tinyblog_fts_probe USING fts5(value)");
+        $pdo->exec('DROP TABLE temp.tinyblog_fts_probe');
+        return $available = true;
+    } catch (Throwable) {
+        return $available = false;
+    }
+}
+
+function setup_fts(PDO $pdo): void
+{
+    if (!fts5_available($pdo)) {
+        return;
+    }
+    $pdo->exec("
+        CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts USING fts5(post_id UNINDEXED, site UNINDEXED, title, excerpt, body);
+        CREATE TRIGGER IF NOT EXISTS posts_fts_ai AFTER INSERT ON posts BEGIN
+            INSERT INTO posts_fts(rowid, post_id, site, title, excerpt, body)
+            VALUES (new.id, new.id, new.site, new.title, new.excerpt, new.body_markdown);
+        END;
+        CREATE TRIGGER IF NOT EXISTS posts_fts_ad AFTER DELETE ON posts BEGIN
+            DELETE FROM posts_fts WHERE rowid = old.id;
+        END;
+        CREATE TRIGGER IF NOT EXISTS posts_fts_au AFTER UPDATE OF title, excerpt, body_markdown, site ON posts BEGIN
+            DELETE FROM posts_fts WHERE rowid = old.id;
+            INSERT INTO posts_fts(rowid, post_id, site, title, excerpt, body)
+            VALUES (new.id, new.id, new.site, new.title, new.excerpt, new.body_markdown);
+        END;
+    ");
+    $pdo->exec('DELETE FROM posts_fts');
+    $pdo->exec('INSERT INTO posts_fts(rowid, post_id, site, title, excerpt, body) SELECT id, id, site, title, excerpt, body_markdown FROM posts');
 }
 
 function setting(PDO $pdo, string $key, ?string $fallback = null): string
@@ -426,6 +561,30 @@ function rate_limit(PDO $pdo, string $type, int $limit, int $windowSeconds): boo
     return true;
 }
 
+function is_probable_bot(): bool
+{
+    $ua = strtolower((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''));
+    return $ua === '' || preg_match('/bot|crawl|spider|slurp|preview|facebookexternalhit|mediapartners|monitoring/i', $ua) === 1;
+}
+
+function track_post_view(PDO $pdo, int $postId): void
+{
+    if ($postId <= 0 || (string) ($_SERVER['HTTP_DNT'] ?? '') === '1' || is_probable_bot()) {
+        return;
+    }
+    $token = hash('sha256', client_ip_hash() . ':' . gmdate('Y-m-d') . ':' . $postId);
+    $stmt = $pdo->prepare('INSERT OR IGNORE INTO post_views (post_id, token_hash, viewed_at) VALUES (:post_id, :token_hash, :viewed_at)');
+    $stmt->execute([
+        ':post_id' => $postId,
+        ':token_hash' => $token,
+        ':viewed_at' => now_utc(),
+    ]);
+    if ($stmt->rowCount() > 0) {
+        $update = $pdo->prepare('UPDATE posts SET view_count = view_count + 1 WHERE id = :id');
+        $update->execute([':id' => $postId]);
+    }
+}
+
 function redirect(string $path): void
 {
     header('Location: ' . url_for($path));
@@ -518,6 +677,22 @@ function render_inline_markdown(string $text): string
     return $escaped;
 }
 
+function highlight_code(string $code, string $language): string
+{
+    $escaped = htmlEscape($code);
+    $language = strtolower($language);
+    if (in_array($language, ['php', 'js', 'javascript', 'ts', 'typescript'], true)) {
+        return preg_replace('/\b(function|return|const|let|var|if|else|foreach|for|while|class|public|private|new|try|catch|throw|true|false|null)\b/', '<span class="tok-key">$1</span>', $escaped) ?? $escaped;
+    }
+    if (in_array($language, ['css', 'scss'], true)) {
+        return preg_replace('/\b(display|grid|flex|color|background|border|padding|margin|font|width|height)\b/', '<span class="tok-key">$1</span>', $escaped) ?? $escaped;
+    }
+    if (in_array($language, ['html', 'xml'], true)) {
+        return preg_replace('/(&lt;\/?)([a-z0-9-]+)/i', '$1<span class="tok-key">$2</span>', $escaped) ?? $escaped;
+    }
+    return $escaped;
+}
+
 function sanitize_markdown(string $markdown): string
 {
     $markdown = str_replace(["\r\n", "\r"], "\n", $markdown);
@@ -529,6 +704,7 @@ function sanitize_markdown(string $markdown): string
     $quote = [];
     $code = [];
     $inCode = false;
+    $codeLanguage = '';
 
     $flushParagraph = function () use (&$html, &$paragraph): void {
         if ($paragraph) {
@@ -550,10 +726,12 @@ function sanitize_markdown(string $markdown): string
             $quote = [];
         }
     };
-    $flushCode = function () use (&$html, &$code): void {
+    $flushCode = function () use (&$html, &$code, &$codeLanguage): void {
         if ($code) {
-            $html[] = '<p><code>' . nl2br(htmlEscape(implode("\n", $code)), false) . '</code></p>';
+            $class = $codeLanguage !== '' ? ' class="language-' . htmlEscape($codeLanguage) . '"' : '';
+            $html[] = '<pre><code' . $class . '>' . highlight_code(implode("\n", $code), $codeLanguage) . '</code></pre>';
             $code = [];
+            $codeLanguage = '';
         }
     };
 
@@ -567,6 +745,7 @@ function sanitize_markdown(string $markdown): string
                 $flushParagraph();
                 $flushList();
                 $flushQuote();
+                $codeLanguage = preg_replace('/[^a-z0-9_-]+/i', '', trim(substr($trimmed, 3))) ?: '';
                 $inCode = true;
             }
             continue;
@@ -636,6 +815,140 @@ function excerpt_from_markdown(string $markdown, int $max = 180): string
     return rtrim($snippet) . '...';
 }
 
+function markdown_word_count(string $markdown): int
+{
+    $plain = trim(preg_replace('/\s+/', ' ', strip_tags(sanitize_markdown($markdown))) ?? '');
+    if ($plain === '') {
+        return 0;
+    }
+    if (preg_match_all("/[\p{L}\p{N}][\p{L}\p{N}'-]*/u", $plain, $matches)) {
+        return count($matches[0]);
+    }
+    return count(preg_split('/\s+/', $plain) ?: []);
+}
+
+function reading_minutes_from_markdown(string $markdown): int
+{
+    $words = markdown_word_count($markdown);
+    if ($words < 100) {
+        return 0;
+    }
+    return max(1, (int) ceil($words / 220));
+}
+
+function post_reading_minutes(array $post): int
+{
+    $stored = (int) ($post['reading_minutes'] ?? 0);
+    if ($stored > 0) {
+        return $stored;
+    }
+    return reading_minutes_from_markdown((string) ($post['body_markdown'] ?? ''));
+}
+
+function reading_time_label(int $minutes): string
+{
+    return $minutes > 0 ? '~' . $minutes . ' min read' : '';
+}
+
+function post_publish_at(array $post): string
+{
+    return (string) (($post['publish_at'] ?? '') ?: ($post['published_at'] ?? '') ?: ($post['created_at'] ?? ''));
+}
+
+function normalize_publish_at(string $value, string $status): ?string
+{
+    $value = trim(str_replace('T', ' ', $value));
+    if ($value === '') {
+        return $status === 'published' ? now_utc() : null;
+    }
+    $time = strtotime($value . (preg_match('/Z|[+-]\d{2}:?\d{2}$/', $value) ? '' : ' UTC'));
+    return $time ? gmdate('Y-m-d H:i:s', $time) : now_utc();
+}
+
+function visible_post_where(string $prefix = ''): string
+{
+    $p = $prefix !== '' ? rtrim($prefix, '.') . '.' : '';
+    return $p . 'site = :site AND ' . $p . "status = :status AND (" . $p . 'publish_at IS NULL OR ' . $p . 'publish_at <= :now)';
+}
+
+function visible_post_params(string $site): array
+{
+    return [
+        ':site' => $site,
+        ':status' => 'published',
+        ':now' => now_utc(),
+    ];
+}
+
+function posts_per_page(PDO $pdo): int
+{
+    return max(1, min(50, (int) setting($pdo, 'posts_per_page', '10') ?: 10));
+}
+
+function page_url(string $path, int $page, array $params = []): string
+{
+    $params['page'] = max(1, $page);
+    return url_for($path) . '?' . http_build_query($params);
+}
+
+function pagination_links(string $path, int $page, bool $hasMore, array $params = []): string
+{
+    if ($page <= 1 && !$hasMore) {
+        return '';
+    }
+    $html = '<nav class="pagination" aria-label="Pagination">';
+    if ($page > 1) {
+        $html .= '<a rel="prev" href="' . htmlEscape(page_url($path, $page - 1, $params)) . '">Previous</a>';
+    }
+    if ($hasMore) {
+        $html .= '<a rel="next" href="' . htmlEscape(page_url($path, $page + 1, $params)) . '">Next</a>';
+    }
+    return $html . '</nav>';
+}
+
+function fts_query(string $query): string
+{
+    if (!preg_match_all('/[\p{L}\p{N}][\p{L}\p{N}_-]*/u', $query, $matches)) {
+        return '';
+    }
+    return implode(' ', array_slice(array_map(fn (string $term): string => '"' . str_replace('"', '""', $term) . '"', $matches[0]), 0, 8));
+}
+
+function search_posts(PDO $pdo, string $site, string $query, int $page, int $perPage): array
+{
+    $offset = ($page - 1) * $perPage;
+    $rows = [];
+    $match = fts_query($query);
+    if ($match !== '' && fts5_available($pdo)) {
+        try {
+            $stmt = $pdo->prepare('SELECT p.* FROM posts_fts JOIN posts p ON p.id = posts_fts.post_id WHERE posts_fts MATCH :match AND ' . visible_post_where('p') . ' ORDER BY bm25(posts_fts), datetime(p.publish_at) DESC LIMIT :limit OFFSET :offset');
+            $stmt->bindValue(':match', $match, PDO::PARAM_STR);
+            foreach (visible_post_params($site) as $key => $value) {
+                $stmt->bindValue($key, $value, PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':limit', $perPage + 1, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $rows = $stmt->fetchAll();
+            return ['rows' => array_slice($rows, 0, $perPage), 'hasMore' => count($rows) > $perPage, 'mode' => 'fts5'];
+        } catch (Throwable) {
+            $rows = [];
+        }
+    }
+
+    $like = '%' . $query . '%';
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' AND (title LIKE :q OR excerpt LIKE :q OR body_markdown LIKE :q) ORDER BY datetime(publish_at) DESC LIMIT :limit OFFSET :offset');
+    foreach (visible_post_params($site) as $key => $value) {
+        $stmt->bindValue($key, $value, PDO::PARAM_STR);
+    }
+    $stmt->bindValue(':q', $like, PDO::PARAM_STR);
+    $stmt->bindValue(':limit', $perPage + 1, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll();
+    return ['rows' => array_slice($rows, 0, $perPage), 'hasMore' => count($rows) > $perPage, 'mode' => 'like'];
+}
+
 function split_tags(string $tags): array
 {
     $parts = preg_split('/[,#]+/', $tags) ?: [];
@@ -701,6 +1014,35 @@ function json_response(array $payload, int $status = 200): void
     exit;
 }
 
+function content_last_modified(PDO $pdo, string $site): string
+{
+    $stmt = $pdo->prepare('SELECT MAX(updated_at) FROM posts WHERE site = :site');
+    $stmt->execute([':site' => $site]);
+    return (string) ($stmt->fetchColumn() ?: now_utc());
+}
+
+function etag_for(string $scope, string $lastModified): string
+{
+    return '"' . hash('sha256', TB_VERSION . ':' . $scope . ':' . $lastModified) . '"';
+}
+
+function maybe_not_modified(string $etag, string $lastModified): void
+{
+    header('ETag: ' . $etag);
+    header('Last-Modified: ' . gmdate(DATE_RFC7231, strtotime($lastModified) ?: time()));
+    $ifNoneMatch = trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? ''));
+    if ($ifNoneMatch !== '' && hash_equals($etag, $ifNoneMatch)) {
+        http_response_code(304);
+        exit;
+    }
+    $ifModifiedSince = strtotime((string) ($_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? ''));
+    $last = strtotime($lastModified) ?: time();
+    if ($ifModifiedSince && $ifModifiedSince >= $last) {
+        http_response_code(304);
+        exit;
+    }
+}
+
 function validate_site(PDO $pdo, string $site): void
 {
     if (!hash_equals(setting($pdo, 'site_key', 'store-1'), $site)) {
@@ -723,12 +1065,16 @@ function get_json_body(): array
 
 function post_to_api(PDO $pdo, array $post, bool $includeContent): array
 {
+    $readingMinutes = post_reading_minutes($post);
     $payload = [
         'id' => (int) $post['id'],
         'slug' => $post['slug'],
         'title' => $post['title'],
         'excerpt' => $post['excerpt'],
-        'published_at' => $post['published_at'],
+        'published_at' => post_publish_at($post),
+        'publish_at' => post_publish_at($post),
+        'reading_minutes' => $readingMinutes,
+        'reading_time' => reading_time_label($readingMinutes),
         'hero_image_url' => $post['hero_image_url'],
         'tags' => split_tags($post['tags']),
         'canonical_url' => canonical_url($pdo, '/post/' . rawurlencode($post['slug'])),
@@ -752,17 +1098,29 @@ function handle_api(PDO $pdo, string $path): void
     if ($path === '/api/posts' && $_SERVER['REQUEST_METHOD'] === 'GET') {
         $site = (string) ($_GET['site'] ?? setting($pdo, 'site_key', 'store-1'));
         validate_site($pdo, $site);
+        $lastModified = content_last_modified($pdo, $site);
+        maybe_not_modified(etag_for('api-posts:' . $site, $lastModified), $lastModified);
         $limit = max(1, min(50, (int) ($_GET['limit'] ?? 10)));
-        $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site AND status = :status ORDER BY datetime(published_at) DESC, id DESC LIMIT :limit');
-        $stmt->bindValue(':site', $site, PDO::PARAM_STR);
-        $stmt->bindValue(':status', 'published', PDO::PARAM_STR);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $offset = ($page - 1) * $limit;
+        $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' ORDER BY pinned DESC, datetime(publish_at) DESC, id DESC LIMIT :limit OFFSET :offset');
+        foreach (visible_post_params($site) as $key => $value) {
+            $stmt->bindValue($key, $value, PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':limit', $limit + 1, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
-        $posts = array_map(fn (array $post): array => post_to_api($pdo, $post, true), $stmt->fetchAll());
+        $rows = $stmt->fetchAll();
+        $hasMore = count($rows) > $limit;
+        $rows = array_slice($rows, 0, $limit);
+        $posts = array_map(fn (array $post): array => post_to_api($pdo, $post, true), $rows);
         json_response([
             'site' => $site,
             'title' => setting($pdo, 'blog_title', 'TinyBlog Widget'),
+            'items' => $posts,
             'posts' => $posts,
+            'page' => $page,
+            'hasMore' => $hasMore,
             'generated_at' => now_utc(),
         ]);
     }
@@ -771,15 +1129,17 @@ function handle_api(PDO $pdo, string $path): void
         $site = (string) ($_GET['site'] ?? setting($pdo, 'site_key', 'store-1'));
         validate_site($pdo, $site);
         $slug = rawurldecode($m[1]);
-        $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site AND slug = :slug AND status = :status LIMIT 1');
-        $stmt->execute([':site' => $site, ':slug' => $slug, ':status' => 'published']);
+        $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' AND slug = :slug LIMIT 1');
+        $stmt->execute(visible_post_params($site) + [':slug' => $slug]);
         $post = $stmt->fetch();
         if (!$post) {
             json_response(['error' => 'Post not found.'], 404);
         }
-        $update = $pdo->prepare('UPDATE posts SET view_count = view_count + 1 WHERE id = :id');
-        $update->execute([':id' => (int) $post['id']]);
-        $post['view_count'] = (int) $post['view_count'] + 1;
+        maybe_not_modified(etag_for('api-post:' . $site . ':' . $slug, (string) $post['updated_at']), (string) $post['updated_at']);
+        track_post_view($pdo, (int) $post['id']);
+        $views = $pdo->prepare('SELECT view_count FROM posts WHERE id = :id');
+        $views->execute([':id' => (int) $post['id']]);
+        $post['view_count'] = (int) $views->fetchColumn();
         json_response(['post' => post_to_api($pdo, $post, true)]);
     }
 
@@ -794,18 +1154,32 @@ function handle_api(PDO $pdo, string $path): void
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 180) {
             json_response(['error' => 'Enter a valid email address.'], 422);
         }
-        $stmt = $pdo->prepare('INSERT INTO subscribers (site, email, status, consent_at, ip_hash, user_agent)
-            VALUES (:site, :email, :status, :consent_at, :ip_hash, :user_agent)
-            ON CONFLICT(site, email) DO UPDATE SET status = :status, consent_at = excluded.consent_at');
+        $existing = $pdo->prepare('SELECT status, unsub_token FROM subscribers WHERE site = :site AND email = :email LIMIT 1');
+        $existing->execute([':site' => $site, ':email' => $email]);
+        $subscriber = $existing->fetch();
+        if ($subscriber && ($subscriber['status'] ?? '') === 'active') {
+            json_response(['ok' => true, 'message' => 'Already subscribed.']);
+        }
+        $confirmToken = random_token();
+        $unsubToken = (string) (($subscriber['unsub_token'] ?? '') ?: random_token());
+        $stmt = $pdo->prepare('INSERT INTO subscribers (site, email, status, consent_at, confirm_token, confirmed_at, unsub_token, ip_hash, user_agent)
+            VALUES (:site, :email, :status, :consent_at, :confirm_token, NULL, :unsub_token, :ip_hash, :user_agent)
+            ON CONFLICT(site, email) DO UPDATE SET status = :status, consent_at = excluded.consent_at, confirm_token = excluded.confirm_token, confirmed_at = NULL, unsub_token = excluded.unsub_token');
         $stmt->execute([
             ':site' => $site,
             ':email' => $email,
-            ':status' => 'active',
+            ':status' => 'unconfirmed',
             ':consent_at' => now_utc(),
+            ':confirm_token' => $confirmToken,
+            ':unsub_token' => $unsubToken,
             ':ip_hash' => client_ip_hash(),
-            ':user_agent' => null,
+            ':user_agent' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 240),
         ]);
-        json_response(['ok' => true, 'message' => 'Subscribed. Check your inbox if confirmation is enabled later.']);
+        $confirmUrl = canonical_url($pdo, '/subscribe/confirm/' . rawurlencode($confirmToken));
+        if (setting($pdo, 'subscribe_mail_enabled', '0') === '1') {
+            @mail($email, 'Confirm your TinyBlog subscription', "Confirm your subscription:\n\n" . $confirmUrl);
+        }
+        json_response(['ok' => true, 'message' => 'Confirm your subscription to finish.', 'confirm_url' => $confirmUrl]);
     }
 
     if ($path === '/api/feed.xml' && $_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -822,6 +1196,9 @@ function render_page(PDO $pdo, string $title, string $body, array $meta = []): v
     $description = $meta['description'] ?? 'A tiny privacy-friendly embeddable blog feed.';
     $canonical = $meta['canonical'] ?? canonical_url($pdo, route_path());
     $ogImage = $meta['og_image'] ?? '';
+    $prevUrl = $meta['prev'] ?? '';
+    $nextUrl = $meta['next'] ?? '';
+    $jsonLd = $meta['json_ld'] ?? null;
     security_headers('html');
     header('Content-Type: text/html; charset=utf-8');
     echo '<!doctype html><html lang="en"><head><meta charset="utf-8">';
@@ -829,12 +1206,22 @@ function render_page(PDO $pdo, string $title, string $body, array $meta = []): v
     echo '<title>' . htmlEscape($title . ' - ' . $blogTitle) . '</title>';
     echo '<meta name="description" content="' . htmlEscape($description) . '">';
     echo '<link rel="canonical" href="' . htmlEscape($canonical) . '">';
+    if ($prevUrl !== '') {
+        echo '<link rel="prev" href="' . htmlEscape($prevUrl) . '">';
+    }
+    if ($nextUrl !== '') {
+        echo '<link rel="next" href="' . htmlEscape($nextUrl) . '">';
+    }
     echo '<meta property="og:title" content="' . htmlEscape($title) . '">';
     echo '<meta property="og:description" content="' . htmlEscape($description) . '">';
     if ($ogImage !== '') {
         echo '<meta property="og:image" content="' . htmlEscape($ogImage) . '">';
     }
+    if (is_array($jsonLd)) {
+        echo '<script type="application/ld+json">' . (json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}') . '</script>';
+    }
     echo '<link rel="alternate" type="application/rss+xml" title="' . htmlEscape($blogTitle) . '" href="' . htmlEscape(url_for('/feed.xml')) . '">';
+    echo '<link rel="alternate" type="application/feed+json" title="' . htmlEscape($blogTitle) . '" href="' . htmlEscape(url_for('/feed.json')) . '">';
     echo '<link rel="preconnect" href="https://fonts.googleapis.com">';
     echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
     echo '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">';
@@ -843,8 +1230,38 @@ function render_page(PDO $pdo, string $title, string $body, array $meta = []): v
     echo '</style></head><body><div class="site">';
     echo '<header class="topbar"><a class="brand" href="' . htmlEscape(url_for('/')) . '">' . htmlEscape($blogTitle) . '</a><nav><a href="' . htmlEscape(url_for('/archive')) . '">Archive</a><a href="' . htmlEscape(url_for('/about')) . '">About</a><a href="' . htmlEscape(url_for('/admin')) . '">Admin</a></nav></header>';
     echo $body;
-    echo '<footer class="footer"><p>Privacy: this site stores subscriber emails only for opt-in delivery. No third-party trackers are enabled by default. Enable HTTPS and keep file permissions tight.</p><p><a href="' . TB_REPO_URL . '">GitHub</a> · <a href="' . htmlEscape(url_for('/SETUP.md')) . '">Docs</a> · <a href="' . htmlEscape(url_for('/SECURITY.md')) . '">Security</a> · <a href="' . htmlEscape(url_for('/feed.xml')) . '">RSS</a> · <a href="' . htmlEscape(url_for('/sitemap.xml')) . '">Sitemap</a></p></footer>';
-    echo '</div></body></html>';
+    echo '<footer class="footer"><p>Privacy: this site stores subscriber emails only for opt-in delivery. No third-party trackers are enabled by default. Enable HTTPS and keep file permissions tight.</p><p><a href="' . TB_REPO_URL . '">GitHub</a> / <a href="' . htmlEscape(url_for('/SETUP.md')) . '">Docs</a> / <a href="' . htmlEscape(url_for('/SECURITY.md')) . '">Security</a> / <a href="' . htmlEscape(url_for('/feed.xml')) . '">RSS</a> / <a href="' . htmlEscape(url_for('/sitemap.xml')) . '">Sitemap</a></p></footer>';
+    echo '</div><script>
+        document.querySelectorAll("pre > code").forEach(function (code) {
+            var pre = code.parentElement;
+            if (!pre || pre.querySelector("[data-copy-code]")) return;
+            var button = document.createElement("button");
+            button.type = "button";
+            button.textContent = "Copy code";
+            button.setAttribute("data-copy-code", "");
+            pre.insertBefore(button, code);
+            button.addEventListener("click", function () {
+                var done = function () {
+                    button.textContent = "Copied";
+                    setTimeout(function () { button.textContent = "Copy code"; }, 1000);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(code.textContent || "").then(done).catch(function () {});
+                    return;
+                }
+                var helper = document.createElement("textarea");
+                helper.value = code.textContent || "";
+                helper.setAttribute("readonly", "");
+                helper.style.position = "fixed";
+                helper.style.left = "-9999px";
+                document.body.appendChild(helper);
+                helper.select();
+                document.execCommand("copy");
+                document.body.removeChild(helper);
+                done();
+            });
+        });
+    </script></body></html>';
     exit;
 }
 
@@ -879,8 +1296,14 @@ function css_base(string $accent): string
         .content p,.content ul,.content ol,.content blockquote{margin:0 0 1.2em}
         .content blockquote{border-left:2px solid var(--text);padding-left:16px;color:#222}
         .content code{background:var(--soft);border:1px solid var(--line);padding:2px 5px;border-radius:4px}
+        .content pre{position:relative;overflow:auto;background:var(--soft);border:1px solid var(--line);padding:46px 14px 14px}
+        .content pre code{display:block;border:0;padding:0;background:transparent;white-space:pre}
+        .content .tok-key{font-weight:800;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+        [data-copy-code]{position:absolute;top:10px;right:10px;border:1px solid var(--text);background:#fff;color:var(--text);padding:6px 9px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
         .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
         .tag{border:1px solid var(--line);padding:5px 9px;border-radius:999px;text-decoration:none;font-size:13px}
+        .pagination{display:flex;gap:10px;margin:24px 0 0}
+        .pagination a{border:1px solid var(--text);padding:9px 12px;text-decoration:none;font-weight:650}
         .panel{border:1px solid var(--line);padding:18px;background:#fff}
         .admin-layout{display:grid;grid-template-columns:1fr;gap:20px;padding:28px 0}
         .admin-nav{display:flex;flex-wrap:wrap;gap:8px}
@@ -901,15 +1324,19 @@ function css_base(string $accent): string
 function render_home(PDO $pdo, int $page = 1): void
 {
     $site = setting($pdo, 'site_key', 'store-1');
-    $perPage = 8;
+    $page = max(1, (int) ($_GET['page'] ?? $page));
+    $perPage = posts_per_page($pdo);
     $offset = max(0, ($page - 1) * $perPage);
-    $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site AND status = :status ORDER BY datetime(published_at) DESC, id DESC LIMIT :limit OFFSET :offset');
-    $stmt->bindValue(':site', $site, PDO::PARAM_STR);
-    $stmt->bindValue(':status', 'published', PDO::PARAM_STR);
-    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' ORDER BY pinned DESC, datetime(publish_at) DESC, id DESC LIMIT :limit OFFSET :offset');
+    foreach (visible_post_params($site) as $key => $value) {
+        $stmt->bindValue($key, $value, PDO::PARAM_STR);
+    }
+    $stmt->bindValue(':limit', $perPage + 1, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
-    $posts = $stmt->fetchAll();
+    $rows = $stmt->fetchAll();
+    $hasMore = count($rows) > $perPage;
+    $posts = array_slice($rows, 0, $perPage);
     $body = '<section class="hero"><h1>Small posts, clean embeds.</h1><p>Canonical TinyBlog pages for search, RSS, and readers who open widget links.</p></section><main class="grid"><section class="post-list">';
     if (!$posts) {
         $body .= '<p class="muted">No published posts yet. Visit admin to create the first one.</p>';
@@ -917,14 +1344,21 @@ function render_home(PDO $pdo, int $page = 1): void
     foreach ($posts as $post) {
         $body .= post_row($post);
     }
+    $body .= pagination_links('/archive', $page, $hasMore);
     $body .= '</section><aside class="panel"><form method="get" action="' . htmlEscape(url_for('/search')) . '"><label>Search<input name="q" placeholder="Search posts"></label><button>Search</button></form><p class="muted">Widget API endpoint: <code>' . htmlEscape(canonical_url($pdo, '/api')) . '</code></p></aside></main>';
-    render_page($pdo, 'Home', $body, ['description' => 'A privacy-friendly embeddable blog widget and tiny backend.']);
+    render_page($pdo, 'Home', $body, [
+        'description' => 'A privacy-friendly embeddable blog widget and tiny backend.',
+        'prev' => $page > 1 ? canonical_url($pdo, page_url('/archive', $page - 1)) : '',
+        'next' => $hasMore ? canonical_url($pdo, page_url('/archive', $page + 1)) : '',
+    ]);
 }
 
 function post_row(array $post): string
 {
     $tags = split_tags($post['tags']);
-    $html = '<article class="post-row"><p class="meta">' . htmlEscape((string) $post['published_at']) . '</p>';
+    $reading = reading_time_label(post_reading_minutes($post));
+    $meta = htmlEscape(post_publish_at($post)) . ($reading !== '' ? ' &middot; ' . htmlEscape($reading) : '');
+    $html = '<article class="post-row"><p class="meta">' . $meta . '</p>';
     $html .= '<h2><a href="' . htmlEscape(url_for('/post/' . rawurlencode($post['slug']))) . '">' . htmlEscape($post['title']) . '</a></h2>';
     $html .= '<p class="excerpt">' . htmlEscape($post['excerpt']) . '</p>';
     if ($tags) {
@@ -937,19 +1371,42 @@ function post_row(array $post): string
     return $html . '</article>';
 }
 
+function related_posts(PDO $pdo, array $post, int $limit = 3): array
+{
+    $tags = split_tags((string) ($post['tags'] ?? ''));
+    if (!$tags) {
+        return [];
+    }
+    $site = (string) ($post['site'] ?? setting($pdo, 'site_key', 'store-1'));
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' AND id != :id ORDER BY datetime(publish_at) DESC LIMIT 80');
+    $params = visible_post_params($site) + [':id' => (int) $post['id']];
+    $stmt->execute($params);
+    $scored = [];
+    foreach ($stmt->fetchAll() as $candidate) {
+        $score = count(array_intersect($tags, split_tags((string) $candidate['tags'])));
+        if ($score > 0) {
+            $candidate['_score'] = $score;
+            $scored[] = $candidate;
+        }
+    }
+    usort($scored, fn (array $a, array $b): int => ((int) $b['_score'] <=> (int) $a['_score']) ?: strcmp((string) $b['publish_at'], (string) $a['publish_at']));
+    return array_slice($scored, 0, $limit);
+}
+
 function render_post(PDO $pdo, string $slug): void
 {
     $site = setting($pdo, 'site_key', 'store-1');
-    $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site AND slug = :slug AND status = :status LIMIT 1');
-    $stmt->execute([':site' => $site, ':slug' => $slug, ':status' => 'published']);
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' AND slug = :slug LIMIT 1');
+    $stmt->execute(visible_post_params($site) + [':slug' => $slug]);
     $post = $stmt->fetch();
     if (!$post) {
         http_response_code(404);
         render_page($pdo, 'Not found', '<main class="article"><h1>Not found</h1><p class="muted">That post does not exist or is not published.</p></main>');
     }
-    $update = $pdo->prepare('UPDATE posts SET view_count = view_count + 1 WHERE id = :id');
-    $update->execute([':id' => (int) $post['id']]);
-    $body = '<main class="article"><p class="meta">' . htmlEscape((string) $post['published_at']) . '</p><h1>' . htmlEscape($post['title']) . '</h1>';
+    track_post_view($pdo, (int) $post['id']);
+    $reading = reading_time_label(post_reading_minutes($post));
+    $meta = htmlEscape(post_publish_at($post)) . ($reading !== '' ? ' &middot; ' . htmlEscape($reading) : '');
+    $body = '<main class="article"><p class="meta">' . $meta . '</p><h1>' . htmlEscape($post['title']) . '</h1>';
     if (!empty($post['hero_image_url'])) {
         $body .= '<img src="' . htmlEscape($post['hero_image_url']) . '" alt="" loading="lazy">';
     }
@@ -958,43 +1415,94 @@ function render_post(PDO $pdo, string $slug): void
     foreach (split_tags($post['tags']) as $tag) {
         $body .= '<a class="tag" href="' . htmlEscape(url_for('/tag/' . rawurlencode($tag))) . '">#' . htmlEscape($tag) . '</a>';
     }
-    $body .= '</div></main>';
+    $body .= '</div>';
+    $related = related_posts($pdo, $post);
+    if ($related) {
+        $body .= '<section class="related"><h2>Related posts</h2>';
+        foreach ($related as $candidate) {
+            $body .= post_row($candidate);
+        }
+        $body .= '</section>';
+    }
+    $body .= '</main>';
+    $canonical = canonical_url($pdo, '/post/' . rawurlencode($post['slug']));
+    $jsonLd = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BlogPosting',
+        'headline' => $post['title'],
+        'description' => $post['excerpt'],
+        'datePublished' => post_publish_at($post),
+        'dateModified' => (string) $post['updated_at'],
+        'author' => [
+            '@type' => 'Organization',
+            'name' => setting($pdo, 'blog_title', 'TinyBlog Widget'),
+        ],
+        'mainEntityOfPage' => [
+            '@type' => 'WebPage',
+            '@id' => $canonical,
+        ],
+    ];
+    if (!empty($post['hero_image_url'])) {
+        $jsonLd['image'] = (string) $post['hero_image_url'];
+    }
     render_page($pdo, $post['title'], $body, [
         'description' => $post['excerpt'],
-        'canonical' => canonical_url($pdo, '/post/' . rawurlencode($post['slug'])),
+        'canonical' => $canonical,
         'og_image' => (string) ($post['hero_image_url'] ?? ''),
+        'json_ld' => $jsonLd,
     ]);
 }
 
 function render_tag(PDO $pdo, string $tag): void
 {
     $site = setting($pdo, 'site_key', 'store-1');
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $perPage = posts_per_page($pdo);
+    $offset = ($page - 1) * $perPage;
     $needle = '%' . $tag . '%';
-    $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site AND status = :status AND tags LIKE :tag ORDER BY datetime(published_at) DESC');
-    $stmt->execute([':site' => $site, ':status' => 'published', ':tag' => $needle]);
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' AND tags LIKE :tag ORDER BY datetime(publish_at) DESC LIMIT :limit OFFSET :offset');
+    foreach (visible_post_params($site) as $key => $value) {
+        $stmt->bindValue($key, $value, PDO::PARAM_STR);
+    }
+    $stmt->bindValue(':tag', $needle, PDO::PARAM_STR);
+    $stmt->bindValue(':limit', $perPage + 1, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll();
+    $hasMore = count($rows) > $perPage;
     $body = '<main class="article"><h1>#' . htmlEscape($tag) . '</h1>';
-    foreach ($stmt->fetchAll() as $post) {
+    foreach (array_slice($rows, 0, $perPage) as $post) {
         $body .= post_row($post);
     }
-    $body .= '</main>';
-    render_page($pdo, 'Tag ' . $tag, $body);
+    $body .= pagination_links('/tag/' . rawurlencode($tag), $page, $hasMore) . '</main>';
+    render_page($pdo, 'Tag ' . $tag, $body, [
+        'prev' => $page > 1 ? canonical_url($pdo, page_url('/tag/' . rawurlencode($tag), $page - 1)) : '',
+        'next' => $hasMore ? canonical_url($pdo, page_url('/tag/' . rawurlencode($tag), $page + 1)) : '',
+    ]);
 }
 
 function render_search(PDO $pdo): void
 {
     $site = setting($pdo, 'site_key', 'store-1');
     $q = trim((string) ($_GET['q'] ?? ''));
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $perPage = posts_per_page($pdo);
+    $offset = ($page - 1) * $perPage;
+    $hasMore = false;
     $body = '<main class="article"><h1>Search</h1><form method="get"><label>Query<input name="q" value="' . htmlEscape($q) . '"></label><button>Search</button></form>';
     if ($q !== '') {
-        $like = '%' . $q . '%';
-        $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site AND status = :status AND (title LIKE :q OR excerpt LIKE :q OR body_markdown LIKE :q) ORDER BY datetime(published_at) DESC LIMIT 30');
-        $stmt->execute([':site' => $site, ':status' => 'published', ':q' => $like]);
-        foreach ($stmt->fetchAll() as $post) {
+        $result = search_posts($pdo, $site, $q, $page, $perPage);
+        $hasMore = (bool) $result['hasMore'];
+        foreach ($result['rows'] as $post) {
             $body .= post_row($post);
         }
+        $body .= pagination_links('/search', $page, $hasMore, ['q' => $q]);
     }
     $body .= '</main>';
-    render_page($pdo, 'Search', $body);
+    render_page($pdo, 'Search', $body, [
+        'prev' => $q !== '' && $page > 1 ? canonical_url($pdo, page_url('/search', $page - 1, ['q' => $q])) : '',
+        'next' => $q !== '' && $hasMore ? canonical_url($pdo, page_url('/search', $page + 1, ['q' => $q])) : '',
+    ]);
 }
 
 function render_about(PDO $pdo): void
@@ -1003,11 +1511,44 @@ function render_about(PDO $pdo): void
     render_page($pdo, 'About', $body);
 }
 
+function render_subscribe_confirm(PDO $pdo, string $token): void
+{
+    if (!rate_limit($pdo, 'subscribe_confirm', 60, 3600)) {
+        http_response_code(429);
+        render_page($pdo, 'Too many attempts', '<main class="article"><h1>Too many attempts</h1><p class="muted">Try again later.</p></main>');
+    }
+    $stmt = $pdo->prepare('UPDATE subscribers SET status = :status, confirmed_at = :confirmed_at, confirm_token = NULL WHERE confirm_token = :confirm_token AND confirm_token IS NOT NULL');
+    $stmt->execute([
+        ':status' => 'active',
+        ':confirmed_at' => now_utc(),
+        ':confirm_token' => $token,
+    ]);
+    $body = '<main class="article"><h1>Subscription confirmed</h1><p class="muted">You are subscribed. Every email should include a one-click unsubscribe link.</p></main>';
+    render_page($pdo, 'Subscription confirmed', $body);
+}
+
+function render_unsubscribe(PDO $pdo, string $token): void
+{
+    if (!rate_limit($pdo, 'unsubscribe', 60, 3600)) {
+        http_response_code(429);
+        render_page($pdo, 'Too many attempts', '<main class="article"><h1>Too many attempts</h1><p class="muted">Try again later.</p></main>');
+    }
+    $stmt = $pdo->prepare('UPDATE subscribers SET status = :status, confirm_token = NULL WHERE unsub_token = :unsub_token');
+    $stmt->execute([
+        ':status' => 'unsubscribed',
+        ':unsub_token' => $token,
+    ]);
+    $body = '<main class="article"><h1>Unsubscribed</h1><p class="muted">That address is unsubscribed if it was on this list.</p></main>';
+    render_page($pdo, 'Unsubscribed', $body);
+}
+
 function render_rss(PDO $pdo): void
 {
     $site = setting($pdo, 'site_key', 'store-1');
-    $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site AND status = :status ORDER BY datetime(published_at) DESC LIMIT 30');
-    $stmt->execute([':site' => $site, ':status' => 'published']);
+    $lastModified = content_last_modified($pdo, $site);
+    maybe_not_modified(etag_for('rss:' . $site, $lastModified), $lastModified);
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' ORDER BY datetime(publish_at) DESC LIMIT 30');
+    $stmt->execute(visible_post_params($site));
     security_headers('xml');
     header('Content-Type: application/rss+xml; charset=utf-8');
     echo '<?xml version="1.0" encoding="UTF-8" ?>';
@@ -1019,18 +1560,54 @@ function render_rss(PDO $pdo): void
         echo '<item><title>' . htmlEscape($post['title']) . '</title>';
         echo '<link>' . htmlEscape(canonical_url($pdo, '/post/' . rawurlencode($post['slug']))) . '</link>';
         echo '<guid>' . htmlEscape(canonical_url($pdo, '/post/' . rawurlencode($post['slug']))) . '</guid>';
-        echo '<pubDate>' . htmlEscape(gmdate(DATE_RSS, strtotime((string) $post['published_at']) ?: time())) . '</pubDate>';
+        echo '<pubDate>' . htmlEscape(gmdate(DATE_RSS, strtotime(post_publish_at($post)) ?: time())) . '</pubDate>';
         echo '<description>' . htmlEscape($post['excerpt']) . '</description></item>';
     }
     echo '</channel></rss>';
     exit;
 }
 
+function render_json_feed(PDO $pdo): void
+{
+    $site = setting($pdo, 'site_key', 'store-1');
+    $lastModified = content_last_modified($pdo, $site);
+    maybe_not_modified(etag_for('json-feed:' . $site, $lastModified), $lastModified);
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' ORDER BY datetime(publish_at) DESC LIMIT 30');
+    $stmt->execute(visible_post_params($site));
+    $items = [];
+    foreach ($stmt->fetchAll() as $post) {
+        $item = [
+            'id' => canonical_url($pdo, '/post/' . rawurlencode($post['slug'])),
+            'url' => canonical_url($pdo, '/post/' . rawurlencode($post['slug'])),
+            'title' => $post['title'],
+            'content_html' => $post['content_html'],
+            'summary' => $post['excerpt'],
+            'date_published' => gmdate(DATE_ATOM, strtotime(post_publish_at($post)) ?: time()),
+            'date_modified' => gmdate(DATE_ATOM, strtotime((string) $post['updated_at']) ?: time()),
+            'tags' => split_tags((string) $post['tags']),
+        ];
+        if (!empty($post['hero_image_url'])) {
+            $item['image'] = (string) $post['hero_image_url'];
+        }
+        $items[] = $item;
+    }
+    security_headers('json');
+    header('Content-Type: application/feed+json; charset=utf-8');
+    echo json_encode([
+        'version' => 'https://jsonfeed.org/version/1.1',
+        'title' => setting($pdo, 'blog_title', 'TinyBlog Widget'),
+        'home_page_url' => canonical_url($pdo, '/'),
+        'feed_url' => canonical_url($pdo, '/feed.json'),
+        'items' => $items,
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 function render_sitemap(PDO $pdo): void
 {
     $site = setting($pdo, 'site_key', 'store-1');
-    $stmt = $pdo->prepare('SELECT slug, updated_at FROM posts WHERE site = :site AND status = :status ORDER BY datetime(updated_at) DESC LIMIT 500');
-    $stmt->execute([':site' => $site, ':status' => 'published']);
+    $stmt = $pdo->prepare('SELECT slug, updated_at FROM posts WHERE ' . visible_post_where() . ' ORDER BY datetime(updated_at) DESC LIMIT 500');
+    $stmt->execute(visible_post_params($site));
     security_headers('xml');
     header('Content-Type: application/xml; charset=utf-8');
     echo '<?xml version="1.0" encoding="UTF-8" ?>';
@@ -1102,7 +1679,7 @@ function render_admin(PDO $pdo): void
         } else {
             $user = require_user($pdo);
             require_csrf();
-            if (in_array($postAction, ['save_settings', 'seed_samples'], true)) {
+            if (in_array($postAction, ['save_settings', 'seed_samples', 'export_data', 'import_data'], true)) {
                 require_admin($user);
             }
             if ($postAction === 'save_post') {
@@ -1113,9 +1690,20 @@ function render_admin(PDO $pdo): void
                 $message = upload_media($pdo, $user);
                 $action = 'media';
             }
+            if ($postAction === 'delete_media') {
+                $message = delete_media($pdo);
+                $action = 'media';
+            }
             if ($postAction === 'save_settings') {
                 save_settings($pdo);
                 $message = 'Settings saved.';
+                $action = 'settings';
+            }
+            if ($postAction === 'export_data') {
+                export_data($pdo);
+            }
+            if ($postAction === 'import_data') {
+                $message = import_data($pdo);
                 $action = 'settings';
             }
             if ($postAction === 'seed_samples') {
@@ -1202,6 +1790,13 @@ function render_dashboard_admin(PDO $pdo, array $user): void
         echo '<tr><td><a href="' . htmlEscape(url_for('/admin?action=edit&id=' . (int) $post['id'])) . '">' . htmlEscape($post['title']) . '</a><br><span class="muted">/' . htmlEscape($post['slug']) . '</span></td><td>' . htmlEscape($post['status']) . '</td><td>' . (int) $post['view_count'] . '</td><td>' . htmlEscape($post['updated_at']) . '</td></tr>';
     }
     echo '</tbody></table>';
+    $top = $pdo->prepare('SELECT title, slug, view_count FROM posts WHERE site = :site AND view_count > 0 ORDER BY view_count DESC, datetime(updated_at) DESC LIMIT 5');
+    $top->execute([':site' => setting($pdo, 'site_key', 'store-1')]);
+    echo '<h2>Top posts</h2><table><thead><tr><th>Post</th><th>Views</th></tr></thead><tbody>';
+    foreach ($top->fetchAll() as $post) {
+        echo '<tr><td><a href="' . htmlEscape(url_for('/post/' . rawurlencode($post['slug']))) . '">' . htmlEscape($post['title']) . '</a></td><td>' . (int) $post['view_count'] . '</td></tr>';
+    }
+    echo '</tbody></table>';
 }
 
 function render_post_form(PDO $pdo, array $user): void
@@ -1215,7 +1810,8 @@ function render_post_form(PDO $pdo, array $user): void
         'hero_image_url' => '',
         'tags' => '',
         'status' => 'draft',
-        'published_at' => now_utc(),
+        'publish_at' => now_utc(),
+        'pinned' => 0,
     ];
     if (!empty($_GET['id'])) {
         $postId = (int) $_GET['id'];
@@ -1240,8 +1836,9 @@ function render_post_form(PDO $pdo, array $user): void
     echo '<label>Excerpt<textarea name="excerpt" style="min-height:90px">' . htmlEscape($post['excerpt']) . '</textarea></label>';
     echo '<label>Featured image URL<input name="hero_image_url" value="' . htmlEscape((string) $post['hero_image_url']) . '" placeholder="https://... or uploaded media URL"></label>';
     echo '<label>Tags<input name="tags" value="' . htmlEscape($post['tags']) . '" placeholder="updates, product, notes"></label>';
-    echo '<label>Publish date<input name="published_at" value="' . htmlEscape((string) $post['published_at']) . '"></label>';
+    echo '<label>Publish date<input name="publish_at" value="' . htmlEscape(post_publish_at($post)) . '"></label>';
     echo '<label>Status<select name="status"><option value="draft"' . ($post['status'] === 'draft' ? ' selected' : '') . '>Draft</option><option value="published"' . ($post['status'] === 'published' ? ' selected' : '') . '>Published</option></select></label>';
+    echo '<label><input type="checkbox" name="pinned" value="1" ' . ((int) ($post['pinned'] ?? 0) === 1 ? 'checked' : '') . '> Pin to top of home listing</label>';
     echo '<button>Save</button></form>';
     echo '<script>
         const title = document.getElementById("title");
@@ -1254,9 +1851,47 @@ function render_post_form(PDO $pdo, array $user): void
         title.addEventListener("input", () => { if (!slug.dataset.touched) slug.value = title.value.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); });
         slug.addEventListener("input", () => slug.dataset.touched = "1");
         body.addEventListener("input", () => { localStorage.setItem(key, body.value); status.textContent = "Draft saved locally"; });
+        const escapePreview = (value) => value.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
+        const safePreviewUrl = (value) => {
+          if (value.startsWith("/uploads/") || value.startsWith("./uploads/")) return true;
+          if (!/^https?:\/\//i.test(value)) return false;
+          try {
+            const parsed = new URL(value, window.location.href);
+            return parsed.protocol === "http:" || parsed.protocol === "https:";
+          } catch (error) { return false; }
+        };
+        const inlinePreview = (value) => escapePreview(value)
+          .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (match, alt, src) => safePreviewUrl(src) ? "<img src=\"" + escapePreview(src) + "\" alt=\"" + escapePreview(alt) + "\" loading=\"lazy\">" : escapePreview(alt))
+          .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label, href) => safePreviewUrl(href) ? "<a href=\"" + escapePreview(href) + "\" rel=\"nofollow noopener\" target=\"_blank\">" + label + "</a>" : label)
+          .replace(/`([^`]+)`/g, "<code>$1</code>")
+          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+        const renderPreview = (markdown) => {
+          const lines = markdown.slice(0, 4000).replace(/\r\n?/g, "\n").split("\n");
+          let html = "", paragraph = [], list = [], ordered = false, code = [], inCode = false, language = "";
+          const flushParagraph = () => { if (paragraph.length) { html += "<p>" + inlinePreview(paragraph.join(" ").trim()) + "</p>"; paragraph = []; } };
+          const flushList = () => { if (list.length) { const tag = ordered ? "ol" : "ul"; html += "<" + tag + ">" + list.map((item) => "<li>" + inlinePreview(item) + "</li>").join("") + "</" + tag + ">"; list = []; } };
+          const flushCode = () => { if (code.length) { html += "<pre><code" + (language ? " class=\"language-" + escapePreview(language) + "\"" : "") + ">" + escapePreview(code.join("\n")) + "</code></pre>"; code = []; language = ""; } };
+          lines.forEach((line) => {
+            const trimmed = line.trim();
+            if (trimmed.startsWith("```")) {
+              if (inCode) { flushCode(); inCode = false; } else { flushParagraph(); flushList(); language = trimmed.slice(3).replace(/[^a-z0-9_-]/gi, ""); inCode = true; }
+              return;
+            }
+            if (inCode) { code.push(line); return; }
+            if (!trimmed) { flushParagraph(); flushList(); return; }
+            if (/^[-*]\s+/.test(trimmed)) { flushParagraph(); if (list.length && ordered) flushList(); ordered = false; list.push(trimmed.replace(/^[-*]\s+/, "")); return; }
+            if (/^\d+\.\s+/.test(trimmed)) { flushParagraph(); if (list.length && !ordered) flushList(); ordered = true; list.push(trimmed.replace(/^\d+\.\s+/, "")); return; }
+            if (/^#{1,3}\s+/.test(trimmed)) { flushParagraph(); flushList(); html += "<p><strong>" + inlinePreview(trimmed.replace(/^#{1,3}\s+/, "")) + "</strong></p>"; return; }
+            if (/^>\s?/.test(trimmed)) { flushParagraph(); flushList(); html += "<blockquote><p>" + inlinePreview(trimmed.replace(/^>\s?/, "")) + "</p></blockquote>"; return; }
+            paragraph.push(trimmed);
+          });
+          flushParagraph(); flushList(); flushCode();
+          return html;
+        };
         document.getElementById("previewToggle").addEventListener("click", () => {
           preview.hidden = !preview.hidden;
-          preview.textContent = body.value.slice(0, 4000);
+          preview.innerHTML = renderPreview(body.value);
         });
     </script>';
 }
@@ -1271,8 +1906,10 @@ function save_post(PDO $pdo, array $user): void
     $excerpt = trim((string) ($_POST['excerpt'] ?? ''));
     $hero = trim((string) ($_POST['hero_image_url'] ?? ''));
     $status = in_array($_POST['status'] ?? 'draft', ['draft', 'published'], true) ? (string) $_POST['status'] : 'draft';
-    $publishedAt = trim((string) ($_POST['published_at'] ?? now_utc())) ?: now_utc();
+    $pinned = isset($_POST['pinned']) ? 1 : 0;
+    $publishedAt = normalize_publish_at((string) ($_POST['publish_at'] ?? ($_POST['published_at'] ?? '')), $status);
     $contentHtml = sanitize_markdown($body);
+    $readingMinutes = reading_minutes_from_markdown($body);
     if ($excerpt === '') {
         $excerpt = excerpt_from_markdown($body);
     }
@@ -1286,7 +1923,7 @@ function save_post(PDO $pdo, array $user): void
             http_response_code(403);
             exit('You cannot edit that post.');
         }
-        $stmt = $pdo->prepare('UPDATE posts SET title = :title, slug = :slug, body_markdown = :body_markdown, content_html = :content_html, excerpt = :excerpt, hero_image_url = :hero_image_url, tags = :tags, status = :status, published_at = :published_at, updated_at = :updated_at WHERE id = :id AND site = :site');
+        $stmt = $pdo->prepare('UPDATE posts SET title = :title, slug = :slug, body_markdown = :body_markdown, content_html = :content_html, excerpt = :excerpt, hero_image_url = :hero_image_url, tags = :tags, status = :status, published_at = :published_at, publish_at = :publish_at, pinned = :pinned, reading_minutes = :reading_minutes, updated_at = :updated_at WHERE id = :id AND site = :site');
         $stmt->execute([
             ':title' => $title,
             ':slug' => $slug,
@@ -1297,14 +1934,17 @@ function save_post(PDO $pdo, array $user): void
             ':tags' => $tags,
             ':status' => $status,
             ':published_at' => $publishedAt,
+            ':publish_at' => $publishedAt,
+            ':pinned' => $pinned,
+            ':reading_minutes' => $readingMinutes,
             ':updated_at' => now_utc(),
             ':id' => $id,
             ':site' => $site,
         ]);
         return;
     }
-    $stmt = $pdo->prepare('INSERT INTO posts (site, title, slug, body_markdown, content_html, excerpt, hero_image_url, tags, status, published_at, created_at, updated_at)
-        VALUES (:site, :title, :slug, :body_markdown, :content_html, :excerpt, :hero_image_url, :tags, :status, :published_at, :created_at, :updated_at)');
+    $stmt = $pdo->prepare('INSERT INTO posts (site, title, slug, body_markdown, content_html, excerpt, hero_image_url, tags, status, published_at, publish_at, pinned, reading_minutes, created_at, updated_at)
+        VALUES (:site, :title, :slug, :body_markdown, :content_html, :excerpt, :hero_image_url, :tags, :status, :published_at, :publish_at, :pinned, :reading_minutes, :created_at, :updated_at)');
     $stmt->execute([
         ':site' => $site,
         ':title' => $title,
@@ -1316,6 +1956,9 @@ function save_post(PDO $pdo, array $user): void
         ':tags' => $tags,
         ':status' => $status,
         ':published_at' => $publishedAt,
+        ':publish_at' => $publishedAt,
+        ':pinned' => $pinned,
+        ':reading_minutes' => $readingMinutes,
         ':created_at' => now_utc(),
         ':updated_at' => now_utc(),
     ]);
@@ -1344,6 +1987,7 @@ function upload_media(PDO $pdo, array $user): string
     if (!in_array($originalExt, $GLOBALS['TB_CONFIG']['allowed_ext'], true)) {
         return 'Only jpg, png, gif, and webp image extensions are allowed.';
     }
+    $altText = substr(trim((string) ($_POST['alt_text'] ?? '')), 0, 180);
     $safeBase = preg_replace('/[^a-z0-9._-]+/i', '-', pathinfo($original, PATHINFO_FILENAME)) ?: 'image';
     $filename = strtolower(substr($safeBase, 0, 48)) . '-' . bin2hex(random_bytes(6)) . '.' . $allowed[$mime];
     $target = $GLOBALS['TB_CONFIG']['upload_dir'] . DIRECTORY_SEPARATOR . $filename;
@@ -1352,27 +1996,50 @@ function upload_media(PDO $pdo, array $user): string
     }
     chmod($target, 0644);
     $url = rtrim(setting($pdo, 'canonical_base', base_url()), '/') . '/uploads/' . rawurlencode($filename);
-    $stmt = $pdo->prepare('INSERT INTO media (filename, original_name, mime, size, url, user_id, created_at) VALUES (:filename, :original_name, :mime, :size, :url, :user_id, :created_at)');
+    $stmt = $pdo->prepare('INSERT INTO media (filename, original_name, mime, size, url, alt_text, user_id, created_at) VALUES (:filename, :original_name, :mime, :size, :url, :alt_text, :user_id, :created_at)');
     $stmt->execute([
         ':filename' => $filename,
         ':original_name' => $original,
         ':mime' => $mime,
         ':size' => (int) $file['size'],
         ':url' => $url,
+        ':alt_text' => $altText,
         ':user_id' => (int) $user['id'],
         ':created_at' => now_utc(),
     ]);
     return 'Image uploaded: ' . $url;
 }
 
+function delete_media(PDO $pdo): string
+{
+    $id = (int) ($_POST['media_id'] ?? 0);
+    if ($id <= 0) {
+        return 'Choose media to delete.';
+    }
+    $stmt = $pdo->prepare('SELECT * FROM media WHERE id = :id LIMIT 1');
+    $stmt->execute([':id' => $id]);
+    $media = $stmt->fetch();
+    if (!$media) {
+        return 'Media not found.';
+    }
+    $uploadDir = realpath((string) $GLOBALS['TB_CONFIG']['upload_dir']);
+    $target = realpath((string) $GLOBALS['TB_CONFIG']['upload_dir'] . DIRECTORY_SEPARATOR . (string) $media['filename']);
+    if ($uploadDir && $target && str_starts_with($target, $uploadDir) && is_file($target)) {
+        unlink($target);
+    }
+    $delete = $pdo->prepare('DELETE FROM media WHERE id = :id');
+    $delete->execute([':id' => $id]);
+    return 'Media deleted.';
+}
+
 function render_media_admin(PDO $pdo): void
 {
-    echo '<h1>Media</h1><form method="post" enctype="multipart/form-data">' . csrf_field() . '<input type="hidden" name="admin_action" value="upload_media"><label>Image<input type="file" name="media" accept="image/jpeg,image/png,image/gif,image/webp" required></label><button>Upload</button></form>';
+    echo '<h1>Media</h1><form method="post" enctype="multipart/form-data">' . csrf_field() . '<input type="hidden" name="admin_action" value="upload_media"><label>Image<input type="file" name="media" accept="image/jpeg,image/png,image/gif,image/webp" required></label><label>Alt text<input name="alt_text" maxlength="180" placeholder="Describe the image"></label><button>Upload</button></form>';
     $stmt = $pdo->prepare('SELECT * FROM media ORDER BY datetime(created_at) DESC LIMIT 60');
     $stmt->execute();
-    echo '<table><thead><tr><th>Preview</th><th>URL</th><th>Size</th></tr></thead><tbody>';
+    echo '<table><thead><tr><th>Preview</th><th>URL</th><th>Size</th><th>Action</th></tr></thead><tbody>';
     foreach ($stmt->fetchAll() as $media) {
-        echo '<tr><td><img src="' . htmlEscape($media['url']) . '" alt="" style="width:86px"></td><td><code>' . htmlEscape($media['url']) . '</code><br><span class="muted">' . htmlEscape($media['original_name']) . '</span></td><td>' . (int) $media['size'] . '</td></tr>';
+        echo '<tr><td><img src="' . htmlEscape($media['url']) . '" alt="' . htmlEscape((string) ($media['alt_text'] ?? '')) . '" style="width:86px"></td><td><code>' . htmlEscape($media['url']) . '</code><br><span class="muted">' . htmlEscape($media['original_name']) . '</span><br><span class="muted">' . htmlEscape((string) ($media['alt_text'] ?? '')) . '</span></td><td>' . (int) $media['size'] . '</td><td><form method="post" onsubmit="return confirm(\'Delete this media file?\')">' . csrf_field() . '<input type="hidden" name="admin_action" value="delete_media"><input type="hidden" name="media_id" value="' . (int) $media['id'] . '"><button class="secondary">Delete</button></form></td></tr>';
     }
     echo '</tbody></table>';
 }
@@ -1380,11 +2047,21 @@ function render_media_admin(PDO $pdo): void
 function render_subscribers_admin(PDO $pdo): void
 {
     echo '<h1>Subscribers</h1><p class="muted">Emails are stored for opt-in updates only. Export carefully and delete on request.</p>';
-    $stmt = $pdo->prepare('SELECT email, status, consent_at FROM subscribers WHERE site = :site ORDER BY datetime(consent_at) DESC LIMIT 200');
+    $count = $pdo->prepare('SELECT COUNT(*) FROM subscribers WHERE site = :site AND status = :status');
+    $count->execute([':site' => setting($pdo, 'site_key', 'store-1'), ':status' => 'active']);
+    echo '<p class="notice">Confirmed subscribers: ' . (int) $count->fetchColumn() . '</p>';
+    $stmt = $pdo->prepare('SELECT email, status, consent_at, confirm_token, unsub_token FROM subscribers WHERE site = :site ORDER BY datetime(consent_at) DESC LIMIT 200');
     $stmt->execute([':site' => setting($pdo, 'site_key', 'store-1')]);
-    echo '<table><thead><tr><th>Email</th><th>Status</th><th>Consent</th></tr></thead><tbody>';
+    echo '<table><thead><tr><th>Email</th><th>Status</th><th>Consent</th><th>Links</th></tr></thead><tbody>';
     foreach ($stmt->fetchAll() as $row) {
-        echo '<tr><td>' . htmlEscape($row['email']) . '</td><td>' . htmlEscape($row['status']) . '</td><td>' . htmlEscape($row['consent_at']) . '</td></tr>';
+        $links = '';
+        if (!empty($row['confirm_token'])) {
+            $links .= '<code>' . htmlEscape(canonical_url($pdo, '/subscribe/confirm/' . rawurlencode((string) $row['confirm_token']))) . '</code><br>';
+        }
+        if (!empty($row['unsub_token'])) {
+            $links .= '<code>' . htmlEscape(canonical_url($pdo, '/unsubscribe/' . rawurlencode((string) $row['unsub_token']))) . '</code>';
+        }
+        echo '<tr><td>' . htmlEscape($row['email']) . '</td><td>' . htmlEscape($row['status']) . '</td><td>' . htmlEscape($row['consent_at']) . '</td><td>' . $links . '</td></tr>';
     }
     echo '</tbody></table>';
 }
@@ -1392,18 +2069,21 @@ function render_subscribers_admin(PDO $pdo): void
 function render_settings_admin(PDO $pdo): void
 {
     echo '<h1>Settings</h1><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="save_settings">';
-    foreach (['blog_title' => 'Blog title', 'site_key' => 'Site id', 'canonical_base' => 'Canonical base URL', 'accent_color' => 'Accent color'] as $key => $label) {
+    foreach (['blog_title' => 'Blog title', 'site_key' => 'Site id', 'canonical_base' => 'Canonical base URL', 'accent_color' => 'Accent color', 'posts_per_page' => 'Posts per page'] as $key => $label) {
         echo '<label>' . htmlEscape($label) . '<input name="' . htmlEscape($key) . '" value="' . htmlEscape(setting($pdo, $key, '')) . '"></label>';
     }
     echo '<label>Allowed widget origins<textarea name="allowed_origins" placeholder="https://example.com">' . htmlEscape(setting($pdo, 'allowed_origins', '')) . '</textarea></label>';
     echo '<label>About text<textarea name="about_text">' . htmlEscape(setting($pdo, 'about_text', '')) . '</textarea></label>';
     echo '<label><input type="checkbox" name="require_site_key" value="1" ' . (setting($pdo, 'require_site_key', '0') === '1' ? 'checked' : '') . '> Require public siteKey for API reads</label>';
+    echo '<label><input type="checkbox" name="subscribe_mail_enabled" value="1" ' . (setting($pdo, 'subscribe_mail_enabled', '0') === '1' ? 'checked' : '') . '> Send subscription confirmation emails with PHP mail()</label>';
     echo '<p class="muted">Public siteKey: <code>' . htmlEscape(setting($pdo, 'public_site_key', '')) . '</code></p><button>Save settings</button></form>';
+    echo '<h2>Backup</h2><div class="toolbar"><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="export_data"><button class="secondary">Export JSON</button></form></div>';
+    echo '<form method="post" enctype="multipart/form-data">' . csrf_field() . '<input type="hidden" name="admin_action" value="import_data"><label>Import JSON<input type="file" name="backup" accept="application/json,.json" required></label><button class="secondary">Import</button></form>';
 }
 
 function save_settings(PDO $pdo): void
 {
-    $fields = ['blog_title', 'site_key', 'canonical_base', 'accent_color', 'allowed_origins', 'about_text'];
+    $fields = ['blog_title', 'site_key', 'canonical_base', 'accent_color', 'posts_per_page', 'allowed_origins', 'about_text'];
     foreach ($fields as $field) {
         $value = trim((string) ($_POST[$field] ?? ''));
         if ($field === 'accent_color' && !preg_match('/^#[0-9a-f]{6}$/i', $value)) {
@@ -1415,9 +2095,125 @@ function save_settings(PDO $pdo): void
         if ($field === 'site_key') {
             $value = slugify($value ?: 'store-1');
         }
+        if ($field === 'posts_per_page') {
+            $value = (string) max(1, min(50, (int) $value ?: 10));
+        }
         set_setting($pdo, $field, $value);
     }
     set_setting($pdo, 'require_site_key', isset($_POST['require_site_key']) ? '1' : '0');
+    set_setting($pdo, 'subscribe_mail_enabled', isset($_POST['subscribe_mail_enabled']) ? '1' : '0');
+}
+
+function export_data(PDO $pdo): void
+{
+    $site = setting($pdo, 'site_key', 'store-1');
+    security_headers('json');
+    header('Content-Type: application/json; charset=utf-8');
+    header('Content-Disposition: attachment; filename="tinyblog-export-' . gmdate('Ymd-His') . '.json"');
+    echo '{"version":' . json_encode(TB_VERSION) . ',"exported_at":' . json_encode(now_utc()) . ',"settings":';
+    stream_json_rows($pdo->query('SELECT key, value FROM settings ORDER BY key'));
+    echo ',"posts":';
+    stream_json_rows($pdo->query('SELECT * FROM posts ORDER BY id'));
+    echo ',"media":';
+    stream_json_rows($pdo->query('SELECT filename, original_name, mime, size, url, alt_text, created_at FROM media ORDER BY id'));
+    echo ',"subscribers":';
+    $stmt = $pdo->prepare('SELECT site, email, status, consent_at, confirmed_at, unsub_token FROM subscribers WHERE site = :site AND status = :status ORDER BY id');
+    $stmt->execute([':site' => $site, ':status' => 'active']);
+    stream_json_rows($stmt);
+    echo '}';
+    exit;
+}
+
+function stream_json_rows(PDOStatement $stmt): void
+{
+    echo '[';
+    $first = true;
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        echo $first ? '' : ',';
+        echo json_encode($row, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $first = false;
+    }
+    echo ']';
+}
+
+function import_data(PDO $pdo): string
+{
+    if (empty($_FILES['backup']) || !is_array($_FILES['backup']) || ($_FILES['backup']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        return 'Choose a JSON backup to import.';
+    }
+    $raw = file_get_contents((string) $_FILES['backup']['tmp_name']);
+    $data = json_decode($raw ?: '', true);
+    if (!is_array($data)) {
+        return 'Backup JSON is invalid.';
+    }
+    $pdo->beginTransaction();
+    try {
+        $settingStmt = $pdo->prepare('INSERT INTO settings (key, value) VALUES (:key, :value) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
+        foreach (($data['settings'] ?? []) as $setting) {
+            if (isset($setting['key'], $setting['value'])) {
+                $settingStmt->execute([':key' => (string) $setting['key'], ':value' => (string) $setting['value']]);
+            }
+        }
+        $postStmt = $pdo->prepare('INSERT INTO posts (site, title, slug, body_markdown, content_html, excerpt, hero_image_url, tags, status, published_at, publish_at, pinned, reading_minutes, created_at, updated_at)
+            VALUES (:site, :title, :slug, :body_markdown, :content_html, :excerpt, :hero_image_url, :tags, :status, :published_at, :publish_at, :pinned, :reading_minutes, :created_at, :updated_at)
+            ON CONFLICT(site, slug) DO UPDATE SET title = excluded.title, body_markdown = excluded.body_markdown, content_html = excluded.content_html, excerpt = excluded.excerpt, hero_image_url = excluded.hero_image_url, tags = excluded.tags, status = excluded.status, published_at = excluded.published_at, publish_at = excluded.publish_at, pinned = excluded.pinned, reading_minutes = excluded.reading_minutes, updated_at = excluded.updated_at');
+        foreach (($data['posts'] ?? []) as $post) {
+            if (empty($post['site']) || empty($post['title']) || empty($post['slug'])) {
+                continue;
+            }
+            $body = (string) ($post['body_markdown'] ?? '');
+            $postStmt->execute([
+                ':site' => (string) $post['site'],
+                ':title' => (string) $post['title'],
+                ':slug' => slugify((string) $post['slug']),
+                ':body_markdown' => $body,
+                ':content_html' => sanitize_markdown($body),
+                ':excerpt' => (string) ($post['excerpt'] ?? excerpt_from_markdown($body)),
+                ':hero_image_url' => safe_url((string) ($post['hero_image_url'] ?? '')) ?: '',
+                ':tags' => tags_to_string((string) ($post['tags'] ?? '')),
+                ':status' => in_array(($post['status'] ?? 'draft'), ['draft', 'published'], true) ? (string) $post['status'] : 'draft',
+                ':published_at' => (string) ($post['published_at'] ?? $post['publish_at'] ?? now_utc()),
+                ':publish_at' => (string) ($post['publish_at'] ?? $post['published_at'] ?? now_utc()),
+                ':pinned' => (int) ($post['pinned'] ?? 0),
+                ':reading_minutes' => (int) ($post['reading_minutes'] ?? reading_minutes_from_markdown($body)),
+                ':created_at' => (string) ($post['created_at'] ?? now_utc()),
+                ':updated_at' => (string) ($post['updated_at'] ?? now_utc()),
+            ]);
+        }
+        $mediaStmt = $pdo->prepare('INSERT OR IGNORE INTO media (filename, original_name, mime, size, url, alt_text, created_at) VALUES (:filename, :original_name, :mime, :size, :url, :alt_text, :created_at)');
+        foreach (($data['media'] ?? []) as $media) {
+            if (!empty($media['filename']) && !empty($media['url'])) {
+                $mediaStmt->execute([
+                    ':filename' => basename((string) $media['filename']),
+                    ':original_name' => basename((string) ($media['original_name'] ?? $media['filename'])),
+                    ':mime' => (string) ($media['mime'] ?? 'image/jpeg'),
+                    ':size' => (int) ($media['size'] ?? 0),
+                    ':url' => (string) $media['url'],
+                    ':alt_text' => (string) ($media['alt_text'] ?? ''),
+                    ':created_at' => (string) ($media['created_at'] ?? now_utc()),
+                ]);
+            }
+        }
+        $subscriberStmt = $pdo->prepare('INSERT INTO subscribers (site, email, status, consent_at, confirmed_at, unsub_token) VALUES (:site, :email, :status, :consent_at, :confirmed_at, :unsub_token) ON CONFLICT(site, email) DO UPDATE SET status = excluded.status, confirmed_at = excluded.confirmed_at, unsub_token = excluded.unsub_token');
+        foreach (($data['subscribers'] ?? []) as $subscriber) {
+            if (!empty($subscriber['site']) && filter_var((string) ($subscriber['email'] ?? ''), FILTER_VALIDATE_EMAIL)) {
+                $subscriberStmt->execute([
+                    ':site' => (string) $subscriber['site'],
+                    ':email' => strtolower((string) $subscriber['email']),
+                    ':status' => 'active',
+                    ':consent_at' => (string) ($subscriber['consent_at'] ?? now_utc()),
+                    ':confirmed_at' => (string) ($subscriber['confirmed_at'] ?? now_utc()),
+                    ':unsub_token' => (string) ($subscriber['unsub_token'] ?? random_token()),
+                ]);
+            }
+        }
+        $pdo->commit();
+        return 'Backup imported.';
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        write_server_log('error', 'Import failed: ' . $e->getMessage());
+        return 'Import failed. Check the server log.';
+    }
 }
 
 function seed_samples(PDO $pdo, array $user): void
@@ -1447,8 +2243,8 @@ function seed_samples(PDO $pdo, array $user): void
         ],
     ];
     $site = setting($pdo, 'site_key', 'store-1');
-    $stmt = $pdo->prepare('INSERT OR IGNORE INTO posts (site, title, slug, body_markdown, content_html, excerpt, hero_image_url, tags, status, published_at, created_at, updated_at)
-        VALUES (:site, :title, :slug, :body_markdown, :content_html, :excerpt, :hero_image_url, :tags, :status, :published_at, :created_at, :updated_at)');
+    $stmt = $pdo->prepare('INSERT OR IGNORE INTO posts (site, title, slug, body_markdown, content_html, excerpt, hero_image_url, tags, status, published_at, publish_at, reading_minutes, created_at, updated_at)
+        VALUES (:site, :title, :slug, :body_markdown, :content_html, :excerpt, :hero_image_url, :tags, :status, :published_at, :publish_at, :reading_minutes, :created_at, :updated_at)');
     foreach ($samples as $i => $sample) {
         $published = gmdate('Y-m-d H:i:s', time() - ($i * 86400));
         $stmt->execute([
@@ -1462,6 +2258,8 @@ function seed_samples(PDO $pdo, array $user): void
             ':tags' => $sample['tags'],
             ':status' => 'published',
             ':published_at' => $published,
+            ':publish_at' => $published,
+            ':reading_minutes' => reading_minutes_from_markdown($sample['body']),
             ':created_at' => now_utc(),
             ':updated_at' => now_utc(),
         ]);
@@ -1478,6 +2276,9 @@ try {
     if ($path === '/feed.xml') {
         render_rss($pdo);
     }
+    if ($path === '/feed.json') {
+        render_json_feed($pdo);
+    }
     if ($path === '/sitemap.xml') {
         render_sitemap($pdo);
     }
@@ -1486,6 +2287,12 @@ try {
     }
     if (preg_match('#^/post/([^/]+)$#', $path, $m)) {
         render_post($pdo, rawurldecode($m[1]));
+    }
+    if (preg_match('#^/subscribe/confirm/([^/]+)$#', $path, $m)) {
+        render_subscribe_confirm($pdo, rawurldecode($m[1]));
+    }
+    if (preg_match('#^/unsubscribe/([^/]+)$#', $path, $m)) {
+        render_unsubscribe($pdo, rawurldecode($m[1]));
     }
     if (preg_match('#^/tag/([^/]+)$#', $path, $m)) {
         render_tag($pdo, rawurldecode($m[1]));

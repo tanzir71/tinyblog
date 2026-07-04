@@ -14,12 +14,21 @@ TinyBlog Widget is intentionally small, but it still treats publishing, embeds, 
 - CORS: API requests with an `Origin` header must match the same origin or an Admin-configured allowlist.
 - Public site key: optional `siteKey` enforcement for API reads can be enabled in Settings.
 - Rate limiting: admin login and subscribe endpoints are rate-limited by hashed IP.
+- Subscriber consent: new subscribers are unconfirmed until they use a random confirmation token; one-click unsubscribe uses a separate random token and is idempotent.
 - Upload safety: only jpg, png, gif, and webp images are allowed; MIME type is checked with `fileinfo`; filenames are randomized; upload size is limited to 2 MB.
+- Media management: uploaded images carry alt text and delete actions are admin-only, CSRF-protected, and constrained to the configured upload directory.
 - Upload execution guard: `uploads/.htaccess` denies common script extensions and disables PHP execution where supported.
 - Security headers: HTML/API responses include CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy`.
 - Authorization: settings, subscriber lists, and sample seeding require admin role; post editing is scoped to the configured site.
+- Publication safety: public pages, RSS, sitemap, and API reads use the same prepared-statement visibility clause so drafts and future-dated posts stay private until eligible.
+- Search safety: FTS5 is detected at runtime and fed with sanitized terms; hosts without FTS5 keep the prepared-statement `LIKE` fallback.
 - Config hygiene: `.env` is optional, `.env.example` documents safe keys, and `.gitignore` excludes `.env`, logs, SQLite databases, and uploaded media.
 - Privacy: no third-party analytics or trackers are included by default. Subscriber records store email, opt-in time, status, and a hashed IP for abuse reduction.
+- View counts: canonical/API post views are counted with a short-lived hashed IP/day token, never raw IPs; `DNT: 1` and obvious bot user agents are ignored.
+- Structured data: canonical post JSON-LD is emitted from escaped server-side values using JSON hex escaping; it does not execute user Markdown or raw HTML.
+- Backups: JSON export/import is admin-only and CSRF-protected; imported post HTML is regenerated from Markdown instead of trusted from backup files.
+- Conditional GET: API/RSS/JSON feed `ETag` and `Last-Modified` headers are derived from post update timestamps and do not weaken CORS checks.
+- Widget resilience: empty and failed feed states render accessible status text instead of leaving embeds blank, and failed requests emit the documented `error` event.
 - Error handling: user-facing API errors are generic; PHP errors go to `TB_LOG_FILE` and the app log table when possible.
 
 ## Production Checklist
@@ -30,6 +39,7 @@ TinyBlog Widget is intentionally small, but it still treats publishing, embeds, 
 - Keep `.htaccess` and `uploads/.htaccess` in place.
 - Restrict Admin -> Settings -> Allowed widget origins to exact domains.
 - Set `Canonical base URL` to the HTTPS URL users should see.
+- Keep draft and scheduled-post checks in the smoke suite before changing listing/API queries.
 - Back up `data/tinyblog.db` and `uploads/` regularly.
 - Keep PHP patched and remove unused hosting apps from the same account.
 - Consider enabling the public `siteKey` requirement if the widget is embedded in a limited set of controlled sites.

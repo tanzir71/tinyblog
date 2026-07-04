@@ -117,6 +117,7 @@ If installing in `/blog`, set `RewriteBase /blog/` or leave it as-is on most Apa
    - `Allowed widget origins`, one per line, for example `https://store.example.com`
 4. Save settings.
 5. Use "Load sample posts" if desired.
+6. Use Settings -> Backup to export/import TinyBlog JSON backups when moving hosts. Media files are referenced by path, so copy `uploads/` alongside the JSON when restoring elsewhere.
 
 ## 6. Embed On Another Site
 
@@ -142,6 +143,7 @@ RSS and sitemap are generated dynamically, but you can warm them and make simple
 ```cron
 # Warm feed and sitemap every hour
 0 * * * * wget -q -O /dev/null https://blog.example.com/feed.xml
+2 * * * * wget -q -O /dev/null https://blog.example.com/feed.json
 5 * * * * wget -q -O /dev/null https://blog.example.com/sitemap.xml
 
 # Daily SQLite backup

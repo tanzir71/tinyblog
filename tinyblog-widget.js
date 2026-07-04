@@ -78,7 +78,9 @@
       li: [],
       img: ["src", "alt"],
       blockquote: [],
-      code: [],
+      pre: [],
+      code: ["class"],
+      span: ["class"],
       br: []
     };
     var template = document.createElement("template");
@@ -100,6 +102,7 @@
         var value = node.getAttribute(attr);
         if (!value) return;
         if ((attr === "href" || attr === "src") && !safeUrl(value)) return;
+        if (attr === "class" && !/^(language-[a-z0-9_-]+|tok-key)$/i.test(value)) return;
         safe.setAttribute(attr, attr === "href" || attr === "src" ? safeUrl(value) : value.slice(0, 180));
       });
       if (tag === "a") {
@@ -181,7 +184,7 @@
       ".tbw__link{display:block;text-decoration:none}",
       ".tbw__post-title{font-size:clamp(20px,5vw,30px);line-height:1.08;font-weight:800;margin:0 0 7px}",
       ".tbw__meta,.tbw__excerpt,.tbw__fallback{font-size:14px;line-height:1.55;color:var(--tbw-muted);margin:0}",
-      ".tbw__excerpt{color:#202020;margin-top:8px}",
+      ".tbw__excerpt{color:var(--tbw-text);margin-top:8px}",
       ".tbw__image{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--tbw-line);margin:0 0 12px}",
       ".tbw__content{font-size:16px;line-height:1.72}",
       ".tbw__content p,.tbw__content ul,.tbw__content ol,.tbw__content blockquote{margin:0 0 1em}",
@@ -190,7 +193,7 @@
       ".tbw__form{display:grid;gap:10px}",
       ".tbw__label{font-size:13px;font-weight:700}",
       ".tbw__input{width:100%;border:1px solid var(--tbw-line);padding:11px 12px;background:#fff;color:var(--tbw-text);font:inherit}",
-      ".tbw__button{border:1px solid var(--tbw-text);background:var(--tbw-text);color:#fff;padding:11px 13px;font:inherit;font-size:14px;font-weight:750;cursor:pointer}",
+      ".tbw__button{border:1px solid var(--tbw-text);background:var(--tbw-text);color:var(--tbw-bg);padding:11px 13px;font:inherit;font-size:14px;font-weight:750;cursor:pointer}",
       ".tbw__button:focus,.tbw a:focus,.tbw__input:focus{outline:2px solid var(--tbw-accent);outline-offset:2px}",
       ".tbw[data-theme='dark']{--tbw-bg:#050505;--tbw-text:#fff;--tbw-muted:#bdbdbd;--tbw-line:#292929;--tbw-soft:#111}.tbw[data-theme='dark'] .tbw__input{background:#050505;color:#fff}"
     ].join("");
@@ -254,6 +257,16 @@
     frame.innerHTML = '<div class="tbw__frame" role="status"><p class="tbw__fallback">' + escapeHtml(message || "TinyBlog could not load right now.") + ' <a href="' + escapeHtml(safeUrl(config.canonicalUrl) || "#") + '">Open blog</a>.</p></div>';
   }
 
+  function formatMeta(post, locale) {
+    var parts = [];
+    var date = formatDate(post.published_at || post.publish_at, locale);
+    if (date) parts.push(date);
+    if (post.reading_minutes && Number(post.reading_minutes) > 0) {
+      parts.push("~" + Number(post.reading_minutes) + " min read");
+    }
+    return parts.join(" - ");
+  }
+
   function renderFeed(instance) {
     var config = instance.config;
     var frame = root(config, instance.container);
@@ -261,13 +274,18 @@
     return request(config, "/posts", { limit: config.maxItems }).then(function (data) {
       var posts = Array.isArray(data.posts) ? data.posts : [];
       var html = '<div class="tbw__frame"><div class="tbw__head"><h2 class="tbw__title">' + escapeHtml(data.title || "Latest posts") + '</h2><a class="tbw__meta" href="' + escapeHtml(safeUrl(config.canonicalUrl) || "#") + '">View all</a></div>';
+      if (!posts.length) {
+        frame.innerHTML = html + '<p class="tbw__fallback" role="status">No posts yet.</p></div>';
+        emit("loaded", { type: "feed", posts: posts, instance: instance });
+        return;
+      }
       html += '<ul class="tbw__list" role="list">';
       posts.forEach(function (post) {
         html += '<li class="tbw__item" role="listitem">';
         html += '<a class="tbw__link" href="' + escapeHtml(safeUrl(post.canonical_url) || "#") + '" data-tbw-slug="' + escapeHtml(post.slug) + '">';
         if (post.hero_image_url) html += '<img class="tbw__image" src="' + escapeHtml(safeUrl(post.hero_image_url)) + '" alt="" loading="lazy">';
         html += '<h3 class="tbw__post-title">' + escapeHtml(post.title) + '</h3>';
-        html += '<p class="tbw__meta">' + formatDate(post.published_at, config.locale) + '</p>';
+        html += '<p class="tbw__meta">' + escapeHtml(formatMeta(post, config.locale)) + '</p>';
         if (config.showExcerpt) html += '<p class="tbw__excerpt">' + escapeHtml(post.excerpt) + '</p>';
         html += '</a></li>';
       });
@@ -283,7 +301,7 @@
       });
       emit("loaded", { type: "feed", posts: posts, instance: instance });
     }).catch(function (error) {
-      renderFallback(config, frame, "TinyBlog feed could not load.");
+      renderFallback(config, frame, "Couldn't load posts.");
       emit("error", { error: error, instance: instance });
     });
   }
@@ -302,7 +320,7 @@
       var html = '<article class="tbw__frame">';
       if (post.hero_image_url) html += '<img class="tbw__image" src="' + escapeHtml(safeUrl(post.hero_image_url)) + '" alt="" loading="lazy">';
       html += '<h2 class="tbw__post-title">' + escapeHtml(post.title) + '</h2>';
-      html += '<p class="tbw__meta">' + formatDate(post.published_at, config.locale) + '</p>';
+      html += '<p class="tbw__meta">' + escapeHtml(formatMeta(post, config.locale)) + '</p>';
       html += '<div class="tbw__content">' + sanitizeHtml(post.content_html || "") + '</div>';
       html += '<p class="tbw__meta"><a href="' + escapeHtml(safeUrl(post.canonical_url) || safeUrl(config.canonicalUrl) || "#") + '">Open canonical post</a></p>';
       html += '</article>';

@@ -13,7 +13,8 @@ $required = @(
   ".env.example",
   ".htaccess",
   "data/.htaccess",
-  "uploads/.htaccess"
+  "uploads/.htaccess",
+  "assets/og.png"
 )
 
 $failures = New-Object System.Collections.Generic.List[string]
@@ -32,6 +33,38 @@ if (Test-Path -LiteralPath $phpPath) {
       $failures.Add("tinyblog.php missing expected safeguard: $needle")
     }
   }
+  foreach ($needle in @("function visible_post_where", "publish_at <= :now", "reading_minutes", "'hasMore'", "application/ld+json", "BlogPosting", "rel=`"next`"", "rel=`"prev`"")) {
+    if (-not $php.Contains($needle)) {
+      $failures.Add("tinyblog.php missing expected feature hook: $needle")
+    }
+  }
+  foreach ($needle in @(
+    "confirm_token",
+    "unsub_token",
+    "/subscribe/confirm/",
+    "/unsubscribe/",
+    "function fts5_available",
+    "posts_fts",
+    "bm25",
+    "function related_posts",
+    "pinned",
+    "alt_text",
+    "delete_media",
+    "function track_post_view",
+    "post_views",
+    "function render_json_feed",
+    "/feed.json",
+    "function export_data",
+    "function import_data",
+    "language-",
+    "data-copy-code",
+    "function maybe_not_modified",
+    "ETag"
+  )) {
+    if (-not $php.Contains($needle)) {
+      $failures.Add("tinyblog.php missing expected backlog hook: $needle")
+    }
+  }
 }
 
 $jsPath = Join-Path $root "tinyblog-widget.js"
@@ -41,6 +74,34 @@ if (Test-Path -LiteralPath $jsPath) {
     if (-not $js.Contains($needle)) {
       $failures.Add("tinyblog-widget.js missing expected feature: $needle")
     }
+  }
+  foreach ($needle in @("No posts yet", "Couldn't load posts", "role=`"status`"", "reading_minutes", "data-theme='dark'")) {
+    if (-not $js.Contains($needle)) {
+      $failures.Add("tinyblog-widget.js missing expected polish: $needle")
+    }
+  }
+}
+
+$landingPath = Join-Path $root "index.html"
+if (Test-Path -LiteralPath $landingPath) {
+  $landing = Get-Content -LiteralPath $landingPath -Raw
+  foreach ($needle in @("<link rel=`"icon`" href=`"assets/logo.svg`">", "rel=`"apple-touch-icon`"", "assets/og.png", "twitter:card", "twitter:image", "class=`"skip`"", "data-demo-endpoint", "navigator.clipboard", "prefers-color-scheme")) {
+    if (-not $landing.Contains($needle)) {
+      $failures.Add("index.html missing expected landing polish: $needle")
+    }
+  }
+}
+
+$ogPath = Join-Path $root "assets/og.png"
+if (Test-Path -LiteralPath $ogPath) {
+  Add-Type -AssemblyName System.Drawing
+  $image = [System.Drawing.Image]::FromFile($ogPath)
+  try {
+    if ($image.Width -ne 1200 -or $image.Height -ne 630) {
+      $failures.Add("assets/og.png must be a 1200x630 PNG.")
+    }
+  } finally {
+    $image.Dispose()
   }
 }
 

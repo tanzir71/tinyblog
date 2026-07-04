@@ -99,6 +99,10 @@ Manual initialization:
 - `locale` - date formatting locale, default `en`.
 - `container` - optional CSS selector for manual placement.
 
+Feed responses include additive pagination fields (`items`, `page`, and `hasMore`) while keeping the original `posts` array for older embeds. Posts also expose `reading_minutes` and `reading_time` when the body is long enough to make a reading estimate useful.
+
+If the backend returns no posts the feed widget renders an accessible "No posts yet" state. Failed fetches render "Couldn't load posts" and emit the documented `error` event.
+
 The widget exposes:
 
 - `TinyBlogWidget.init(config)`
@@ -111,17 +115,20 @@ The widget exposes:
 Public/canonical:
 
 - `GET /` - public archive listing.
-- `GET /post/{slug}` - canonical post page with SEO and social meta.
-- `GET /tag/{tag}` - tag listing.
-- `GET /search?q=term` - prepared-statement search.
-- `GET /archive` - listing route.
+- `GET /post/{slug}` - canonical post page with SEO, social meta, reading time, and BlogPosting JSON-LD.
+- `GET /tag/{tag}?page=2` - paginated tag listing.
+- `GET /search?q=term&page=2` - paginated prepared-statement search.
+- `GET /archive?page=2` - paginated listing route.
 - `GET /about` - privacy-friendly about page.
 - `GET /feed.xml` - RSS feed.
+- `GET /feed.json` - JSON Feed 1.1 feed.
 - `GET /sitemap.xml` - sitemap.
+- `GET /subscribe/confirm/{token}` - double opt-in confirmation link.
+- `GET /unsubscribe/{token}` - one-click unsubscribe link.
 
 JSON API:
 
-- `GET /api/posts?site=SITE&limit=10`
+- `GET /api/posts?site=SITE&limit=10&page=1`
 - `GET /api/posts/{slug}?site=SITE`
 - `POST /api/subscribe`
 - `GET /api/feed.xml`
@@ -130,6 +137,10 @@ Admin:
 
 - `GET /admin` - login/register/dashboard.
 - Admin post actions are CSRF-protected form posts.
+- Posts can be saved as `draft` or `published`; published posts with a future publish date stay hidden from public pages, RSS, sitemap, and the JSON API until that UTC time.
+- Posts can be pinned, which moves them to the top of the home/API listing.
+- Media uploads include alt text and CSRF-protected delete controls.
+- Settings includes JSON export/import for posts, settings, confirmed subscribers, and media references.
 
 ## Sample Content
 
@@ -162,7 +173,7 @@ Create first admin with a browser at `/admin` because CSRF tokens are form-bound
 ```bash
 # Fetch recent posts
 curl -H "Origin: https://your-store.example" \
-  "https://blog.example.com/api/posts?site=store-1&limit=3"
+  "https://blog.example.com/api/posts?site=store-1&limit=3&page=1"
 
 # Fetch one post
 curl -H "Origin: https://your-store.example" \
@@ -174,8 +185,18 @@ curl -X POST "https://blog.example.com/api/subscribe" \
   -H "Content-Type: application/json" \
   --data '{"site":"store-1","email":"reader@example.com"}'
 
+# Confirm/unsubscribe links are tokenized URLs copied from Admin -> Subscribers
+curl "https://blog.example.com/subscribe/confirm/PASTE_CONFIRM_TOKEN"
+curl "https://blog.example.com/unsubscribe/PASTE_UNSUB_TOKEN"
+
 # RSS
 curl "https://blog.example.com/feed.xml"
+
+# JSON Feed
+curl "https://blog.example.com/feed.json"
+
+# Page through public listings
+curl "https://blog.example.com/archive?page=2"
 
 # SQL injection probe: should return normal JSON or no results, not break SQL
 curl "https://blog.example.com/search?q=%27%20OR%201%3D1--"
@@ -192,17 +213,34 @@ done
 
 # Non-image upload rejection is checked manually in Admin -> Media
 # by attempting to upload a .txt or .php file; it should be rejected.
+
+# Conditional GET probe: second request with the returned ETag should be 304
+curl -i "https://blog.example.com/api/posts?site=store-1"
+curl -i "https://blog.example.com/feed.xml" -H 'If-None-Match: "PASTE_ETAG"'
 ```
 
 Manual QA checklist:
 
 - Create first admin and log out/log in.
 - Load sample posts, publish/unpublish, edit slug/title/body/tags.
+- Save a draft and a future-dated published post; confirm neither appears in `/`, `/tag/...`, `/search`, `/feed.xml`, `/sitemap.xml`, or `/api/posts` until eligible.
+- Create more posts than the configured page size and confirm page 2 has the next slice with no duplicates.
+- Confirm reading time appears on long posts and in widget feed rows, but not on very short posts.
+- Confirm canonical post pages include valid BlogPosting JSON-LD matching the visible post metadata.
+- Confirm a pinned post leads the home listing and related posts share tags without including the current post.
+- Search for normal terms and an injection probe such as `' OR 1=1--`; FTS5 hosts should rank results and non-FTS hosts should fall back safely.
 - Confirm widget feed renders from an allowed origin.
+- Confirm widget empty feeds show "No posts yet" and blocked/failed fetches show "Couldn't load posts" while firing the `error` event.
+- Confirm the landing page favicon uses `assets/logo.svg`, social cards use `assets/og.png`, the skip link is first in keyboard tab order, the embed snippet copies, and dark mode remains legible.
 - Confirm a blocked Origin receives 403 from `/api/posts`.
-- Upload jpg/png/webp/gif and confirm a `.txt` or `.php` upload is rejected.
+- Upload jpg/png/webp/gif with alt text, confirm a `.txt` or `.php` upload is rejected, then delete an uploaded image and confirm the DB row and file are removed.
 - Submit subscribe form and verify rate limit after repeated attempts.
-- Confirm `/feed.xml`, `/sitemap.xml`, and canonical post meta tags work.
+- Subscribe, confirm via the token link, then unsubscribe via the one-click link; confirmed subscriber counts and exports should exclude unconfirmed/unsubscribed rows.
+- Visit a canonical post twice from the same IP/day and confirm the privacy-friendly view counter increments once; `DNT: 1` and obvious bot UAs should not increment.
+- Export JSON, import into a fresh install, and confirm posts/settings/confirmed subscribers/media references are restored.
+- Confirm fenced code blocks render as escaped `<pre><code class="language-x">` with a copy button and no external highlighter.
+- Confirm `/feed.xml`, `/feed.json`, `/sitemap.xml`, and canonical post meta tags work.
+- Confirm `/api/posts` or `/feed.xml` return `304` with matching conditional headers.
 - Confirm Markdown raw HTML is escaped, not executed.
 
 ## How To Scale

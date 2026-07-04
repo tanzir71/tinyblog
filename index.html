@@ -7,191 +7,327 @@
   <meta name="description" content="TinyBlog Widget is a secure PHP and SQLite backend with a one-line embeddable blog widget.">
   <meta property="og:title" content="TinyBlog Widget">
   <meta property="og:description" content="A small shared-hosting blog backend and one-line embed widget.">
-  <meta property="og:image" content="assets/og-placeholder.svg">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9D%3C/text%3E%3C/svg%3E">
+  <meta property="og:image" content="assets/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="assets/og.png">
+  <link rel="icon" href="assets/logo.svg">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #fff;
-      --text: #050505;
-      --muted: #5f5f5f;
-      --line: #dedede;
-      --soft: #f7f7f7;
-      --max: 1180px;
+      /* Palette */
+      --bg: #ffffff;
+      --text: #0a0a0a;
+      --muted: #6b6b6b;
+      --line: #e4e4e4;
+      --line-strong: #0a0a0a;
+      --soft: #f6f6f6;
+      --surface: #ffffff;
+      --copy: #2b2b2b;
+      --lede: #1c1c1c;
+      --button-bg: var(--text);
+      --button-text: #ffffff;
+      --max: 1120px;
+
+      /* Type scale (1.25 major-third, fluid where it earns it) */
+      --fs-display: clamp(2.75rem, 5vw + 1.25rem, 6rem); /* h1 */
+      --fs-h2:      clamp(2rem, 2.4vw + 1.1rem, 3.25rem);
+      --fs-h3:      1.25rem;
+      --fs-lede:    clamp(1.125rem, 0.8vw + 0.95rem, 1.375rem);
+      --fs-body:    1rem;
+      --fs-small:   0.8125rem;
+      --fs-label:   0.75rem;
+
+      /* Line heights */
+      --lh-tight: 0.98;
+      --lh-snug: 1.15;
+      --lh-body: 1.7;
+
+      /* Spacing scale (8px base) */
+      --s-1: 0.25rem;  /* 4  */
+      --s-2: 0.5rem;   /* 8  */
+      --s-3: 0.75rem;  /* 12 */
+      --s-4: 1rem;     /* 16 */
+      --s-5: 1.5rem;   /* 24 */
+      --s-6: 2rem;     /* 32 */
+      --s-7: 3rem;     /* 48 */
+      --s-8: 4.5rem;   /* 72 */
+      --s-9: 6rem;     /* 96 */
     }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #050505;
+        --text: #f5f5f5;
+        --muted: #b8b8b8;
+        --line: #303030;
+        --line-strong: #f5f5f5;
+        --soft: #121212;
+        --surface: #050505;
+        --copy: #dedede;
+        --lede: #e8e8e8;
+        --button-bg: #f5f5f5;
+        --button-text: #050505;
+      }
+    }
+
     * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
     html, body { max-width: 100%; overflow-x: hidden; }
     body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      letter-spacing: 0;
+      font-size: var(--fs-body);
+      line-height: var(--lh-body);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
     a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    :focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
     code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .wrap { width: min(var(--max), calc(100% - 32px)); margin: 0 auto; }
+
+    .wrap { width: min(var(--max), calc(100% - 2 * var(--s-5))); margin: 0 auto; }
+    .skip {
+      position: fixed;
+      left: var(--s-4);
+      top: var(--s-4);
+      z-index: 10;
+      transform: translateY(calc(-100% - var(--s-4)));
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--text);
+      padding: var(--s-2) var(--s-3);
+      font-size: var(--fs-small);
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform .15s ease;
+    }
+    .skip:focus-visible { transform: translateY(0); }
+
+    /* ---- Header ---- */
     .top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 18px;
-      padding: 22px 0;
-      border-bottom: 1px solid var(--line);
-      font-size: 14px;
+      gap: var(--s-5);
+      padding: var(--s-5) 0;
+      border-bottom: 1px solid var(--line-strong);
+      font-size: var(--fs-small);
     }
-    .brand { font-weight: 900; text-decoration: none; }
-    nav { display: flex; flex-wrap: wrap; gap: 18px; color: #111; }
-    nav a { text-decoration: none; }
-    .hero {
-      padding: 64px 0 36px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 34px;
-    }
-    .hero > *, .section > * { min-width: 0; }
+    .brand { font-weight: 800; letter-spacing: -0.01em; text-decoration: none; }
+    nav { display: flex; flex-wrap: wrap; gap: var(--s-5); }
+    nav a { text-decoration: none; color: var(--muted); transition: color .15s ease; }
+    nav a:hover { color: var(--text); text-decoration: underline; }
+
+    /* ---- Shared type ---- */
     .kicker, .section-label {
-      margin: 0 0 18px;
-      font-size: 13px;
+      margin: 0 0 var(--s-4);
+      font-size: var(--fs-label);
       line-height: 1;
-      font-weight: 800;
+      font-weight: 700;
+      letter-spacing: 0.09em;
       text-transform: uppercase;
+      color: var(--muted);
     }
     h1 {
-      max-width: 860px;
+      max-width: 15ch;
       margin: 0;
-      font-size: clamp(46px, 11vw, 112px);
-      line-height: .9;
-      letter-spacing: 0;
+      font-size: var(--fs-display);
+      font-weight: 800;
+      line-height: var(--lh-tight);
+      letter-spacing: -0.035em;
     }
+    h2 {
+      max-width: 20ch;
+      margin: 0;
+      font-size: var(--fs-h2);
+      font-weight: 800;
+      line-height: 1.02;
+      letter-spacing: -0.025em;
+    }
+    h3 {
+      margin: 0 0 var(--s-2);
+      font-size: var(--fs-h3);
+      font-weight: 700;
+      line-height: var(--lh-snug);
+      letter-spacing: -0.01em;
+    }
+    p { margin: 0; }
     .lede {
-      max-width: 760px;
-      margin: 22px 0 0;
-      color: #191919;
-      font-size: clamp(18px, 3vw, 24px);
+      max-width: 46ch;
+      margin: var(--s-5) 0 0;
+      color: var(--lede);
+      font-size: var(--fs-lede);
       line-height: 1.5;
     }
-    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+    .copy { max-width: 62ch; color: var(--copy); font-size: var(--fs-body); line-height: var(--lh-body); }
+
+    /* ---- Hero ---- */
+    .hero {
+      padding: var(--s-9) 0 var(--s-8);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--s-8);
+    }
+    .hero > *, .section > * { min-width: 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-6); }
     .button {
       display: inline-flex;
-      min-height: 44px;
+      min-height: 46px;
       align-items: center;
       justify-content: center;
-      border: 1px solid var(--text);
-      padding: 11px 15px;
-      background: var(--text);
-      color: #fff;
+      border: 1px solid var(--line-strong);
+      padding: 0 var(--s-5);
+      background: var(--button-bg);
+      color: var(--button-text);
       text-decoration: none;
-      font-size: 14px;
-      font-weight: 750;
+      font-size: var(--fs-small);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      transition: background .15s ease, color .15s ease;
     }
-    .button.secondary { background: #fff; color: var(--text); }
+    .button:hover { background: var(--surface); color: var(--text); }
+    .button.secondary { background: var(--surface); color: var(--text); }
+    .button.secondary:hover { background: var(--button-bg); color: var(--button-text); }
     .bullets {
       display: flex;
       flex-wrap: wrap;
-      gap: 9px 18px;
+      gap: var(--s-2) var(--s-5);
       padding: 0;
-      margin: 24px 0 0;
+      margin: var(--s-6) 0 0;
       color: var(--muted);
       list-style: none;
-      font-size: 14px;
+      font-size: var(--fs-small);
     }
-    .bullets li::before { content: "* "; color: var(--text); }
-    .surface {
-      border: 1px solid #101010;
-      background: #fff;
-      min-width: 0;
-    }
+    .bullets li::before { content: "- "; color: var(--text); }
+
+    /* ---- Preview surface ---- */
+    .surface { border: 1px solid var(--line-strong); background: var(--surface); min-width: 0; align-self: start; }
     .surface-head {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--line);
-      font-size: 14px;
-      font-weight: 800;
+      gap: var(--s-3);
+      padding: var(--s-4) var(--s-5);
+      border-bottom: 1px solid var(--line-strong);
+      font-size: var(--fs-small);
+      font-weight: 700;
+      letter-spacing: 0.02em;
     }
-    .surface-body { padding: 8px 16px 16px; }
+    .surface-head a { color: var(--muted); text-decoration: none; font-weight: 600; }
+    .surface-head a:hover { color: var(--text); text-decoration: underline; }
+    .surface-body { padding: 0 var(--s-5); }
+    .surface-demo { padding: var(--s-5); }
+    .surface-demo:empty { display: none; }
     .feed-row {
       display: grid;
-      gap: 4px;
-      padding: 14px 0;
+      gap: var(--s-1);
+      padding: var(--s-4) 0;
       border-bottom: 1px solid var(--line);
     }
     .feed-row:last-child { border-bottom: 0; }
-    .feed-row strong { font-size: 18px; line-height: 1.2; }
-    .feed-row span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .feed-row strong { font-size: 1.0625rem; line-height: 1.25; letter-spacing: -0.01em; }
+    .feed-row span { color: var(--muted); font-size: var(--fs-small); line-height: 1.5; }
+
+    /* ---- Sections ---- */
     .section {
       border-top: 1px solid var(--line);
-      padding: 42px 0;
+      padding: var(--s-8) 0;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 24px;
+      gap: var(--s-6);
     }
-    h2 {
-      max-width: 760px;
-      margin: 0;
-      font-size: clamp(34px, 7vw, 66px);
-      line-height: .95;
-      letter-spacing: 0;
-    }
-    h3 { margin: 0 0 8px; font-size: 20px; line-height: 1.2; }
-    p { margin: 0; }
-    .copy { max-width: 720px; color: #242424; font-size: 16px; line-height: 1.72; }
+    .section-head { display: grid; gap: var(--s-3); }
+
+    /* ---- Cards ---- */
     .cards {
       display: grid;
       grid-template-columns: 1fr;
       gap: 0;
       border-top: 1px solid var(--line);
     }
-    .card { padding: 20px 0; border-bottom: 1px solid var(--line); }
-    .num { display: block; margin-bottom: 18px; font-size: 13px; font-weight: 800; color: var(--muted); }
+    .card { padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
+    .card:last-child { border-bottom: 0; }
+    .num {
+      display: block;
+      margin-bottom: var(--s-4);
+      font-size: var(--fs-small);
+      font-weight: 700;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .card .copy { color: var(--muted); }
+
+    /* ---- Code ---- */
     .code {
       width: 100%;
       min-width: 0;
       margin: 0;
-      padding: 18px;
+      padding: var(--s-5);
       overflow-x: auto;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
-      border: 1px solid var(--line);
+      border: 1px solid var(--line-strong);
       background: var(--soft);
-      font-size: 13px;
-      line-height: 1.65;
+      font-size: var(--fs-small);
+      line-height: 1.7;
     }
+    .code-wrap { display: grid; gap: var(--s-3); }
+    .copy-code {
+      justify-self: start;
+      min-height: 36px;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--text);
+      padding: 0 var(--s-4);
+      font: inherit;
+      font-size: var(--fs-small);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ---- Footer ---- */
     footer {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      gap: 16px;
-      padding: 26px 0 46px;
-      border-top: 1px solid var(--line);
+      gap: var(--s-4);
+      margin-top: var(--s-8);
+      padding: var(--s-6) 0 var(--s-8);
+      border-top: 1px solid var(--line-strong);
       color: var(--muted);
-      font-size: 13px;
+      font-size: var(--fs-small);
     }
     footer a { color: var(--text); }
+
+    /* ---- Responsive ---- */
     @media (min-width: 860px) {
-      .hero { grid-template-columns: minmax(0, 1.05fr) minmax(340px, .72fr); align-items: end; }
-      .section { grid-template-columns: .92fr 1.08fr; }
+      .hero {
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.75fr);
+        align-items: start;
+        gap: var(--s-9);
+      }
+      .section { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: var(--s-8); }
       .cards { grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
-      .card { padding: 24px 22px; border-right: 1px solid var(--line); border-bottom: 0; }
-      .card:last-child { border-right: 0; }
+      .card { padding: var(--s-5) var(--s-5) var(--s-5) 0; border-right: 1px solid var(--line); border-bottom: 0; }
+      .card + .card { padding-left: var(--s-5); }
+      .card:last-child { border-right: 0; padding-right: 0; }
     }
     @media (max-width: 560px) {
-      .top { display: grid; align-items: flex-start; }
-      nav { justify-content: flex-start; gap: 10px 14px; }
-      h1 { max-width: 8ch; font-size: 52px; }
-      .lede, .copy { max-width: 31ch; }
-      .bullets { display: grid; gap: 10px; }
-      .surface { width: calc(100vw - 32px); max-width: calc(100vw - 32px); overflow: hidden; }
-      .surface-head { display: grid; justify-content: start; align-items: flex-start; }
+      .top { flex-direction: column; align-items: flex-start; gap: var(--s-3); }
+      nav { gap: var(--s-3) var(--s-4); }
+      .surface { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
     }
   </style>
 </head>
 <body>
+  <a class="skip" href="#overview">Skip to content</a>
   <div class="wrap">
     <header class="top">
       <a class="brand" href="https://github.com/tanzir71/tinyblog">TinyBlog Widget</a>
@@ -222,8 +358,9 @@
           </ul>
         </div>
 
-        <aside class="surface" aria-label="TinyBlog widget preview">
+        <aside class="surface" aria-label="TinyBlog widget preview" data-demo-endpoint="" data-demo-site="store-1">
           <div class="surface-head"><span>Review Surface</span><a href="README.md">View all</a></div>
+          <div class="surface-demo" id="landing-widget-demo"></div>
           <div class="surface-body">
             <div class="feed-row"><strong>Why TinyBlog Widget exists</strong><span>A tiny publishing feed for stores, portfolios, docs, and product updates.</span></div>
             <div class="feed-row"><strong>A secure default for shared hosting</strong><span>PDO, CSRF, CORS allowlists, safe uploads, and no default credentials.</span></div>
@@ -233,7 +370,7 @@
       </section>
 
       <section class="section">
-        <div>
+        <div class="section-head">
           <p class="section-label">Built for the real bottleneck</p>
           <h2>The job is to publish clearly, not run a CMS fleet.</h2>
         </div>
@@ -241,7 +378,7 @@
       </section>
 
       <section class="section">
-        <div>
+        <div class="section-head">
           <p class="section-label">What the tool actually does</p>
           <h2>Three ways TinyBlog helps before the next deploy.</h2>
         </div>
@@ -253,26 +390,29 @@
       </section>
 
       <section class="section" id="workflow">
-        <div>
+        <div class="section-head">
           <p class="section-label">How it flows</p>
           <h2>One path from upload to embedded update.</h2>
         </div>
         <div class="cards">
-          <article class="card"><span class="num">1</span><h3>Deploy</h3><p class="copy">Upload the files, enable PHP 8 with PDO SQLite, and let the app create <code>data/tinyblog.db</code>.</p></article>
-          <article class="card"><span class="num">2</span><h3>Write</h3><p class="copy">Create the first admin, publish Markdown posts, upload safe images, and set allowed widget origins.</p></article>
-          <article class="card"><span class="num">3</span><h3>Embed</h3><p class="copy">Paste a one-line script into any allowed site and fetch only the JSON that the widget needs.</p></article>
+          <article class="card"><span class="num">01</span><h3>Deploy</h3><p class="copy">Upload the files, enable PHP 8 with PDO SQLite, and let the app create <code>data/tinyblog.db</code>.</p></article>
+          <article class="card"><span class="num">02</span><h3>Write</h3><p class="copy">Create the first admin, publish Markdown posts, upload safe images, and set allowed widget origins.</p></article>
+          <article class="card"><span class="num">03</span><h3>Embed</h3><p class="copy">Paste a one-line script into any allowed site and fetch only the JSON that the widget needs.</p></article>
         </div>
       </section>
 
       <section class="section">
-        <div>
+        <div class="section-head">
           <p class="section-label">Quick start</p>
           <h2>Get from cPanel to a live feed fast.</h2>
         </div>
-        <pre class="code"><code>&lt;script
+        <div class="code-wrap">
+          <button class="copy-code" type="button" data-copy-target="embedSnippet">Copy</button>
+          <pre class="code"><code id="embedSnippet">&lt;script
   src="https://blog.example.com/tinyblog-widget.js"
   data-tb-config='{"site":"store-1","endpoint":"https://blog.example.com/api","widgetType":"feed"}'&gt;
 &lt;/script&gt;</code></pre>
+        </div>
       </section>
     </main>
 
@@ -281,5 +421,50 @@
       <span><a href="README.md">README</a> / <a href="SETUP.md">Docs</a> / <a href="SECURITY.md">Security</a></span>
     </footer>
   </div>
+  <script src="tinyblog-widget.js"></script>
+  <script>
+    (function () {
+      var surface = document.querySelector("[data-demo-endpoint]");
+      var mount = document.getElementById("landing-widget-demo");
+      if (surface && mount && surface.dataset.demoEndpoint && window.TinyBlogWidget) {
+        var fallback = surface.querySelector(".surface-body");
+        if (fallback) fallback.hidden = true;
+        window.TinyBlogWidget.init({
+          container: "#landing-widget-demo",
+          endpoint: surface.dataset.demoEndpoint,
+          site: surface.dataset.demoSite || "store-1",
+          widgetType: "feed",
+          maxItems: 3,
+          showExcerpt: true
+        });
+      }
+
+      var button = document.querySelector("[data-copy-target]");
+      if (!button) return;
+      button.addEventListener("click", function () {
+        var target = document.getElementById(button.dataset.copyTarget);
+        var text = target ? target.textContent : "";
+        var done = function () {
+          var original = button.textContent;
+          button.textContent = "Copied";
+          setTimeout(function () { button.textContent = original; }, 1000);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done);
+          return;
+        }
+        var helper = document.createElement("textarea");
+        helper.value = text;
+        helper.setAttribute("readonly", "");
+        helper.style.position = "fixed";
+        helper.style.left = "-9999px";
+        document.body.appendChild(helper);
+        helper.select();
+        document.execCommand("copy");
+        document.body.removeChild(helper);
+        done();
+      });
+    })();
+  </script>
 </body>
 </html>
