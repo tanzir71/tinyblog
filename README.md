@@ -2,7 +2,7 @@
 
 Repository: https://github.com/tanzir71/tinyblog
 
-TinyBlog Widget is an embeddable blog MVP: one JavaScript file renders a feed, a single post, or a subscribe box on any site, while a minimal PHP 8 + SQLite backend gives authors a secure admin UI for publishing.
+TinyBlog Widget is an embeddable blog MVP: one JavaScript file renders a feed, a single post, or a subscribe box on any site, while a minimal PHP 8 + SQLite backend gives authors a secure browser admin UI for publishing without returning to cPanel for day-to-day content work.
 
 ## Security Summary
 
@@ -29,15 +29,26 @@ Top threats are SQL injection, cross-site scripting, cross-site request forgery,
 1. Upload the project files to a PHP 8+ shared hosting account.
 2. Make sure `data/` and `uploads/` are writable by PHP.
 3. Open `https://your-domain.example/admin`.
-4. Create the first admin account. No default password is shipped.
+4. Create the first admin account, or set `TB_ADMIN_EMAIL` and `TB_ADMIN_PASSWORD` in the private `.env` file from cPanel/File Manager before visiting `/admin`.
 5. In Admin -> Settings, set:
    - Blog title
    - Canonical base URL
    - Site id, for example `store-1`
    - Allowed widget origins, for example `https://your-store.example`
 6. Click "Load sample posts" from the dashboard if you want the 3 sample posts.
+7. Create, edit, publish, unpublish, and delete posts from `/admin`; cPanel is only needed for install/recovery tasks.
 
-Optional config: copy `.env.example` to `.env` on the server if you need custom database/upload/log paths or rate-limit thresholds. `.env` is ignored by git.
+Optional config: copy `.env.example` to `.env` on the server if you need custom database/upload/log paths, rate-limit thresholds, or backend-editable admin credentials. `.env` is ignored by git.
+
+Backend-editable admin credentials:
+
+```text
+TB_ADMIN_EMAIL=owner@example.com
+TB_ADMIN_NAME=Owner
+TB_ADMIN_PASSWORD=change-this-long-password
+```
+
+Edit those values in cPanel/File Manager or another private server-side file editor, then log in from the frontend at the known link `/admin`. `TB_ADMIN_PASSWORD_HASH` can be used instead of `TB_ADMIN_PASSWORD` if you prefer pasting a PHP `password_hash()` value.
 
 ## Embed Snippets
 
@@ -139,6 +150,8 @@ Admin:
 
 - `GET /admin` - login/register/dashboard.
 - Admin post actions are CSRF-protected form posts.
+- `TB_ADMIN_EMAIL` + `TB_ADMIN_PASSWORD` in `.env` create or update an admin account from a backend-editable file; the login link remains `/admin`.
+- Posts can be created, edited, published/unpublished, and deleted from the browser admin UI.
 - Posts can be saved as `draft` or `published`; published posts with a future publish date stay hidden from public pages, RSS, sitemap, and the JSON API until that UTC time.
 - Posts can be pinned, which moves them to the top of the home/API listing.
 - Media uploads include alt text and CSRF-protected delete controls.
@@ -224,7 +237,8 @@ curl -i "https://blog.example.com/feed.xml" -H 'If-None-Match: "PASTE_ETAG"'
 Manual QA checklist:
 
 - Create first admin and log out/log in.
-- Load sample posts, publish/unpublish, edit slug/title/body/tags.
+- Set `TB_ADMIN_EMAIL` and `TB_ADMIN_PASSWORD` in `.env`, visit `/admin`, and confirm those backend-edited credentials log in.
+- Load sample posts, publish/unpublish, edit slug/title/body/tags, then delete a post entirely from `/admin` without using cPanel.
 - Save a draft and a future-dated published post; confirm neither appears in `/`, `/tag/...`, `/search`, `/feed.xml`, `/sitemap.xml`, or `/api/posts` until eligible.
 - Create more posts than the configured page size and confirm page 2 has the next slice with no duplicates.
 - Confirm reading time appears on long posts and in widget feed rows, but not on very short posts.

@@ -63,7 +63,7 @@
           <section class="docs-intro" aria-labelledby="docs-title">
             <p class="eyebrow"><span class="sq" aria-hidden="true"></span>Documentation</p>
             <h1 id="docs-title">Implementation guide.</h1>
-            <p class="lede">Everything needed to run TinyBlog on ordinary PHP hosting: upload the files, create the first admin, embed a feed or subscribe box, and keep the security path visible.</p>
+            <p class="lede">Everything needed to run TinyBlog on ordinary PHP hosting: upload the files, create or configure the first admin, embed a feed or subscribe box, and keep the security path visible.</p>
             <div class="actions">
               <a class="btn" href="#quick-start">Start setup</a>
               <a class="btn ghost" href="#embed">Copy embed</a>
@@ -73,11 +73,11 @@
           <section class="docs-section" id="quick-start">
             <p class="sys">Docs 01</p>
             <h2>Quick start</h2>
-            <p class="copy">Upload the project to a PHP 8 host with PDO SQLite, make <code>data/</code> and <code>uploads/</code> writable, then visit <code>/admin</code> to create the first admin account. No default password ships with the app.</p>
+            <p class="copy">Upload the project to a PHP 8 host with PDO SQLite, make <code>data/</code> and <code>uploads/</code> writable, then visit <code>/admin</code> to create the first admin account or log in with credentials configured in a private <code>.env</code> file. No default password ships with the app.</p>
             <div class="step-list">
               <div><span class="num">01</span><p>Upload <code>tinyblog.php</code>, <code>tinyblog-widget.js</code>, <code>.htaccess</code>, <code>assets/</code>, <code>uploads/</code>, and <code>data/.htaccess</code> to your site root or <code>/blog</code> subfolder.</p></div>
               <div><span class="num">02</span><p>Enable PHP 8.0 or newer, plus <code>pdo_sqlite</code>, <code>sqlite3</code>, and <code>fileinfo</code> when your host exposes extension toggles.</p></div>
-              <div><span class="num">03</span><p>Open <code>/admin</code>, create the first admin, set the canonical URL, choose the site id, and add allowed widget origins.</p></div>
+              <div><span class="num">03</span><p>Open <code>/admin</code>, or first set <code>TB_ADMIN_EMAIL</code> and <code>TB_ADMIN_PASSWORD</code> in <code>.env</code>, then set the canonical URL, choose the site id, and add allowed widget origins.</p></div>
               <div><span class="num">04</span><p>Paste the widget snippet on an allowed page and publish sample posts if you want starter content.</p></div>
             </div>
           </section>
@@ -97,7 +97,7 @@ chmod 644 tinyblog.php tinyblog-widget.js .htaccess
 # If PHP runs as another user and SQLite cannot create the DB:
 chmod 775 data uploads</code></pre>
             </div>
-            <p class="copy">Keep <code>data/</code> outside the public web root when your host allows it. If it must stay public, the included <code>.htaccess</code> denies direct downloads of databases, logs, and <code>.env</code>.</p>
+            <p class="copy">Keep <code>data/</code> outside the public web root when your host allows it. If it must stay public, the included <code>.htaccess</code> denies direct downloads of databases, logs, and <code>.env</code>. <strong>Known login link:</strong> use <code>/admin</code> after editing credentials in the backend file.</p>
             <div class="docs-code code-card" aria-label="Optional environment configuration">
               <div class="code-bar">
                 <span>.env</span>
@@ -107,7 +107,10 @@ chmod 775 data uploads</code></pre>
 TB_UPLOAD_DIR=/home/USER/public_html/blog/uploads
 TB_LOG_FILE=/home/USER/private/tinyblog.log
 TB_SESSION_TIMEOUT=1800
-TB_LOGIN_RATE_LIMIT=10</code></pre>
+TB_LOGIN_RATE_LIMIT=10
+TB_ADMIN_EMAIL=owner@example.com
+TB_ADMIN_NAME=Owner
+TB_ADMIN_PASSWORD=change-this-long-password</code></pre>
             </div>
           </section>
 

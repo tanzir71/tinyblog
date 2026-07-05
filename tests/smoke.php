@@ -29,7 +29,7 @@ foreach ($required as $file) {
 
 if (is_file($root . '/tinyblog.php')) {
     $php = file_get_contents($root . '/tinyblog.php');
-    foreach (['password_hash', 'hash_equals', 'PDO', 'csrf_token', 'sanitize_markdown', 'check_cors_or_fail', 'security_headers', 'Content-Security-Policy', 'require_admin', 'can_manage_post'] as $needle) {
+    foreach (['password_hash', 'hash_equals', 'PDO', 'csrf_token', 'sanitize_markdown', 'check_cors_or_fail', 'security_headers', 'Content-Security-Policy', 'require_admin', 'can_manage_post', 'function sync_configured_admin', 'TB_ADMIN_EMAIL', 'TB_ADMIN_PASSWORD_HASH'] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing expected safeguard: {$needle}";
         }
@@ -51,6 +51,8 @@ if (is_file($root . '/tinyblog.php')) {
         'pinned',
         'alt_text',
         'delete_media',
+        'delete_post',
+        'admin_action" value="delete_post"',
         'function track_post_view',
         'post_views',
         'function render_json_feed',
@@ -84,7 +86,7 @@ if (is_file($root . '/tinyblog-widget.js')) {
 
 if (is_file($root . '/index.html')) {
     $landing = file_get_contents($root . '/index.html');
-    foreach (['<link rel="icon" href="assets/logo.svg">', 'rel="apple-touch-icon"', 'assets/og.png', 'twitter:card', 'twitter:image', 'class="skip"', 'navigator.clipboard', 'href="docs.html"'] as $needle) {
+    foreach (['<link rel="icon" href="assets/logo.svg">', 'rel="apple-touch-icon"', 'assets/og.png', 'twitter:card', 'twitter:image', 'class="skip"', 'navigator.clipboard', 'href="docs.html"', 'Edit credentials in .env', '/admin'] as $needle) {
         if (!str_contains($landing, $needle)) {
             $failures[] = "index.html missing expected landing polish: {$needle}";
         }
@@ -96,7 +98,7 @@ if (is_file($root . '/index.html')) {
 
 if (is_file($root . '/docs.html')) {
     $docs = file_get_contents($root . '/docs.html');
-    foreach (['class="docs-toc"', 'id="quick-start"', 'id="deployment"', 'id="embed"', 'id="security"', 'id="changelog"', 'data-copy="#snippet-feed"'] as $needle) {
+    foreach (['class="docs-toc"', 'id="quick-start"', 'id="deployment"', 'id="embed"', 'id="security"', 'id="changelog"', 'data-copy="#snippet-feed"', 'TB_ADMIN_EMAIL', 'TB_ADMIN_PASSWORD', 'Known login link'] as $needle) {
         if (!str_contains($docs, $needle)) {
             $failures[] = "docs.html missing expected docs surface: {$needle}";
         }
@@ -120,6 +122,15 @@ if (is_file($root . '/_config.yml')) {
     foreach (['exclude:', 'README.md', 'tinyblog.php', 'tests/', 'data/', 'uploads/'] as $needle) {
         if (!str_contains($config, $needle)) {
             $failures[] = "_config.yml missing Pages exclude: {$needle}";
+        }
+    }
+}
+
+if (is_file($root . '/.env.example')) {
+    $env = file_get_contents($root . '/.env.example');
+    foreach (['TB_ADMIN_EMAIL', 'TB_ADMIN_PASSWORD', 'TB_ADMIN_PASSWORD_HASH'] as $needle) {
+        if (!str_contains($env, $needle)) {
+            $failures[] = ".env.example missing backend-editable admin credential key: {$needle}";
         }
     }
 }

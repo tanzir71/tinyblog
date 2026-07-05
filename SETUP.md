@@ -65,7 +65,7 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-Edit `.env` only if you need custom paths or thresholds:
+Edit `.env` only if you need custom paths, thresholds, or backend-editable admin credentials:
 
 ```text
 TB_DB_PATH=/home/USER/private/tinyblog.db
@@ -73,7 +73,12 @@ TB_UPLOAD_DIR=/home/USER/public_html/blog/uploads
 TB_LOG_FILE=/home/USER/private/tinyblog.log
 TB_SESSION_TIMEOUT=1800
 TB_LOGIN_RATE_LIMIT=10
+TB_ADMIN_EMAIL=owner@example.com
+TB_ADMIN_NAME=Owner
+TB_ADMIN_PASSWORD=change-this-long-password
 ```
+
+`TB_ADMIN_EMAIL` and `TB_ADMIN_PASSWORD` let you edit the admin login from cPanel/File Manager like any other private backend file. After saving `.env`, use the known frontend login link `https://blog.example.com/admin`.
 
 ## 4. Apache Rewrite
 
@@ -112,14 +117,15 @@ If installing in `/blog`, set `RewriteBase /blog/` or leave it as-is on most Apa
 ## 5. First Admin
 
 1. Visit `https://blog.example.com/admin`.
-2. Create the first admin account with a strong password.
+2. Create the first admin account with a strong password, or log in with the `.env` credentials if you set `TB_ADMIN_EMAIL` and `TB_ADMIN_PASSWORD`.
 3. Open Settings and set:
    - `Canonical base URL`, for example `https://blog.example.com`
    - `Site id`, for example `store-1`
    - `Allowed widget origins`, one per line, for example `https://store.example.com`
 4. Save settings.
 5. Use "Load sample posts" if desired.
-6. Use Settings -> Backup to export/import TinyBlog JSON backups when moving hosts. Media files are referenced by path, so copy `uploads/` alongside the JSON when restoring elsewhere.
+6. Create, edit, publish, unpublish, and delete posts from `/admin`. cPanel is for installation, backups, and recovery only; normal publishing should stay in the TinyBlog browser UI.
+7. Use Settings -> Backup to export/import TinyBlog JSON backups when moving hosts. Media files are referenced by path, so copy `uploads/` alongside the JSON when restoring elsewhere.
 
 ## 6. Embed On Another Site
 

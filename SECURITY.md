@@ -35,6 +35,7 @@ TinyBlog Widget is intentionally small, but it still treats publishing, embeds, 
 
 - Enable HTTPS before creating the first admin.
 - Use a unique admin password of at least 12 characters.
+- If you set backend-editable credentials in `.env`, keep the file private, protected by `.htaccess` or outside the public web root, and use `TB_ADMIN_PASSWORD_HASH` instead of plaintext when practical.
 - Move `data/` outside the public web root when your host allows it.
 - Keep `.htaccess` and `uploads/.htaccess` in place.
 - Restrict Admin -> Settings -> Allowed widget origins to exact domains.
@@ -48,7 +49,7 @@ TinyBlog Widget is intentionally small, but it still treats publishing, embeds, 
 ## Rotating Keys
 
 - Public site key: in Admin -> Settings, disable "Require public siteKey", save, then manually update the `public_site_key` value in the SQLite `settings` table with a new random value and re-enable the setting. Update embeds that include `siteKey`.
-- Admin credentials: create a new admin account in the database or reset the password hash with PHP `password_hash()`, then remove the old account.
+- Admin credentials: edit `TB_ADMIN_EMAIL` and `TB_ADMIN_PASSWORD` in the private `.env` file, then log in at `/admin`. For stronger file hygiene, set `TB_ADMIN_PASSWORD_HASH` to a PHP `password_hash()` value instead of storing plaintext.
 - CORS origins: rotate by removing old origins from Admin -> Settings -> Allowed widget origins and saving.
 
 ## Logging
@@ -57,6 +58,8 @@ Runtime/security errors are written to `data/tinyblog.log` by default. To move o
 
 ```text
 TB_LOG_FILE=/home/USER/private/tinyblog.log
+TB_ADMIN_EMAIL=owner@example.com
+TB_ADMIN_PASSWORD_HASH=<paste-output-of-password_hash>
 ```
 
 To disable extra app-file logging, set `TB_LOG_FILE` to a path handled by your host's private logs and keep PHP display errors disabled. Do not enable public stack traces in production.

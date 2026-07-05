@@ -11,6 +11,12 @@ that runs on cheap shared hosting with no build step and no third-party runtime
 dependencies. If a task needs npm, a framework, or a background worker, it does
 not belong here — push it to the "Explicit non-goals" list.
 
+The key product experience is **frontend content CRUD without cPanel**. After
+the one-time install, an author must be able to create, read, update, publish,
+unpublish, and delete content from TinyBlog's browser UI. cPanel, phpMyAdmin,
+the hosting file manager, and direct SQLite edits are only acceptable for
+installation/recovery chores, never for day-to-day publishing.
+
 ## Repo map (what exists today)
 
 | File | Role |
@@ -69,6 +75,24 @@ Priorities: **P0** = high value + low risk, do first; **P1** = strong value,
 moderate work; **P2** = nice-to-have / larger. Keep each PR small and shippable.
 
 ## P0 — do first
+
+### B0. Frontend content CRUD without cPanel
+- **Why:** This is the core promise: a non-technical site owner should run the
+  blog from TinyBlog's own browser UI after install, without logging into
+  cPanel or editing files/database rows by hand.
+- **Files:** `tinyblog.php` (`render_admin`, post form/actions, delete actions,
+  media admin, settings admin), `README.md`, `SETUP.md`, `tests/smoke.php`.
+- **Approach:** Audit the existing admin surface and close any CRUD gaps. Post
+  create/edit/delete/publish/unpublish, media upload/delete, and basic settings
+  changes must all be reachable from authenticated frontend routes with CSRF
+  protection and clear success/error states. Keep all writes inside
+  `tinyblog.php`; do not add a separate admin framework or require server-panel
+  access. Docs should position cPanel as install-only and recovery-only.
+- **Acceptance:** From a fresh install, an authenticated author can create a
+  post, edit it, publish/unpublish it, delete it, upload media, delete media,
+  and change site settings entirely in the browser. The README/SETUP flow never
+  tells authors to use cPanel for normal content work. Smoke/manual QA covers
+  the full frontend CRUD loop.
 
 ### B1. Draft vs. publish + scheduled publishing
 - **Why:** Core blogging need; today posts appear to be immediately public.
@@ -212,8 +236,9 @@ moderate work; **P2** = nice-to-have / larger. Keep each PR small and shippable.
 ## Suggested sequencing
 
 1. **Landing polish A1–A3** (favicon, OG, a11y) — trivial, ship immediately.
-2. **B1 → B2 → B3** — the content-model backbone (status/schedule, pagination,
-   reading time). Do B1 first; several later items assume `status`.
+2. **B0 → B1 → B2 → B3** — the authoring backbone (frontend CRUD,
+   status/schedule, pagination, reading time). Do B0/B1 first; several later
+   items assume the admin CRUD loop and `status`.
 3. **B4 + B5** — widget robustness and structured data.
 4. **B6, B7, B8, B9, B10** — pick per appetite; B9 is the biggest UX lever.
 5. **P2** as capacity allows.
@@ -222,6 +247,9 @@ moderate work; **P2** = nice-to-have / larger. Keep each PR small and shippable.
 
 - **One file stays one file.** New backend logic goes in `tinyblog.php` as small
   functions near their peers. No new PHP dependencies, no Composer.
+- **No cPanel-dependent publishing workflow.** Daily content operations must be
+  exposed through TinyBlog's authenticated frontend UI. cPanel/file-manager/DB
+  access can be documented for install, migration, or recovery only.
 - **No build step, no framework, no CDN runtime deps** in the widget or pages.
   Vanilla JS only; keep `tinyblog-widget.js` dependency-free.
 - **Migrations are additive and idempotent.** Guard every schema change with a
@@ -248,6 +276,7 @@ section, not in this app.
 
 ## Definition of done (per task)
 
-`php -l tinyblog.php` clean · `tests/smoke.php` passes · manual QA item added ·
-no new dependencies · docs + CHANGELOG updated · CSRF/CORS/prepared-statement
-invariants verified for any new route.
+`php -l tinyblog.php` clean · `tests/smoke.php` passes · manual QA item added
+for browser-based content CRUD where relevant · no new dependencies · docs +
+CHANGELOG updated · CSRF/CORS/prepared-statement invariants verified for any
+new route.

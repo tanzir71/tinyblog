@@ -2,6 +2,12 @@
 
 Repository: https://github.com/tanzir71/tinyblog
 
+## 2026-07-06
+
+- Added optional `.env` admin credential sync (`TB_ADMIN_EMAIL`, `TB_ADMIN_PASSWORD`, and `TB_ADMIN_PASSWORD_HASH`) so credentials can be edited from a private backend file and used at `/admin`.
+- Added CSRF-protected browser post deletion to complete the frontend create/read/update/publish/unpublish/delete content loop without cPanel.
+- Updated README and SETUP guidance to frame cPanel as install/recovery-only for normal publishing workflows.
+
 ## 2026-07-04
 
 - Added landing-page polish: real SVG favicon, PNG Open Graph image, touch icon, skip link, dark color-scheme tokens, live widget demo hook, and copy-to-clipboard for the embed snippet.

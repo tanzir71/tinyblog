@@ -245,6 +245,7 @@ function init_db(PDO $pdo): void
     foreach ($defaults as $key => $value) {
         $stmt->execute([':key' => $key, ':value' => $value]);
     }
+    sync_configured_admin($pdo);
 }
 
 function migrate_schema(PDO $pdo): void
@@ -314,6 +315,80 @@ function column_exists(PDO $pdo, string $table, string $column): bool
 function random_token(): string
 {
     return bin2hex(random_bytes(32));
+}
+
+function configured_admin_credentials(): ?array
+{
+    $email = strtolower(trim(config_value('TB_ADMIN_EMAIL', '')));
+    $name = trim(config_value('TB_ADMIN_NAME', 'Admin'));
+    $password = (string) config_value('TB_ADMIN_PASSWORD', '');
+    $passwordHash = trim(config_value('TB_ADMIN_PASSWORD_HASH', ''));
+    if ($email === '' && $password === '' && $passwordHash === '') {
+        return null;
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        write_server_log('warning', 'Ignoring configured admin credentials: TB_ADMIN_EMAIL is missing or invalid.');
+        return null;
+    }
+    if ($password !== '') {
+        if (strlen($password) < 12) {
+            write_server_log('warning', 'Ignoring configured admin credentials: TB_ADMIN_PASSWORD must be at least 12 characters.');
+            return null;
+        }
+        return [
+            'email' => $email,
+            'name' => $name !== '' ? $name : 'Admin',
+            'password' => $password,
+            'password_hash' => null,
+        ];
+    }
+    $hashInfo = password_get_info($passwordHash);
+    if (($hashInfo['algoName'] ?? 'unknown') === 'unknown') {
+        write_server_log('warning', 'Ignoring configured admin credentials: TB_ADMIN_PASSWORD_HASH is not a valid password_hash() value.');
+        return null;
+    }
+    return [
+        'email' => $email,
+        'name' => $name !== '' ? $name : 'Admin',
+        'password' => null,
+        'password_hash' => $passwordHash,
+    ];
+}
+
+function sync_configured_admin(PDO $pdo): void
+{
+    $credentials = configured_admin_credentials();
+    if ($credentials === null) {
+        return;
+    }
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
+    $stmt->execute([':email' => $credentials['email']]);
+    $existing = $stmt->fetch();
+    $passwordHash = (string) ($credentials['password_hash'] ?? '');
+    if (($credentials['password'] ?? null) !== null) {
+        $currentHash = $existing ? (string) $existing['password_hash'] : '';
+        $passwordHash = $currentHash !== '' && password_verify((string) $credentials['password'], $currentHash) && !password_needs_rehash($currentHash, PASSWORD_DEFAULT)
+            ? $currentHash
+            : password_hash((string) $credentials['password'], PASSWORD_DEFAULT);
+    }
+    if ($existing) {
+        $update = $pdo->prepare('UPDATE users SET name = :name, password_hash = :password_hash, role = :role WHERE id = :id');
+        $update->execute([
+            ':name' => $credentials['name'],
+            ':password_hash' => $passwordHash,
+            ':role' => 'admin',
+            ':id' => (int) $existing['id'],
+        ]);
+        return;
+    }
+    $insert = $pdo->prepare('INSERT INTO users (email, name, password_hash, role, created_at) VALUES (:email, :name, :password_hash, :role, :created_at)');
+    $insert->execute([
+        ':email' => $credentials['email'],
+        ':name' => $credentials['name'],
+        ':password_hash' => $passwordHash,
+        ':role' => 'admin',
+        ':created_at' => now_utc(),
+    ]);
 }
 
 function fts5_available(PDO $pdo): bool
@@ -1686,6 +1761,10 @@ function render_admin(PDO $pdo): void
                 save_post($pdo, $user);
                 redirect('/admin');
             }
+            if ($postAction === 'delete_post') {
+                $message = delete_post($pdo, $user);
+                $action = 'dashboard';
+            }
             if ($postAction === 'upload_media') {
                 $message = upload_media($pdo, $user);
                 $action = 'media';
@@ -1840,6 +1919,9 @@ function render_post_form(PDO $pdo, array $user): void
     echo '<label>Status<select name="status"><option value="draft"' . ($post['status'] === 'draft' ? ' selected' : '') . '>Draft</option><option value="published"' . ($post['status'] === 'published' ? ' selected' : '') . '>Published</option></select></label>';
     echo '<label><input type="checkbox" name="pinned" value="1" ' . ((int) ($post['pinned'] ?? 0) === 1 ? 'checked' : '') . '> Pin to top of home listing</label>';
     echo '<button>Save</button></form>';
+    if (!empty($post['id'])) {
+        echo '<form method="post" onsubmit="return confirm(\'Delete this post permanently?\')" style="margin-top:12px">' . csrf_field() . '<input type="hidden" name="admin_action" value="delete_post"><input type="hidden" name="id" value="' . (int) $post['id'] . '"><button class="secondary">Delete post</button></form>';
+    }
     echo '<script>
         const title = document.getElementById("title");
         const slug = document.getElementById("slug");
@@ -1962,6 +2044,24 @@ function save_post(PDO $pdo, array $user): void
         ':created_at' => now_utc(),
         ':updated_at' => now_utc(),
     ]);
+}
+
+function delete_post(PDO $pdo, array $user): string
+{
+    $id = (int) ($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        return 'Choose a post to delete.';
+    }
+    if (!can_manage_post($pdo, $user, $id)) {
+        http_response_code(403);
+        exit('You cannot delete that post.');
+    }
+    $stmt = $pdo->prepare('DELETE FROM posts WHERE id = :id AND site = :site');
+    $stmt->execute([
+        ':id' => $id,
+        ':site' => setting($pdo, 'site_key', 'store-1'),
+    ]);
+    return $stmt->rowCount() > 0 ? 'Post deleted.' : 'Post not found.';
 }
 
 function upload_media(PDO $pdo, array $user): string

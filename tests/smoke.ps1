@@ -30,7 +30,7 @@ foreach ($file in $required) {
 $phpPath = Join-Path $root "tinyblog.php"
 if (Test-Path -LiteralPath $phpPath) {
   $php = Get-Content -LiteralPath $phpPath -Raw
-  foreach ($needle in @("password_hash", "hash_equals", "PDO", "csrf_token", "sanitize_markdown", "check_cors_or_fail", "security_headers", "Content-Security-Policy", "require_admin", "can_manage_post")) {
+  foreach ($needle in @("password_hash", "hash_equals", "PDO", "csrf_token", "sanitize_markdown", "check_cors_or_fail", "security_headers", "Content-Security-Policy", "require_admin", "can_manage_post", "function sync_configured_admin", "TB_ADMIN_EMAIL", "TB_ADMIN_PASSWORD_HASH")) {
     if (-not $php.Contains($needle)) {
       $failures.Add("tinyblog.php missing expected safeguard: $needle")
     }
@@ -52,6 +52,8 @@ if (Test-Path -LiteralPath $phpPath) {
     "pinned",
     "alt_text",
     "delete_media",
+    "delete_post",
+    "admin_action`" value=`"delete_post`"",
     "function track_post_view",
     "post_views",
     "function render_json_feed",
@@ -87,7 +89,7 @@ if (Test-Path -LiteralPath $jsPath) {
 $landingPath = Join-Path $root "index.html"
 if (Test-Path -LiteralPath $landingPath) {
   $landing = Get-Content -LiteralPath $landingPath -Raw
-  foreach ($needle in @("<link rel=`"icon`" href=`"assets/logo.svg`">", "rel=`"apple-touch-icon`"", "assets/og.png", "twitter:card", "twitter:image", "class=`"skip`"", "navigator.clipboard", "href=`"docs.html`"")) {
+  foreach ($needle in @("<link rel=`"icon`" href=`"assets/logo.svg`">", "rel=`"apple-touch-icon`"", "assets/og.png", "twitter:card", "twitter:image", "class=`"skip`"", "navigator.clipboard", "href=`"docs.html`"", "Edit credentials in .env", "/admin")) {
     if (-not $landing.Contains($needle)) {
       $failures.Add("index.html missing expected landing polish: $needle")
     }
@@ -100,7 +102,7 @@ if (Test-Path -LiteralPath $landingPath) {
 $docsPath = Join-Path $root "docs.html"
 if (Test-Path -LiteralPath $docsPath) {
   $docs = Get-Content -LiteralPath $docsPath -Raw
-  foreach ($needle in @("class=`"docs-toc`"", "id=`"quick-start`"", "id=`"deployment`"", "id=`"embed`"", "id=`"security`"", "id=`"changelog`"", "data-copy=`"#snippet-feed`"")) {
+  foreach ($needle in @("class=`"docs-toc`"", "id=`"quick-start`"", "id=`"deployment`"", "id=`"embed`"", "id=`"security`"", "id=`"changelog`"", "data-copy=`"#snippet-feed`"", "TB_ADMIN_EMAIL", "TB_ADMIN_PASSWORD", "Known login link")) {
     if (-not $docs.Contains($needle)) {
       $failures.Add("docs.html missing expected docs surface: $needle")
     }
@@ -126,6 +128,16 @@ if (Test-Path -LiteralPath $pagesConfigPath) {
   foreach ($needle in @("exclude:", "README.md", "tinyblog.php", "tests/", "data/", "uploads/")) {
     if (-not $pagesConfig.Contains($needle)) {
       $failures.Add("_config.yml missing Pages exclude: $needle")
+    }
+  }
+}
+
+$envExamplePath = Join-Path $root ".env.example"
+if (Test-Path -LiteralPath $envExamplePath) {
+  $envExample = Get-Content -LiteralPath $envExamplePath -Raw
+  foreach ($needle in @("TB_ADMIN_EMAIL", "TB_ADMIN_PASSWORD", "TB_ADMIN_PASSWORD_HASH")) {
+    if (-not $envExample.Contains($needle)) {
+      $failures.Add(".env.example missing backend-editable admin credential key: $needle")
     }
   }
 }
