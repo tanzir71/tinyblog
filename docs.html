@@ -214,6 +214,15 @@ TB_ADMIN_PASSWORD=change-this-long-password</code></pre>
                 <li>Confirm raw Markdown HTML is escaped, not executed.</li>
               </ul>
             </div>
+            <div class="docs-callout">
+              <h3>Auth flow caveats</h3>
+              <ul>
+                <li>Set <code>TB_ADMIN_EMAIL</code> and <code>TB_ADMIN_PASSWORD_HASH</code> before public launch when possible; otherwise the first visitor to <code>/admin</code> can create the first admin.</li>
+                <li>Prefer <code>TB_ADMIN_PASSWORD_HASH</code> over plaintext <code>TB_ADMIN_PASSWORD</code>; plaintext credentials are only for short setup or recovery windows and depend on <code>.env</code> staying private.</li>
+                <li>Remove <code>TB_ADMIN_*</code> values after bootstrap or recovery if you do not want the backend file to keep re-applying that admin password and role.</li>
+                <li>Force HTTPS and HSTS at the host so login credentials and session cookies never travel over plain HTTP.</li>
+              </ul>
+            </div>
           </section>
 
           <section class="docs-section" id="backups">

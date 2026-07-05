@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-06
 
+- Documented auth-flow caveats on the landing docs and setup surface: first-admin timing, plaintext `.env` password risk, recovery credential cleanup, and HTTPS enforcement.
 - Added optional `.env` admin credential sync (`TB_ADMIN_EMAIL`, `TB_ADMIN_PASSWORD`, and `TB_ADMIN_PASSWORD_HASH`) so credentials can be edited from a private backend file and used at `/admin`.
 - Added CSRF-protected browser post deletion to complete the frontend create/read/update/publish/unpublish/delete content loop without cPanel.
 - Updated README and SETUP guidance to frame cPanel as install/recovery-only for normal publishing workflows.

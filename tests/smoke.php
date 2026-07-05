@@ -86,7 +86,7 @@ if (is_file($root . '/tinyblog-widget.js')) {
 
 if (is_file($root . '/index.html')) {
     $landing = file_get_contents($root . '/index.html');
-    foreach (['<link rel="icon" href="assets/logo.svg">', 'rel="apple-touch-icon"', 'assets/og.png', 'twitter:card', 'twitter:image', 'class="skip"', 'navigator.clipboard', 'href="docs.html"', 'Edit credentials in .env', '/admin'] as $needle) {
+    foreach (['<link rel="icon" href="assets/logo.svg">', 'rel="apple-touch-icon"', 'assets/og.png', 'twitter:card', 'twitter:image', 'class="skip"', 'navigator.clipboard', 'href="docs.html"', 'Edit credentials in .env', '/admin', 'force HTTPS'] as $needle) {
         if (!str_contains($landing, $needle)) {
             $failures[] = "index.html missing expected landing polish: {$needle}";
         }
@@ -98,7 +98,7 @@ if (is_file($root . '/index.html')) {
 
 if (is_file($root . '/docs.html')) {
     $docs = file_get_contents($root . '/docs.html');
-    foreach (['class="docs-toc"', 'id="quick-start"', 'id="deployment"', 'id="embed"', 'id="security"', 'id="changelog"', 'data-copy="#snippet-feed"', 'TB_ADMIN_EMAIL', 'TB_ADMIN_PASSWORD', 'Known login link'] as $needle) {
+    foreach (['class="docs-toc"', 'id="quick-start"', 'id="deployment"', 'id="embed"', 'id="security"', 'id="changelog"', 'data-copy="#snippet-feed"', 'TB_ADMIN_EMAIL', 'TB_ADMIN_PASSWORD', 'Known login link', 'Auth flow caveats', 'first visitor to', 'Remove <code>TB_ADMIN_*'] as $needle) {
         if (!str_contains($docs, $needle)) {
             $failures[] = "docs.html missing expected docs surface: {$needle}";
         }

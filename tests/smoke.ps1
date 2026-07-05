@@ -89,7 +89,7 @@ if (Test-Path -LiteralPath $jsPath) {
 $landingPath = Join-Path $root "index.html"
 if (Test-Path -LiteralPath $landingPath) {
   $landing = Get-Content -LiteralPath $landingPath -Raw
-  foreach ($needle in @("<link rel=`"icon`" href=`"assets/logo.svg`">", "rel=`"apple-touch-icon`"", "assets/og.png", "twitter:card", "twitter:image", "class=`"skip`"", "navigator.clipboard", "href=`"docs.html`"", "Edit credentials in .env", "/admin")) {
+  foreach ($needle in @("<link rel=`"icon`" href=`"assets/logo.svg`">", "rel=`"apple-touch-icon`"", "assets/og.png", "twitter:card", "twitter:image", "class=`"skip`"", "navigator.clipboard", "href=`"docs.html`"", "Edit credentials in .env", "/admin", "force HTTPS")) {
     if (-not $landing.Contains($needle)) {
       $failures.Add("index.html missing expected landing polish: $needle")
     }
@@ -102,7 +102,7 @@ if (Test-Path -LiteralPath $landingPath) {
 $docsPath = Join-Path $root "docs.html"
 if (Test-Path -LiteralPath $docsPath) {
   $docs = Get-Content -LiteralPath $docsPath -Raw
-  foreach ($needle in @("class=`"docs-toc`"", "id=`"quick-start`"", "id=`"deployment`"", "id=`"embed`"", "id=`"security`"", "id=`"changelog`"", "data-copy=`"#snippet-feed`"", "TB_ADMIN_EMAIL", "TB_ADMIN_PASSWORD", "Known login link")) {
+  foreach ($needle in @("class=`"docs-toc`"", "id=`"quick-start`"", "id=`"deployment`"", "id=`"embed`"", "id=`"security`"", "id=`"changelog`"", "data-copy=`"#snippet-feed`"", "TB_ADMIN_EMAIL", "TB_ADMIN_PASSWORD", "Known login link", "Auth flow caveats", "first visitor to", "Remove <code>TB_ADMIN_*")) {
     if (-not $docs.Contains($needle)) {
       $failures.Add("docs.html missing expected docs surface: $needle")
     }
