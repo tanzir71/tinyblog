@@ -115,6 +115,11 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing form/focus polish hook: {$needle}";
         }
     }
+    foreach (['render_account_admin', 'render_users_admin', 'change_password', 'add_user', 'delete_user', "password_verify(\$currentPassword", 'session_regenerate_id(true)', 'not self', 'last admin', "'account', 'users'", 'admin_action" value="change_password"', 'admin_action" value="add_user"', 'admin_action" value="delete_user"'] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing account/users hook: {$needle}";
+        }
+    }
     foreach ([
         'confirm_token',
         'unsub_token',
@@ -262,6 +267,15 @@ foreach (['README.md', 'SETUP.md', 'SECURITY.md', 'CHANGELOG.md', 'index.html'] 
         $text = file_get_contents($root . '/' . $doc);
         if (!str_contains($text, 'https://github.com/tanzir71/tinyblog')) {
             $failures[] = "{$doc} missing canonical GitHub link";
+        }
+    }
+}
+
+if (is_file($root . '/README.md')) {
+    $readme = file_get_contents($root . '/README.md');
+    foreach (['Admin -> Account', 'Admin -> Users'] as $needle) {
+        if (!str_contains($readme, $needle)) {
+            $failures[] = "README.md missing account/users admin guidance: {$needle}";
         }
     }
 }

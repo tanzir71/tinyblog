@@ -40,6 +40,7 @@ Top threats are SQL injection, cross-site scripting, cross-site request forgery,
    - Allowed widget origins, for example `https://your-store.example`
 6. Click "Load sample posts" from the dashboard if you want the 3 sample posts.
 7. Create, edit, publish, unpublish, and delete posts from `/admin`; cPanel is only needed for install/recovery tasks.
+8. Use Admin -> Account to change your own password. Admin users can use Admin -> Users to add editors/admins or remove users without editing server files.
 
 Optional config: copy `.env.example` to `.env` on the server if you need custom database/upload/log paths, rate-limit thresholds, or backend-editable admin credentials. `.env` is ignored by git.
 

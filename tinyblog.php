@@ -600,7 +600,7 @@ function can_manage_post(PDO $pdo, array $user, int $postId): bool
 function admin_route_action(): string
 {
     $action = (string) ($_GET['action'] ?? 'dashboard');
-    $allowed = ['dashboard', 'edit', 'media', 'subscribers', 'settings'];
+    $allowed = ['dashboard', 'edit', 'media', 'account', 'users', 'subscribers', 'settings'];
     return in_array($action, $allowed, true) ? $action : 'dashboard';
 }
 
@@ -1827,7 +1827,7 @@ function render_admin(PDO $pdo): void
         } else {
             $user = require_user($pdo);
             require_csrf();
-            if (in_array($postAction, ['save_settings', 'seed_samples', 'export_data', 'import_data'], true)) {
+            if (in_array($postAction, ['save_settings', 'seed_samples', 'export_data', 'import_data', 'add_user', 'delete_user'], true)) {
                 require_admin($user);
             }
             if ($postAction === 'save_post') {
@@ -1849,6 +1849,33 @@ function render_admin(PDO $pdo): void
             if ($postAction === 'delete_media') {
                 $message = delete_media($pdo);
                 $action = 'media';
+            }
+            if ($postAction === 'change_password') {
+                $result = change_password($pdo, $user);
+                if (str_starts_with($result, 'OK:')) {
+                    $message = substr($result, 3);
+                } else {
+                    $error = $result;
+                }
+                $action = 'account';
+            }
+            if ($postAction === 'add_user') {
+                $result = add_user($pdo);
+                if (str_starts_with($result, 'OK:')) {
+                    $message = substr($result, 3);
+                } else {
+                    $error = $result;
+                }
+                $action = 'users';
+            }
+            if ($postAction === 'delete_user') {
+                $result = delete_user($pdo, $user);
+                if (str_starts_with($result, 'OK:')) {
+                    $message = substr($result, 3);
+                } else {
+                    $error = $result;
+                }
+                $action = 'users';
             }
             if ($postAction === 'save_settings') {
                 save_settings($pdo);
@@ -1896,8 +1923,9 @@ function render_admin(PDO $pdo): void
     $blogTitle = setting($pdo, 'blog_title', 'TinyBlog Widget');
     echo admin_head($pdo, 'Admin');
     echo '<div class="site admin-shell"><header class="admin-topbar"><a class="admin-brand" href="' . htmlEscape(url_for('/admin')) . '"><span class="admin-brand-mark">TB</span><span class="admin-brand-name">' . htmlEscape($blogTitle) . '</span></a><div class="admin-topbar-actions"><a class="admin-topbar-link" href="' . htmlEscape(url_for('/')) . '">View site</a><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="logout"><button class="admin-logout" type="submit">Logout</button></form></div></header><div class="admin-layout"><nav class="admin-nav" aria-label="Admin sections">';
-    $nav = ['dashboard' => 'Dashboard', 'edit' => 'New post', 'media' => 'Media'];
+    $nav = ['dashboard' => 'Dashboard', 'edit' => 'New post', 'media' => 'Media', 'account' => 'Account'];
     if (($user['role'] ?? '') === 'admin') {
+        $nav['users'] = 'Users';
         $nav['subscribers'] = 'Subscribers';
         $nav['settings'] = 'Settings';
     }
@@ -1910,10 +1938,18 @@ function render_admin(PDO $pdo): void
     if ($message) {
         echo '<p class="notice success">' . htmlEscape($message) . '</p>';
     }
+    if ($error) {
+        echo '<p class="notice error" role="alert">' . htmlEscape($error) . '</p>';
+    }
     if ($action === 'edit') {
         render_post_form($pdo, $user);
     } elseif ($action === 'media') {
         render_media_admin($pdo);
+    } elseif ($action === 'account') {
+        render_account_admin($pdo, $user);
+    } elseif ($action === 'users') {
+        require_admin($user);
+        render_users_admin($pdo, $user);
     } elseif ($action === 'subscribers') {
         require_admin($user);
         render_subscribers_admin($pdo);
@@ -2377,6 +2413,118 @@ function delete_media(PDO $pdo): string
     $delete = $pdo->prepare('DELETE FROM media WHERE id = :id');
     $delete->execute([':id' => $id]);
     return 'Media deleted.';
+}
+
+function change_password(PDO $pdo, array $user): string
+{
+    if (!rate_limit($pdo, 'password_change_' . (int) $user['id'], 5, 900)) {
+        return 'Too many password change attempts. Try again later.';
+    }
+    $currentPassword = (string) ($_POST['current_password'] ?? '');
+    $newPassword = (string) ($_POST['new_password'] ?? '');
+    $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+    if (strlen($newPassword) < 12) {
+        return 'New password must be at least 12 characters.';
+    }
+    if ($newPassword !== $confirmPassword) {
+        return 'New passwords do not match.';
+    }
+    $stmt = $pdo->prepare('SELECT password_hash FROM users WHERE id = :id LIMIT 1');
+    $stmt->execute([':id' => (int) $user['id']]);
+    $hash = (string) ($stmt->fetchColumn() ?: '');
+    if ($hash === '' || !password_verify($currentPassword, $hash)) {
+        return 'Current password is incorrect.';
+    }
+    $update = $pdo->prepare('UPDATE users SET password_hash = :password_hash WHERE id = :id');
+    $update->execute([
+        ':password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
+        ':id' => (int) $user['id'],
+    ]);
+    session_regenerate_id(true);
+    return 'OK:Password updated.';
+}
+
+function add_user(PDO $pdo): string
+{
+    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+    $name = trim((string) ($_POST['name'] ?? ''));
+    $postedRole = (string) ($_POST['role'] ?? 'editor');
+    $role = in_array($postedRole, ['admin', 'editor'], true) ? $postedRole : 'editor';
+    $password = (string) ($_POST['temporary_password'] ?? '');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return 'Enter a valid email address.';
+    }
+    if (strlen($password) < 12) {
+        return 'Temporary password must be at least 12 characters.';
+    }
+    try {
+        $stmt = $pdo->prepare('INSERT INTO users (email, name, password_hash, role, created_at) VALUES (:email, :name, :password_hash, :role, :created_at)');
+        $stmt->execute([
+            ':email' => $email,
+            ':name' => $name !== '' ? $name : $email,
+            ':password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            ':role' => $role,
+            ':created_at' => now_utc(),
+        ]);
+    } catch (PDOException $exception) {
+        return 'A user with that email already exists.';
+    }
+    return 'OK:User added.';
+}
+
+function delete_user(PDO $pdo, array $currentUser): string
+{
+    $id = (int) ($_POST['user_id'] ?? 0);
+    if ($id <= 0) {
+        return 'Choose a user to delete.';
+    }
+    if ($id === (int) $currentUser['id']) {
+        return 'You can not self delete; choose another user.';
+    }
+    $stmt = $pdo->prepare('SELECT id, role FROM users WHERE id = :id LIMIT 1');
+    $stmt->execute([':id' => $id]);
+    $target = $stmt->fetch();
+    if (!$target) {
+        return 'User not found.';
+    }
+    if (($target['role'] ?? '') === 'admin') {
+        $admins = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn();
+        if ($admins <= 1) {
+            return 'Cannot delete the last admin.';
+        }
+    }
+    $delete = $pdo->prepare('DELETE FROM users WHERE id = :id');
+    $delete->execute([':id' => $id]);
+    return 'OK:User deleted.';
+}
+
+function render_account_admin(PDO $pdo, array $user): void
+{
+    echo '<h1>Account</h1><section class="panel"><h2>Change password</h2><p class="muted">Use a new password with at least 12 characters.</p><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="change_password">';
+    echo '<label>Current password<input type="password" name="current_password" autocomplete="current-password" required></label>';
+    echo '<label>New password<input type="password" name="new_password" minlength="12" autocomplete="new-password" required></label>';
+    echo '<label>Confirm new password<input type="password" name="confirm_password" minlength="12" autocomplete="new-password" required></label>';
+    echo '<button>Update password</button></form></section>';
+}
+
+function render_users_admin(PDO $pdo, array $currentUser): void
+{
+    echo '<h1>Users</h1><section class="panel"><h2>Add user</h2><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="add_user">';
+    echo '<label>Name<input name="name" autocomplete="name"></label><label>Email<input name="email" type="email" autocomplete="email" required></label>';
+    echo '<label>Role<select name="role"><option value="editor">Editor</option><option value="admin">Admin</option></select></label>';
+    echo '<label>Temporary password<input name="temporary_password" type="password" minlength="12" autocomplete="new-password" required></label><button>Add user</button></form></section>';
+    $stmt = $pdo->query('SELECT id, email, name, role, created_at FROM users ORDER BY datetime(created_at) DESC, id DESC');
+    echo '<table><caption>Users</caption><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th><th>Action</th></tr></thead><tbody>';
+    foreach ($stmt->fetchAll() as $row) {
+        echo '<tr><td>' . htmlEscape($row['name']) . '</td><td>' . htmlEscape($row['email']) . '</td><td>' . htmlEscape($row['role']) . '</td><td>' . htmlEscape($row['created_at']) . '</td><td>';
+        if ((int) $row['id'] === (int) $currentUser['id']) {
+            echo '<span class="muted">Current user</span>';
+        } else {
+            echo '<form method="post" onsubmit="return confirm(\'Delete this user?\')">' . csrf_field() . '<input type="hidden" name="admin_action" value="delete_user"><input type="hidden" name="user_id" value="' . (int) $row['id'] . '"><button class="secondary">Delete</button></form>';
+        }
+        echo '</td></tr>';
+    }
+    echo '</tbody></table>';
 }
 
 function render_media_admin(PDO $pdo): void

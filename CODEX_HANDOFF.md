@@ -199,7 +199,7 @@ Design direction: same spec-sheet aesthetic as the landing page — paper backgr
 **Do:** Consistent field spacing, `:focus-visible` accent ring on every input/button/link, success notice (accent-soft bg) vs error notice (distinct, with `role="alert"`), table `<caption>` or aria-labels, button hover states, `aria-busy` on preview while rendering. Login/create-first-admin screens get the same shell treatment (centered narrow card, product mark, link back to site).
 **Accept:** Tab through every admin screen — focus always visible; errors announced; login screen looks like the same product as the landing page.
 
-### T3.6 — Account self-service: change password + manage users `[ ]`
+### T3.6 — Account self-service: change password + manage users `[x]`
 **Files:** `tinyblog.php` (`render_admin()` actions, new `render_account_admin()` / `render_users_admin()`), README.
 **Why:** The login error says "Ask an admin to add users" but **no add-user UI exists**, and password change currently requires `.env` editing via cPanel — contradicting the no-cPanel promise. This is the one *functional* gap in this plan.
 **Do:** Add "Account" (all roles): change own password (verify current, min 12, `password_hash()`, `session_regenerate_id()`). Add "Users" (admin only): list users, add user (email/name/role/temp password), delete user (not self, not last admin). All CSRF-protected prepared statements. Rate-limit password change attempts.
