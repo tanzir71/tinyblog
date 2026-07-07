@@ -110,6 +110,11 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing media grid hook: {$needle}";
         }
     }
+    foreach ([':focus-visible', 'notice success', 'role="alert"', 'auth-card', 'auth-mark', '<caption>', 'button:hover'] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing form/focus polish hook: {$needle}";
+        }
+    }
     foreach ([
         'confirm_token',
         'unsub_token',

@@ -1357,6 +1357,7 @@ function css_base(string $accent): string
         *{box-sizing:border-box}
         body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;letter-spacing:0}
         a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
+        a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
         img{max-width:100%;height:auto}
         input,textarea,select,button{font:inherit}
         .site{width:min(var(--max),calc(100% - 32px));margin:0 auto}
@@ -1397,6 +1398,10 @@ function css_base(string $accent): string
         .admin-topbar-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end}
         .admin-topbar-link,.admin-logout{color:var(--muted);font-size:14px;font-weight:650;text-decoration:none}
         .admin-topbar-link:hover,.admin-logout:hover{color:var(--text)}
+        .auth-shell{min-height:100vh;display:grid;place-items:center;padding:40px 0}
+        .auth-card{width:min(100%,440px);border:1px solid var(--line);background:var(--panel);padding:24px}
+        .auth-brand{display:inline-flex;align-items:center;gap:10px;margin:0 0 22px;text-decoration:none;font-weight:800}
+        .auth-mark{display:inline-grid;place-items:center;width:28px;height:28px;background:var(--text);color:var(--paper);font-size:12px;font-weight:800}
         .admin-layout{display:grid;grid-template-columns:1fr;gap:20px;padding:24px 0}
         .admin-nav{display:flex;gap:16px;overflow-x:auto;padding:0 0 10px;border-bottom:1px solid var(--line)}
         .admin-nav-link{color:var(--muted);text-decoration:none;font-size:14px;font-weight:700;padding:8px 0 9px;border-bottom:2px solid transparent;white-space:nowrap}
@@ -1436,15 +1441,19 @@ function css_base(string $accent): string
         .media-card-body code{font-size:12px;word-break:break-all}
         .media-card-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .button,button{border:1px solid var(--text);background:var(--text);color:var(--paper);text-decoration:none;padding:10px 13px;border-radius:0;cursor:pointer;font-weight:650;font-size:14px}
+        .button:hover,button:hover{background:transparent;color:var(--text)}
         .button.secondary,button.secondary{background:var(--panel);color:var(--text)}
+        .button.secondary:hover,button.secondary:hover{background:var(--text);color:var(--paper)}
         .admin-logout{border:0;background:transparent;padding:0}
         label{display:grid;gap:7px;font-size:13px;font-weight:650;margin:0 0 14px}
         input,textarea,select{width:100%;border:1px solid var(--line);padding:11px 12px;background:var(--panel);color:var(--text)}
         textarea{min-height:230px;line-height:1.55}
         table{width:100%;border-collapse:collapse;font-size:14px}
+        caption{text-align:left;font-weight:800;margin:18px 0 8px}
         th,td{text-align:left;border-bottom:1px solid var(--line);padding:10px 8px;vertical-align:top}
         .notice{padding:12px 14px;border:1px solid var(--line);background:var(--soft);margin:0 0 18px}
-        .error{border-color:var(--line-strong);background:var(--panel)}
+        .notice.success{border-color:var(--accent);background:var(--accent-soft)}
+        .notice.error,.error{border-color:var(--line-strong);background:var(--panel)}
         .footer{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted);font-size:13px;line-height:1.6}
         @media(min-width:820px){.grid{grid-template-columns:minmax(0,1fr) 280px}.admin-layout{grid-template-columns:180px minmax(0,1fr);align-items:start}.admin-nav{display:grid;gap:4px;align-content:start;border-bottom:0;border-right:1px solid var(--line);padding:0 18px 0 0;overflow:visible}.admin-nav-link{padding:9px 0}.admin-content{max-width:980px}}
         @media(min-width:1000px){.editor-grid{grid-template-columns:minmax(0,1fr) minmax(320px,.8fr)}.editor-preview.is-collapsed{display:block}.editor-preview{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow:auto}}
@@ -1863,9 +1872,9 @@ function render_admin(PDO $pdo): void
 
     if (!$user) {
         echo admin_head($pdo, user_count($pdo) === 0 ? 'Create admin' : 'Login');
-        echo '<main class="site article">';
+        echo '<main class="site auth-shell"><section class="auth-card"><a class="auth-brand" href="' . htmlEscape(url_for('/')) . '"><span class="auth-mark">TB</span><span>TinyBlog</span></a>';
         if ($error) {
-            echo '<p class="notice error">' . htmlEscape($error) . '</p>';
+            echo '<p class="notice error" role="alert">' . htmlEscape($error) . '</p>';
         }
         if (user_count($pdo) === 0) {
             echo '<h1>Create first admin</h1><p class="muted">No default admin credentials ship with TinyBlog Widget.</p>';
@@ -1880,7 +1889,7 @@ function render_admin(PDO $pdo): void
             echo '<label>Password<input name="password" type="password" required autocomplete="current-password"></label>';
             echo '<button>Login</button></form>';
         }
-        echo '</main></body></html>';
+        echo '</section></main></body></html>';
         exit;
     }
 
@@ -1899,7 +1908,7 @@ function render_admin(PDO $pdo): void
     }
     echo '</nav><main class="admin-content">';
     if ($message) {
-        echo '<p class="notice">' . htmlEscape($message) . '</p>';
+        echo '<p class="notice success">' . htmlEscape($message) . '</p>';
     }
     if ($action === 'edit') {
         render_post_form($pdo, $user);
@@ -2018,7 +2027,7 @@ function render_dashboard_admin(PDO $pdo, array $user): void
         }
         echo '</div></section>';
     } else {
-        echo '<table aria-label="Recent posts"><thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Updated</th></tr></thead><tbody>';
+        echo '<table aria-label="Recent posts"><caption>Recent posts</caption><thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Updated</th></tr></thead><tbody>';
         foreach ($posts as $post) {
             $status = dashboard_status_label($post);
             $statusClass = preg_replace('/[^a-z-]/', '', $status) ?: 'draft';
@@ -2041,7 +2050,7 @@ function render_dashboard_admin(PDO $pdo, array $user): void
     }
     $top = $pdo->prepare('SELECT title, slug, view_count FROM posts WHERE site = :site AND view_count > 0 ORDER BY view_count DESC, datetime(updated_at) DESC LIMIT 5');
     $top->execute([':site' => $site]);
-    echo '<h2>Top posts</h2><table><thead><tr><th>Post</th><th>Views</th></tr></thead><tbody>';
+    echo '<h2>Top posts</h2><table><caption>Top posts by views</caption><thead><tr><th>Post</th><th>Views</th></tr></thead><tbody>';
     foreach ($top->fetchAll() as $post) {
         echo '<tr><td><a href="' . htmlEscape(url_for('/post/' . rawurlencode($post['slug']))) . '">' . htmlEscape($post['title']) . '</a></td><td>' . (int) $post['view_count'] . '</td></tr>';
     }
@@ -2428,7 +2437,7 @@ function render_subscribers_admin(PDO $pdo): void
     echo '<p class="notice">Confirmed subscribers: ' . (int) $count->fetchColumn() . '</p>';
     $stmt = $pdo->prepare('SELECT email, status, consent_at, confirm_token, unsub_token FROM subscribers WHERE site = :site ORDER BY datetime(consent_at) DESC LIMIT 200');
     $stmt->execute([':site' => setting($pdo, 'site_key', 'store-1')]);
-    echo '<table><thead><tr><th>Email</th><th>Status</th><th>Consent</th><th>Links</th></tr></thead><tbody>';
+    echo '<table><caption>Subscriber list</caption><thead><tr><th>Email</th><th>Status</th><th>Consent</th><th>Links</th></tr></thead><tbody>';
     foreach ($stmt->fetchAll() as $row) {
         $links = '';
         if (!empty($row['confirm_token'])) {

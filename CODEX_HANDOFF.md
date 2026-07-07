@@ -194,7 +194,7 @@ Design direction: same spec-sheet aesthetic as the landing page — paper backgr
 **Do:** Replace the media table with a responsive thumbnail grid (square crop via CSS `object-fit`), each cell showing filename, alt text, a "Copy Markdown" button (`![alt](url)` to clipboard), and delete-with-confirm. Upload form gets a drag-over highlight (CSS `:has()`-free, simple JS class toggle) — still a normal `<input type=file>` POST underneath, no XHR required.
 **Accept:** Grid at 3–4 cols desktop / 2 mobile; Copy Markdown works; delete still removes file + row; upload still image-only server-side.
 
-### T3.5 — Forms, notices, focus states — global pass `[ ]`
+### T3.5 — Forms, notices, focus states — global pass `[x]`
 **Files:** `tinyblog.php` (`css_base()` + admin markup).
 **Do:** Consistent field spacing, `:focus-visible` accent ring on every input/button/link, success notice (accent-soft bg) vs error notice (distinct, with `role="alert"`), table `<caption>` or aria-labels, button hover states, `aria-busy` on preview while rendering. Login/create-first-admin screens get the same shell treatment (centered narrow card, product mark, link back to site).
 **Accept:** Tab through every admin screen — focus always visible; errors announced; login screen looks like the same product as the landing page.
