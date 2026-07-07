@@ -184,7 +184,7 @@ Design direction: same spec-sheet aesthetic as the landing page — paper backgr
 **Do:** Add a 3–4 cell stat strip (published count, drafts, confirmed subscribers, views 30d — all from existing tables). Posts table gets: status as a small badge (`draft` = outline, `published` = solid, `scheduled` = accent outline when `publish_at` future), pinned indicator, relative dates ("2d ago", title attr = full UTC), row hover, and per-row quick actions (Edit / View / Unpublish-Publish as small links). Empty state when no posts: bordered panel with "Write your first post" primary button + "Load sample posts" secondary.
 **Accept:** Fresh install shows the empty state; seeded install shows badges/relative dates; all quick actions CSRF-protected forms or plain GET links to existing routes; no new SQL beyond simple prepared aggregates.
 
-### T3.3 — Editor: two-pane preview + writing ergonomics `[ ]`
+### T3.3 — Editor: two-pane preview + writing ergonomics `[x]`
 **Files:** `tinyblog.php` (`render_post_form()` + admin CSS).
 **Do:** At ≥1000px, editor becomes side-by-side textarea | live preview (existing preview JS already renders; make it live-on-input with 300ms debounce instead of toggle-only; keep toggle for narrow screens). Add above the textarea: a compact mono toolbar with B / I / code / link / image buttons that wrap selection with Markdown (pure JS, ~30 lines). Move Excerpt/hero/tags/date/status/pinned into a collapsible right rail or `<details>` "Post settings" so writing is the default focus. Autosave status stays. Add `Ctrl/Cmd+S` → submit form.
 **Accept:** Typing updates preview live; toolbar inserts correct Markdown around selection; Cmd+S saves; mobile layout unbroken; no external editor libs.

@@ -100,6 +100,11 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing dashboard refinement hook: {$needle}";
         }
     }
+    foreach (['editor-grid', 'markdown-toolbar', 'data-wrap-prefix', 'Post settings', 'renderLivePreview', 'setTimeout(renderLivePreview, 300)', 'aria-busy', 'postForm.requestSubmit', 'event.ctrlKey || event.metaKey'] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing editor ergonomics hook: {$needle}";
+        }
+    }
     foreach ([
         'confirm_token',
         'unsub_token',

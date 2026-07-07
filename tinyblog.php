@@ -1416,6 +1416,17 @@ function css_base(string $accent): string
         .row-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:13px}
         .link-button{border:0;background:transparent;color:inherit;padding:0;font:inherit;font-weight:650;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
         .empty-state{border:1px solid var(--line);background:var(--panel);padding:22px;margin:18px 0}
+        .editor-grid{display:grid;gap:18px;align-items:start}
+        .editor-main,.editor-side{min-width:0}
+        .editor-main textarea{min-height:460px}
+        .markdown-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+        .markdown-toolbar button{min-width:34px;padding:7px 9px;background:var(--panel);color:var(--text)}
+        .editor-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+        .editor-preview{background:var(--panel)}
+        .editor-preview.is-collapsed{display:none}
+        .editor-preview[aria-busy=\"true\"]{opacity:.72}
+        .post-settings{border:1px solid var(--line);background:var(--panel);padding:14px;margin-top:16px}
+        .post-settings summary{cursor:pointer;font-weight:800;margin:-2px 0 12px}
         .button,button{border:1px solid var(--text);background:var(--text);color:var(--paper);text-decoration:none;padding:10px 13px;border-radius:0;cursor:pointer;font-weight:650;font-size:14px}
         .button.secondary,button.secondary{background:var(--panel);color:var(--text)}
         .admin-logout{border:0;background:transparent;padding:0}
@@ -1428,6 +1439,7 @@ function css_base(string $accent): string
         .error{border-color:var(--line-strong);background:var(--panel)}
         .footer{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted);font-size:13px;line-height:1.6}
         @media(min-width:820px){.grid{grid-template-columns:minmax(0,1fr) 280px}.admin-layout{grid-template-columns:180px minmax(0,1fr);align-items:start}.admin-nav{display:grid;gap:4px;align-content:start;border-bottom:0;border-right:1px solid var(--line);padding:0 18px 0 0;overflow:visible}.admin-nav-link{padding:9px 0}.admin-content{max-width:980px}}
+        @media(min-width:1000px){.editor-grid{grid-template-columns:minmax(0,1fr) minmax(320px,.8fr)}.editor-preview.is-collapsed{display:block}.editor-preview{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow:auto}}
     ";
 }
 
@@ -2058,21 +2070,25 @@ function render_post_form(PDO $pdo, array $user): void
     }
     echo '<h1>' . ($post['id'] ? 'Edit post' : 'New post') . '</h1>';
     echo '<form method="post" id="postForm">' . csrf_field() . '<input type="hidden" name="admin_action" value="save_post"><input type="hidden" name="id" value="' . htmlEscape((string) $post['id']) . '">';
+    echo '<div class="editor-grid"><section class="editor-main">';
     echo '<label>Title<input name="title" id="title" value="' . htmlEscape($post['title']) . '" required></label>';
     echo '<label>Slug<input name="slug" id="slug" value="' . htmlEscape($post['slug']) . '" placeholder="auto-generated"></label>';
+    echo '<div class="markdown-toolbar" aria-label="Markdown toolbar"><button type="button" class="secondary" data-wrap-prefix="**" data-wrap-suffix="**" title="Bold"><strong>B</strong></button><button type="button" class="secondary" data-wrap-prefix="*" data-wrap-suffix="*" title="Italic"><em>I</em></button><button type="button" class="secondary" data-wrap-prefix="`" data-wrap-suffix="`" title="Code">code</button><button type="button" class="secondary" data-wrap-prefix="[" data-wrap-suffix="](https://)" title="Link">link</button><button type="button" class="secondary" data-wrap-prefix="![" data-wrap-suffix="](/uploads/image.jpg)" title="Image">img</button></div>';
     echo '<label>Markdown body<textarea name="body_markdown" id="body_markdown" required>' . htmlEscape($post['body_markdown']) . '</textarea></label>';
-    echo '<div class="toolbar"><button type="button" class="secondary" id="previewToggle">Preview</button><span class="muted" id="autosaveStatus">Autosave ready</span></div><div class="editor-preview content" id="preview" hidden></div>';
+    echo '</section><aside class="editor-side"><div class="editor-actions"><button type="button" class="secondary" id="previewToggle">Preview</button><span class="muted" id="autosaveStatus">Autosave ready</span></div><div class="editor-preview content" id="preview" aria-live="polite" aria-busy="false"></div>';
+    echo '<details class="post-settings" open><summary>Post settings</summary>';
     echo '<label>Excerpt<textarea name="excerpt" style="min-height:90px">' . htmlEscape($post['excerpt']) . '</textarea></label>';
     echo '<label>Featured image URL<input name="hero_image_url" value="' . htmlEscape((string) $post['hero_image_url']) . '" placeholder="https://... or uploaded media URL"></label>';
     echo '<label>Tags<input name="tags" value="' . htmlEscape($post['tags']) . '" placeholder="updates, product, notes"></label>';
     echo '<label>Publish date<input name="publish_at" value="' . htmlEscape(post_publish_at($post)) . '"></label>';
     echo '<label>Status<select name="status"><option value="draft"' . ($post['status'] === 'draft' ? ' selected' : '') . '>Draft</option><option value="published"' . ($post['status'] === 'published' ? ' selected' : '') . '>Published</option></select></label>';
     echo '<label><input type="checkbox" name="pinned" value="1" ' . ((int) ($post['pinned'] ?? 0) === 1 ? 'checked' : '') . '> Pin to top of home listing</label>';
-    echo '<button>Save</button></form>';
+    echo '</details></aside></div><button>Save</button></form>';
     if (!empty($post['id'])) {
         echo '<form method="post" onsubmit="return confirm(\'Delete this post permanently?\')" style="margin-top:12px">' . csrf_field() . '<input type="hidden" name="admin_action" value="delete_post"><input type="hidden" name="id" value="' . (int) $post['id'] . '"><button class="secondary">Delete post</button></form>';
     }
     echo '<script>
+        const postForm = document.getElementById("postForm");
         const title = document.getElementById("title");
         const slug = document.getElementById("slug");
         const body = document.getElementById("body_markdown");
@@ -2082,7 +2098,22 @@ function render_post_form(PDO $pdo, array $user): void
         if (!body.value && localStorage.getItem(key)) body.value = localStorage.getItem(key);
         title.addEventListener("input", () => { if (!slug.dataset.touched) slug.value = title.value.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); });
         slug.addEventListener("input", () => slug.dataset.touched = "1");
-        body.addEventListener("input", () => { localStorage.setItem(key, body.value); status.textContent = "Draft saved locally"; });
+        body.addEventListener("input", () => { localStorage.setItem(key, body.value); status.textContent = "Draft saved locally"; schedulePreview(); });
+        document.querySelectorAll(".markdown-toolbar [data-wrap-prefix]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const start = body.selectionStart || 0;
+            const end = body.selectionEnd || start;
+            const selected = body.value.slice(start, end);
+            const prefix = button.dataset.wrapPrefix || "";
+            const suffix = button.dataset.wrapSuffix || "";
+            const fallback = selected || (prefix.startsWith("![") ? "alt text" : prefix === "[" ? "link text" : "text");
+            body.value = body.value.slice(0, start) + prefix + fallback + suffix + body.value.slice(end);
+            const cursor = start + prefix.length + fallback.length;
+            body.focus();
+            body.setSelectionRange(cursor, cursor);
+            body.dispatchEvent(new Event("input", { bubbles: true }));
+          });
+        });
         const escapePreview = (value) => value.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char]));
         const safePreviewUrl = (value) => {
           if (value.startsWith("/uploads/") || value.startsWith("./uploads/")) return true;
@@ -2121,10 +2152,28 @@ function render_post_form(PDO $pdo, array $user): void
           flushParagraph(); flushList(); flushCode();
           return html;
         };
-        document.getElementById("previewToggle").addEventListener("click", () => {
-          preview.hidden = !preview.hidden;
+        let previewTimer = null;
+        const renderLivePreview = () => {
+          preview.setAttribute("aria-busy", "true");
           preview.innerHTML = renderPreview(body.value);
+          preview.setAttribute("aria-busy", "false");
+        };
+        const schedulePreview = () => {
+          window.clearTimeout(previewTimer);
+          preview.setAttribute("aria-busy", "true");
+          previewTimer = setTimeout(renderLivePreview, 300);
+        };
+        document.getElementById("previewToggle").addEventListener("click", () => {
+          preview.classList.toggle("is-collapsed");
+          renderLivePreview();
         });
+        document.addEventListener("keydown", (event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+            event.preventDefault();
+            postForm.requestSubmit();
+          }
+        });
+        renderLivePreview();
     </script>';
 }
 
