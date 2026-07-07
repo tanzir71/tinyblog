@@ -82,6 +82,11 @@ if (is_file($root . '/tinyblog.php')) {
     if (str_contains($php, 'Small posts, clean embeds.')) {
         $failures[] = 'tinyblog.php should not hardcode the old home hero tagline.';
     }
+    foreach (['function app_icon_head_tags', "is_file(__DIR__ . '/assets/logo.svg')", '<link rel="icon" href="/assets/logo.svg">', 'name="theme-color" content="#f4f3ee"', 'name="theme-color" content="#131210"', 'echo app_icon_head_tags();', "app_icon_head_tags() . '<style>' . css_base(\$accent)"] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing favicon/theme-color head parity hook: {$needle}";
+        }
+    }
     foreach ([
         'confirm_token',
         'unsub_token',

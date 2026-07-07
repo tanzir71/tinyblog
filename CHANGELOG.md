@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Added guarded favicon and light/dark theme-color metadata to public and admin PHP pages.
 - Added configurable home-page heading and intro settings, with the blog title as the default hero heading.
 - Added shared-token `prefers-color-scheme` dark mode for public and admin PHP surfaces.
 - Ported the marketing design tokens into the PHP app and widget defaults so public, admin, and embed surfaces share one palette.

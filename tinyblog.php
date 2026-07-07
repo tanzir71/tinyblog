@@ -1266,6 +1266,14 @@ function handle_api(PDO $pdo, string $path): void
     json_response(['error' => 'API route not found.'], 404);
 }
 
+function app_icon_head_tags(): string
+{
+    if (!is_file(__DIR__ . '/assets/logo.svg')) {
+        return '';
+    }
+    return '<link rel="icon" href="/assets/logo.svg"><meta name="theme-color" content="#f4f3ee" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#131210" media="(prefers-color-scheme: dark)">';
+}
+
 function render_page(PDO $pdo, string $title, string $body, array $meta = []): void
 {
     $blogTitle = setting($pdo, 'blog_title', 'TinyBlog Widget');
@@ -1299,6 +1307,7 @@ function render_page(PDO $pdo, string $title, string $body, array $meta = []): v
     }
     echo '<link rel="alternate" type="application/rss+xml" title="' . htmlEscape($blogTitle) . '" href="' . htmlEscape(url_for('/feed.xml')) . '">';
     echo '<link rel="alternate" type="application/feed+json" title="' . htmlEscape($blogTitle) . '" href="' . htmlEscape(url_for('/feed.json')) . '">';
+    echo app_icon_head_tags();
     echo '<style>';
     echo css_base($accent);
     echo '</style></head><body><div class="site">';
@@ -1861,7 +1870,7 @@ function admin_head(PDO $pdo, string $title): string
 {
     security_headers('html');
     $accent = setting($pdo, 'accent_color', '#2436d4');
-    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . htmlEscape($title) . ' - TinyBlog Admin</title><style>' . css_base($accent) . '.editor-preview{border:1px solid var(--line);padding:14px;min-height:180px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}</style></head><body>';
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . htmlEscape($title) . ' - TinyBlog Admin</title>' . app_icon_head_tags() . '<style>' . css_base($accent) . '.editor-preview{border:1px solid var(--line);padding:14px;min-height:180px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}</style></head><body>';
 }
 
 function render_dashboard_admin(PDO $pdo, array $user): void

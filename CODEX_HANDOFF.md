@@ -134,7 +134,7 @@ Keep the admin "accent color" setting working: it overrides `--accent` only (val
 **Do:** Add settings `home_heading` (default: blog title) and `home_intro` (default: empty → hide the `<p>`). Render via `htmlEscape()`. Add both fields to Settings with helper text.
 **Accept:** Fresh install shows the blog title as hero, not "Small posts, clean embeds." Settings round-trips both values. Empty intro renders no empty element.
 
-### T1.5 — Favicon + basic head parity on app pages `[ ]`
+### T1.5 — Favicon + basic head parity on app pages `[x]`
 **Files:** `tinyblog.php` (`render_page()`, `admin_head()`).
 **Do:** Emit `<link rel="icon" href="/assets/logo.svg">` and `<meta name="theme-color">` (paper color, both schemes) on public + admin pages. Guard: only when `assets/logo.svg` exists (`is_file(__DIR__ . '/assets/logo.svg')`).
 **Accept:** Browser tab shows the TB mark on `/`, `/post/*`, `/admin`.
