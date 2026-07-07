@@ -148,7 +148,7 @@ Keep the admin "accent color" setting working: it overrides `--accent` only (val
 **Do:** Replace the static "code card" *adjacent* hero panel (keep the code card itself — it's good) with a real mounted widget: load `tinyblog-widget.js` from the repo and `TinyBlogWidget.init({ container:"#live-demo", endpoint:"demo", widgetType:"feed", maxItems:3 })` won't work against static hosting because the widget fetches `{endpoint}/posts`. So: add a tiny fetch-shim OR (preferred, zero widget changes) host `demo/posts` as a static JSON file and set `endpoint:"demo"` → verify the widget's `apiUrl()` produces `demo/posts?...` and GitHub Pages serves extensionless files; if it doesn't, name the file `demo/posts` with a `_headers`-equivalent or fall back to a 10-line inline mock of `window.fetch` scoped to the demo URL. Caption it: "This is the actual widget, rendering the actual JSON."
 **Accept:** Landing page hero area renders a real feed via `tinyblog-widget.js` with 3 demo posts; JS console clean; graceful static fallback (`<noscript>` + error state) if fetch fails.
 
-### T2.2 — Admin screenshots section `[ ]`
+### T2.2 — Admin screenshots section `[x]`
 **Files:** `index.html`, `assets/shot-admin-*.png` (Codex: generate by running `php -S`, seeding samples, and capturing at 1440px, light + dark).
 **Do:** Add a "What the admin looks like" section after Features: 2–3 real screenshots (dashboard, editor with preview, media) in a bordered figure with mono captions. Lazy-load (`loading="lazy"`), width/height attributes set. NOTE: do this task AFTER Phase 3 lands so the screenshots show the refined admin.
 **Accept:** Screenshots are of the real refined admin, crisp at 2x, < 150 KB each (use `optipng`/`pngquant` equivalent or export at quality that hits budget).

@@ -239,6 +239,11 @@ if (is_file($root . '/index.html')) {
             $failures[] = "index.html missing honest proof copy: {$needle}";
         }
     }
+    foreach (['What the admin looks like', 'assets/shot-admin-dashboard.png', 'assets/shot-admin-editor.png', 'assets/shot-admin-media.png', 'loading="lazy"', 'width="720"', 'height="450"'] as $needle) {
+        if (!str_contains($landing, $needle)) {
+            $failures[] = "index.html missing admin screenshot proof: {$needle}";
+        }
+    }
     foreach (['SYS', 'MIT · Commercial ok'] as $needle) {
         if (str_contains($landing, $needle)) {
             $failures[] = "index.html should not keep filler/duplicated proof copy: {$needle}";
@@ -397,6 +402,21 @@ if (is_file($root . '/assets/og.png')) {
     $info = getimagesize($root . '/assets/og.png');
     if ($info === false || (int) $info[0] !== 1200 || (int) $info[1] !== 630) {
         $failures[] = 'assets/og.png must be a 1200x630 PNG.';
+    }
+}
+
+foreach (['dashboard', 'editor', 'media'] as $shot) {
+    $file = $root . "/assets/shot-admin-{$shot}.png";
+    if (!is_file($file)) {
+        $failures[] = "Missing admin screenshot asset: assets/shot-admin-{$shot}.png";
+        continue;
+    }
+    $info = getimagesize($file);
+    if ($info === false || (int) $info[0] !== 1440 || (int) $info[1] !== 900) {
+        $failures[] = "assets/shot-admin-{$shot}.png must be a 1440x900 PNG.";
+    }
+    if (filesize($file) > 150 * 1024) {
+        $failures[] = "assets/shot-admin-{$shot}.png must stay under 150 KB.";
     }
 }
 

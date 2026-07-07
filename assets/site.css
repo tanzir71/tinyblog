@@ -227,6 +227,18 @@ em { font-style: italic; }
 .cell p { color: var(--muted); font-size: var(--fs-small); max-width: 44ch; }
 .cell .sig { display: inline-block; margin-top: var(--s-3); padding: 3px 8px; border: 1px solid var(--line-2); font: 500 0.72rem/1.4 var(--mono); color: var(--ink-soft); }
 
+/* ---------- Admin screenshots ---------- */
+.shot-grid { display: grid; grid-template-columns: 1fr; gap: var(--s-5); margin-top: var(--s-6); }
+.shot { margin: 0; border: 1px solid var(--line-strong); background: var(--panel); }
+.shot img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--line); }
+.shot figcaption {
+  padding: var(--s-3) var(--s-4);
+  font: 600 var(--fs-label)/1.5 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 /* ---------- Compare cards ---------- */
 .vs-grid { display: grid; grid-template-columns: 1fr; gap: 0; border-top: 1px solid var(--line); margin-top: var(--s-6); }
 .vs { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-5) 0; border-bottom: 1px solid var(--line); }
@@ -372,6 +384,7 @@ footer { padding: var(--s-7) 0 var(--s-8); border-top: 1px solid var(--line); }
   .stats { grid-template-columns: repeat(4, 1fr); }
   .grid, .vs-grid { grid-template-columns: repeat(2, 1fr); column-gap: var(--s-6); }
   .cell, .vs { padding: var(--s-6) 0; }
+  .shot-grid { grid-template-columns: repeat(3, 1fr); }
   .choose { grid-template-columns: 1fr 1fr; column-gap: var(--s-7); }
   .foot-cols { grid-template-columns: 2fr 1fr 1fr 1fr; }
   .flow { grid-template-columns: repeat(3, 1fr); }

@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Added a landing-page admin screenshots section with optimized dashboard, editor, and media PNG assets.
 - Swept static landing/docs/comparison pages for single-h1 structure, absolute social images, focus-visible coverage, and labeled demo-region semantics.
 - Replaced landing-page filler section labels and duplicated stat claims with verifiable proof copy plus a direct source link.
 - Added a DropInBlog comparison page and promoted it as the primary embed-product comparison, with the older Disqus page reframed as third-party embed widgets.
