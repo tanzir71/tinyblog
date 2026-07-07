@@ -210,6 +210,16 @@ if (is_file($root . '/index.html')) {
             $failures[] = "index.html missing DropInBlog comparison hook: {$needle}";
         }
     }
+    foreach (['How it works', 'Setup', 'Features', 'Compare', 'Scope', 'Quick start', '2 files to deploy', '~140 KB, no deps', '0 external requests on your blog', '5-min cPanel install', 'Read the source', 'github.com/tanzir71/tinyblog/blob/main/tinyblog.php'] as $needle) {
+        if (!str_contains($landing, $needle)) {
+            $failures[] = "index.html missing honest proof copy: {$needle}";
+        }
+    }
+    foreach (['SYS', 'MIT · Commercial ok'] as $needle) {
+        if (str_contains($landing, $needle)) {
+            $failures[] = "index.html should not keep filler/duplicated proof copy: {$needle}";
+        }
+    }
 }
 
 if (is_file($root . '/demo/posts')) {

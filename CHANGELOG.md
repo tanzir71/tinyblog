@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Replaced landing-page filler section labels and duplicated stat claims with verifiable proof copy plus a direct source link.
 - Added a DropInBlog comparison page and promoted it as the primary embed-product comparison, with the older Disqus page reframed as third-party embed widgets.
 - Added a landing-page hero demo that mounts the real TinyBlog widget against static demo JSON.
 - Added account password changes and admin user management for adding/deleting editor or admin users without server-file edits.

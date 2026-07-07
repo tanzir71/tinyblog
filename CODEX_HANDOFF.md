@@ -158,7 +158,7 @@ Keep the admin "accent color" setting working: it overrides `--accent` only (val
 **Do:** Honest table: DropInBlog $49–$99/mo hosted vs TinyBlog $0 self-hosted; their managed convenience/support vs your ownership/no-tracker/no-per-seat. Make DropInBlog the FIRST card in the landing compare grid (it's the same product category; Substack/Ghost/WordPress follow). Keep the Disqus page but retitle its framing to "vs third-party embed widgets".
 **Accept:** New page matches the design system, factually accurate (prices as of mid-2026, say "from $49/mo"), linked from landing + compare + footer.
 
-### T2.4 — Proof strip + honest numbers `[ ]`
+### T2.4 — Proof strip + honest numbers `[x]`
 **Files:** `index.html`.
 **Do:** Replace the "SYS · 0N" filler labels with plain section labels ("How it works", "Setup", …) in the same mono style. In the stats strip, replace "$0 / MIT" duplication with verifiable facts: file count (`2 files to deploy`), backend size (`~110 KB, no deps`), `0 external requests on your blog` (true after T1.1), `5-min cPanel install`. Add a quiet link "Read the source — it's one file" → GitHub blob link.
 **Accept:** Every number on the page is verifiable from the repo; no invented stats, no fake testimonials.

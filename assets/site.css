@@ -176,8 +176,11 @@ em { font-style: italic; }
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; margin-top: var(--s-7); border-top: 1px solid var(--line); }
 .stat { padding: var(--s-5) var(--s-5) var(--s-5) 0; }
 .stat + .stat { border-left: 1px solid var(--line); padding-left: var(--s-5); }
-.stat-num { font-size: var(--fs-stat); font-weight: 650; letter-spacing: -0.03em; line-height: 1; }
+.stat-num { font-size: var(--fs-stat); font-weight: 650; letter-spacing: 0; line-height: 1; }
 .stat-label { margin-top: var(--s-3); font: 600 var(--fs-label)/1.5 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.proof-note { margin: var(--s-3) 0 0; font: 600 var(--fs-small)/1.5 var(--mono); color: var(--muted); }
+.proof-note a { color: inherit; text-underline-offset: 4px; text-decoration-color: color-mix(in oklab, var(--muted) 45%, transparent); }
+.proof-note a:hover { color: var(--ink); text-decoration-color: var(--ink); }
 
 /* ---------- Code card ---------- */
 .code-card { border: 1px solid var(--line-strong); background: var(--code-bg); color: var(--code-fg); align-self: start; }
