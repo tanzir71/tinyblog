@@ -74,6 +74,14 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing expected feature hook: {$needle}";
         }
     }
+    foreach (['home_heading', 'home_intro', "setting(\$pdo, 'home_heading'", "setting(\$pdo, 'home_intro'", "'home_heading', 'home_intro'"] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing configurable home hero hook: {$needle}";
+        }
+    }
+    if (str_contains($php, 'Small posts, clean embeds.')) {
+        $failures[] = 'tinyblog.php should not hardcode the old home hero tagline.';
+    }
     foreach ([
         'confirm_token',
         'unsub_token',

@@ -239,6 +239,8 @@ function init_db(PDO $pdo): void
         'allowed_origins' => '',
         'accent_color' => '#2436d4',
         'canonical_base' => base_url(),
+        'home_heading' => '',
+        'home_intro' => '',
         'about_text' => 'TinyBlog Widget is a small privacy-friendly publishing feed. No third-party trackers are enabled by default.',
     ];
     $stmt = $pdo->prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (:key, :value)');
@@ -1410,7 +1412,16 @@ function render_home(PDO $pdo, int $page = 1): void
     $rows = $stmt->fetchAll();
     $hasMore = count($rows) > $perPage;
     $posts = array_slice($rows, 0, $perPage);
-    $body = '<section class="hero"><h1>Small posts, clean embeds.</h1><p>Canonical TinyBlog pages for search, RSS, and readers who open widget links.</p></section><main class="grid"><section class="post-list">';
+    $homeHeading = trim(setting($pdo, 'home_heading', ''));
+    if ($homeHeading === '') {
+        $homeHeading = setting($pdo, 'blog_title', 'TinyBlog Widget');
+    }
+    $homeIntro = trim(setting($pdo, 'home_intro', ''));
+    $body = '<section class="hero"><h1>' . htmlEscape($homeHeading) . '</h1>';
+    if ($homeIntro !== '') {
+        $body .= '<p>' . htmlEscape($homeIntro) . '</p>';
+    }
+    $body .= '</section><main class="grid"><section class="post-list">';
     if (!$posts) {
         $body .= '<p class="muted">No published posts yet. Visit admin to create the first one.</p>';
     }
@@ -2167,9 +2178,14 @@ function render_subscribers_admin(PDO $pdo): void
 function render_settings_admin(PDO $pdo): void
 {
     echo '<h1>Settings</h1><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="save_settings">';
-    foreach (['blog_title' => 'Blog title', 'site_key' => 'Site id', 'canonical_base' => 'Canonical base URL', 'accent_color' => 'Accent color', 'posts_per_page' => 'Posts per page'] as $key => $label) {
+    foreach (['blog_title' => 'Blog title', 'home_heading' => 'Home heading', 'site_key' => 'Site id', 'canonical_base' => 'Canonical base URL', 'accent_color' => 'Accent color', 'posts_per_page' => 'Posts per page'] as $key => $label) {
         echo '<label>' . htmlEscape($label) . '<input name="' . htmlEscape($key) . '" value="' . htmlEscape(setting($pdo, $key, '')) . '"></label>';
+        if ($key === 'home_heading') {
+            echo '<p class="muted">Leave empty to use the blog title on the home page.</p>';
+        }
     }
+    echo '<label>Home intro<textarea name="home_intro" placeholder="Optional short intro below the home heading">' . htmlEscape(setting($pdo, 'home_intro', '')) . '</textarea></label>';
+    echo '<p class="muted">Leave empty to hide the intro paragraph.</p>';
     echo '<label>Allowed widget origins<textarea name="allowed_origins" placeholder="https://example.com">' . htmlEscape(setting($pdo, 'allowed_origins', '')) . '</textarea></label>';
     echo '<label>About text<textarea name="about_text">' . htmlEscape(setting($pdo, 'about_text', '')) . '</textarea></label>';
     echo '<label><input type="checkbox" name="require_site_key" value="1" ' . (setting($pdo, 'require_site_key', '0') === '1' ? 'checked' : '') . '> Require public siteKey for API reads</label>';
@@ -2181,7 +2197,7 @@ function render_settings_admin(PDO $pdo): void
 
 function save_settings(PDO $pdo): void
 {
-    $fields = ['blog_title', 'site_key', 'canonical_base', 'accent_color', 'posts_per_page', 'allowed_origins', 'about_text'];
+    $fields = ['blog_title', 'home_heading', 'home_intro', 'site_key', 'canonical_base', 'accent_color', 'posts_per_page', 'allowed_origins', 'about_text'];
     foreach ($fields as $field) {
         $value = trim((string) ($_POST[$field] ?? ''));
         if ($field === 'accent_color' && !preg_match('/^#[0-9a-f]{6}$/i', $value)) {

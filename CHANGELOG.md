@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Added configurable home-page heading and intro settings, with the blog title as the default hero heading.
 - Added shared-token `prefers-color-scheme` dark mode for public and admin PHP surfaces.
 - Ported the marketing design tokens into the PHP app and widget defaults so public, admin, and embed surfaces share one palette.
 - Removed Google Fonts from the PHP app/admin, tightened CSP font/style sources, and documented the system-font/no-tracker deployment claim.

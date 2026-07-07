@@ -34,6 +34,7 @@ Top threats are SQL injection, cross-site scripting, cross-site request forgery,
 4. Create the first admin account, or set `TB_ADMIN_EMAIL` and `TB_ADMIN_PASSWORD` in the private `.env` file from cPanel/File Manager before visiting `/admin`.
 5. In Admin -> Settings, set:
    - Blog title
+   - Optional home heading and intro
    - Canonical base URL
    - Site id, for example `store-1`
    - Allowed widget origins, for example `https://your-store.example`

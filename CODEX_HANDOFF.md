@@ -129,7 +129,7 @@ Keep the admin "accent color" setting working: it overrides `--accent` only (val
 **Do:** Wrap the dark token overrides from T1.2 in `@media (prefers-color-scheme: dark){:root{...}}`. Audit every rule that hardcodes `#fff`/`#222`/`#202020` (e.g. `.panel`, `.excerpt`, `[data-copy-code]`, blockquote) and switch to tokens.
 **Accept:** Both public post page and admin dashboard fully legible in OS dark mode; borders visible; code blocks readable; no white flash panels.
 
-### T1.4 — Configurable blog-home hero (kill the hardcoded tagline) `[ ]`
+### T1.4 — Configurable blog-home hero (kill the hardcoded tagline) `[x]`
 **Files:** `tinyblog.php` (`render_home()` ~line 1415, `render_settings_admin()`, `save_settings()`).
 **Do:** Add settings `home_heading` (default: blog title) and `home_intro` (default: empty → hide the `<p>`). Render via `htmlEscape()`. Add both fields to Settings with helper text.
 **Accept:** Fresh install shows the blog title as hero, not "Small posts, clean embeds." Settings round-trips both values. Empty intro renders no empty element.
