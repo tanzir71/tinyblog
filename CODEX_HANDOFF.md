@@ -153,7 +153,7 @@ Keep the admin "accent color" setting working: it overrides `--accent` only (val
 **Do:** Add a "What the admin looks like" section after Features: 2–3 real screenshots (dashboard, editor with preview, media) in a bordered figure with mono captions. Lazy-load (`loading="lazy"`), width/height attributes set. NOTE: do this task AFTER Phase 3 lands so the screenshots show the refined admin.
 **Accept:** Screenshots are of the real refined admin, crisp at 2x, < 150 KB each (use `optipng`/`pngquant` equivalent or export at quality that hits budget).
 
-### T2.3 — "vs DropInBlog" comparison page + reposition compare row `[ ]`
+### T2.3 — "vs DropInBlog" comparison page + reposition compare row `[x]`
 **Files:** new `tinyblog-vs-dropinblog.html` (copy structure from `tinyblog-vs-ghost.html`), `index.html` compare section, `compare.html`, footer links.
 **Do:** Honest table: DropInBlog $49–$99/mo hosted vs TinyBlog $0 self-hosted; their managed convenience/support vs your ownership/no-tracker/no-per-seat. Make DropInBlog the FIRST card in the landing compare grid (it's the same product category; Substack/Ghost/WordPress follow). Keep the Disqus page but retitle its framing to "vs third-party embed widgets".
 **Accept:** New page matches the design system, factually accurate (prices as of mid-2026, say "from $49/mo"), linked from landing + compare + footer.

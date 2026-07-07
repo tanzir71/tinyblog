@@ -7,6 +7,7 @@ $required = [
     'tinyblog-widget.js',
     'index.html',
     'docs.html',
+    'tinyblog-vs-dropinblog.html',
     '_config.yml',
     'README.md',
     'SETUP.md',
@@ -204,6 +205,11 @@ if (is_file($root . '/index.html')) {
             $failures[] = "index.html missing live widget demo hook: {$needle}";
         }
     }
+    foreach (['tinyblog-vs-dropinblog.html', 'vs DropInBlog', 'from $49/mo'] as $needle) {
+        if (!str_contains($landing, $needle)) {
+            $failures[] = "index.html missing DropInBlog comparison hook: {$needle}";
+        }
+    }
 }
 
 if (is_file($root . '/demo/posts')) {
@@ -226,6 +232,31 @@ if (is_file($root . '/docs.html')) {
     }
     if (preg_match('/href="[^"]+\.md(?:#[^"]*)?"/', $docs)) {
         $failures[] = 'docs.html should not link to raw Markdown docs.';
+    }
+}
+
+if (is_file($root . '/compare.html')) {
+    $compare = file_get_contents($root . '/compare.html');
+    foreach (['tinyblog-vs-dropinblog.html', 'TinyBlog vs DropInBlog', 'from $49/mo'] as $needle) {
+        if (!str_contains($compare, $needle)) {
+            $failures[] = "compare.html missing DropInBlog comparison hook: {$needle}";
+        }
+    }
+}
+
+if (is_file($root . '/tinyblog-vs-dropinblog.html')) {
+    $dropinblog = file_get_contents($root . '/tinyblog-vs-dropinblog.html');
+    foreach (['TinyBlog vs DropInBlog', 'from $49/mo', '$0 self-hosted', 'managed convenience', 'no trackers'] as $needle) {
+        if (!str_contains($dropinblog, $needle)) {
+            $failures[] = "tinyblog-vs-dropinblog.html missing expected copy: {$needle}";
+        }
+    }
+}
+
+if (is_file($root . '/tinyblog-vs-disqus-embed.html')) {
+    $embeds = file_get_contents($root . '/tinyblog-vs-disqus-embed.html');
+    if (!str_contains($embeds, 'third-party embed widgets')) {
+        $failures[] = 'tinyblog-vs-disqus-embed.html should be framed as third-party embed widgets.';
     }
 }
 
