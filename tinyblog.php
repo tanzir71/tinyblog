@@ -34,6 +34,7 @@ $GLOBALS['TB_CONFIG'] = [
         'image/webp' => 'webp',
     ],
 ];
+$GLOBALS['TB_CONFIG']['data_dir'] = dirname((string) $GLOBALS['TB_CONFIG']['db_path']);
 
 function load_env_file(string $path): void
 {
@@ -1440,6 +1441,11 @@ function css_base(string $accent): string
         .media-card-body{padding:12px;display:grid;gap:8px}
         .media-card-body code{font-size:12px;word-break:break-all}
         .media-card-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        .health-panel{margin-top:24px}
+        .health-panel table{margin-top:10px}
+        .health-dot{display:inline-block;width:10px;height:10px;border:1px solid var(--line-strong);margin-right:8px;vertical-align:middle}
+        .health-ok .health-dot{background:var(--accent)}
+        .health-warn .health-dot{background:transparent}
         .button,button{border:1px solid var(--text);background:var(--text);color:var(--paper);text-decoration:none;padding:10px 13px;border-radius:0;cursor:pointer;font-weight:650;font-size:14px}
         .button:hover,button:hover{background:transparent;color:var(--text)}
         .button.secondary,button.secondary{background:var(--panel);color:var(--text)}
@@ -2705,6 +2711,30 @@ function render_subscribers_admin(PDO $pdo): void
     echo '</tbody></table>';
 }
 
+function settings_health_checks(PDO $pdo): array
+{
+    try {
+        $sqliteVersion = (string) $pdo->query('SELECT sqlite_version()')->fetchColumn();
+    } catch (Throwable) {
+        $sqliteVersion = 'unknown';
+    }
+    $dataWritable = is_writable((string) $GLOBALS['TB_CONFIG']['data_dir']);
+    $uploadsWritable = is_writable((string) $GLOBALS['TB_CONFIG']['upload_dir']);
+    $https = is_https();
+    $envPresent = is_file(__DIR__ . DIRECTORY_SEPARATOR . '.env');
+    $mailAvailable = function_exists('mail');
+    return [
+        ['label' => 'PHP version', 'value' => PHP_VERSION, 'ok' => version_compare(PHP_VERSION, '8.0.0', '>=')],
+        ['label' => 'SQLite version', 'value' => $sqliteVersion, 'ok' => $sqliteVersion !== 'unknown'],
+        ['label' => 'FTS5 available', 'value' => fts5_available($pdo) ? 'Available' : 'Unavailable', 'ok' => fts5_available($pdo)],
+        ['label' => 'data/ writable', 'value' => $dataWritable ? 'Writable' : 'Not writable', 'ok' => $dataWritable],
+        ['label' => 'uploads/ writable', 'value' => $uploadsWritable ? 'Writable' : 'Not writable', 'ok' => $uploadsWritable],
+        ['label' => 'HTTPS on', 'value' => $https ? 'On' : 'Off', 'ok' => $https],
+        ['label' => '.env present', 'value' => $envPresent ? 'Present' : 'Not found', 'ok' => $envPresent],
+        ['label' => 'mail() available', 'value' => $mailAvailable ? 'Available' : 'Unavailable', 'ok' => $mailAvailable],
+    ];
+}
+
 function render_settings_admin(PDO $pdo): void
 {
     echo '<h1>Settings</h1><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="save_settings">';
@@ -2721,6 +2751,12 @@ function render_settings_admin(PDO $pdo): void
     echo '<label><input type="checkbox" name="require_site_key" value="1" ' . (setting($pdo, 'require_site_key', '0') === '1' ? 'checked' : '') . '> Require public siteKey for API reads</label>';
     echo '<label><input type="checkbox" name="subscribe_mail_enabled" value="1" ' . (setting($pdo, 'subscribe_mail_enabled', '0') === '1' ? 'checked' : '') . '> Send subscription confirmation emails with PHP mail()</label>';
     echo '<p class="muted">Public siteKey: <code>' . htmlEscape(setting($pdo, 'public_site_key', '')) . '</code></p><button>Save settings</button></form>';
+    echo '<section class="panel health-panel"><h2>Hosting health</h2><p class="muted">Read-only checks for common shared-hosting setup issues.</p><table><caption>Settings health checks</caption><thead><tr><th>Check</th><th>Status</th></tr></thead><tbody>';
+    foreach (settings_health_checks($pdo) as $check) {
+        $class = !empty($check['ok']) ? 'health-ok' : 'health-warn';
+        echo '<tr class="' . $class . '"><td><span class="health-dot" aria-hidden="true"></span>' . htmlEscape((string) $check['label']) . '</td><td>' . htmlEscape((string) $check['value']) . '</td></tr>';
+    }
+    echo '</tbody></table></section>';
     echo '<h2>Backup</h2><div class="toolbar"><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="export_data"><button class="secondary">Export JSON</button></form></div>';
     echo '<form method="post" enctype="multipart/form-data">' . csrf_field() . '<input type="hidden" name="admin_action" value="import_data"><label>Import JSON<input type="file" name="backup" accept="application/json,.json" required></label><button class="secondary">Import</button></form>';
 }

@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Added a read-only Settings health panel for PHP, SQLite, FTS5, writable directories, HTTPS, `.env`, and `mail()` checks.
 - Added the widget `theme: "card"` variant with a soft panel treatment and README configuration docs.
 - Added month-filtered archive pages with a right-rail month list and month-aware pagination metadata.
 - Added `/llms.txt` with a plain-text blog summary and published-post list for LLM crawlers.

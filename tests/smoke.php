@@ -155,6 +155,11 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing account/users hook: {$needle}";
         }
     }
+    foreach (['function settings_health_checks', 'health-panel', 'health-dot', 'health-ok', 'health-warn', 'PHP_VERSION', 'SQLite version', 'fts5_available($pdo)', "is_writable((string) \$GLOBALS['TB_CONFIG']['data_dir'])", "is_writable((string) \$GLOBALS['TB_CONFIG']['upload_dir'])", 'is_https()', "is_file(__DIR__ . DIRECTORY_SEPARATOR . '.env')", "function_exists('mail')"] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing settings health panel hook: {$needle}";
+        }
+    }
     foreach ([
         'confirm_token',
         'unsub_token',
