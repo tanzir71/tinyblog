@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Added styled 404/server-error pages with search and recent-post links, and made unknown routes return 404.
 - Added media width/height storage, lazy dimensioned post rendering, and backup/widget support for image dimensions.
 - Added a read-only Settings health panel for PHP, SQLite, FTS5, writable directories, HTTPS, `.env`, and `mail()` checks.
 - Added the widget `theme: "card"` variant with a soft panel treatment and README configuration docs.

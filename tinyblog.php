@@ -1694,8 +1694,7 @@ function render_post(PDO $pdo, string $slug): void
     $stmt->execute(visible_post_params($site) + [':slug' => $slug]);
     $post = $stmt->fetch();
     if (!$post) {
-        http_response_code(404);
-        render_page($pdo, 'Not found', '<main class="article"><h1>Not found</h1><p class="muted">That post does not exist or is not published.</p></main>');
+        render_not_found($pdo, 'That post does not exist or is not published.');
     }
     track_post_view($pdo, (int) $post['id']);
     $reading = reading_time_label(post_reading_minutes($post));
@@ -1797,6 +1796,50 @@ function render_search(PDO $pdo): void
     render_page($pdo, 'Search', $body, [
         'prev' => $q !== '' && $page > 1 ? canonical_url($pdo, page_url('/search', $page - 1, ['q' => $q])) : '',
         'next' => $q !== '' && $hasMore ? canonical_url($pdo, page_url('/search', $page + 1, ['q' => $q])) : '',
+    ]);
+}
+
+function recent_posts_for_error(PDO $pdo, int $limit = 3): array
+{
+    $site = setting($pdo, 'site_key', 'store-1');
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . visible_post_where() . ' ORDER BY datetime(publish_at) DESC, id DESC LIMIT :limit');
+    foreach (visible_post_params($site) as $key => $value) {
+        $stmt->bindValue($key, $value, PDO::PARAM_STR);
+    }
+    $stmt->bindValue(':limit', max(1, min(6, $limit)), PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+function error_page_body(PDO $pdo, string $heading, string $message): string
+{
+    $body = '<main class="article error-page"><h1>' . htmlEscape($heading) . '</h1><p class="muted">' . htmlEscape($message) . '</p>';
+    $body .= '<form method="get" action="' . htmlEscape(url_for('/search')) . '"><label>Search<input name="q" placeholder="Search posts"></label><button>Search</button></form>';
+    $recent = recent_posts_for_error($pdo);
+    if ($recent) {
+        $body .= '<section class="related"><h2>Recent posts</h2>';
+        foreach ($recent as $post) {
+            $body .= post_row($post);
+        }
+        $body .= '</section>';
+    }
+    return $body . '</main>';
+}
+
+function render_not_found(PDO $pdo, string $message = 'That page does not exist or may have moved.'): void
+{
+    http_response_code(404);
+    render_page($pdo, 'Not found', error_page_body($pdo, 'Page not found', $message), [
+        'description' => 'The requested TinyBlog page was not found.',
+        'canonical' => canonical_url($pdo, '/'),
+    ]);
+}
+
+function render_error_page(PDO $pdo, string $message): void
+{
+    render_page($pdo, 'Server error', error_page_body($pdo, 'Server error', $message), [
+        'description' => 'TinyBlog server error.',
+        'canonical' => canonical_url($pdo, '/'),
     ]);
 }
 
@@ -3068,7 +3111,10 @@ try {
     if ($path === '/archive') {
         render_archive($pdo);
     }
-    render_home($pdo);
+    if ($path === '/') {
+        render_home($pdo);
+    }
+    render_not_found($pdo);
 } catch (Throwable $e) {
     http_response_code(500);
     write_server_log('error', $e->getMessage(), ['path' => route_path()]);
@@ -3081,6 +3127,9 @@ try {
     if (str_starts_with(route_path(), '/api/')) {
         json_response(['error' => 'A server error occurred.'], 500);
     }
+    if (isset($pdo) && $pdo instanceof PDO) {
+        render_error_page($pdo, 'A server error occurred. Check the server log.');
+    }
     security_headers('html');
-    echo '<!doctype html><meta charset="utf-8"><title>TinyBlog error</title><p>A server error occurred. Check the server log.</p>';
+    echo '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TinyBlog error</title><body style="font-family:system-ui,sans-serif;margin:3rem;background:#f4f3ee;color:#0a0a0a"><main style="max-width:42rem"><h1>Server error</h1><p>A server error occurred. Check the server log.</p></main></body></html>';
 }

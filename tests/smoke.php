@@ -165,6 +165,14 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing image nicety hook: {$needle}";
         }
     }
+    foreach (['function recent_posts_for_error', 'function render_not_found', 'function render_error_page', 'http_response_code(404);', 'render_not_found($pdo)', 'name="q" placeholder="Search posts"', 'Recent posts', "render_error_page(\$pdo, 'A server error occurred. Check the server log.')"] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing styled error-page hook: {$needle}";
+        }
+    }
+    if (str_contains($php, '<!doctype html><meta charset="utf-8"><title>TinyBlog error</title><p>A server error occurred. Check the server log.</p>')) {
+        $failures[] = 'tinyblog.php should use the styled error page instead of the bare error fallback.';
+    }
     foreach ([
         'confirm_token',
         'unsub_token',
