@@ -14,7 +14,7 @@
     maxItems: 5,
     showExcerpt: true,
     theme: "light",
-    accent: "#000000",
+    accent: "#0a0a0a",
     locale: "en",
     container: "",
     canonicalUrl: ""
@@ -155,6 +155,7 @@
   }
 
   function normalizeConfig(config) {
+    var hasCustomAccent = Object.prototype.hasOwnProperty.call(config || {}, "accent") && String(config.accent || "") !== "";
     var next = merge(merge({}, DEFAULTS), config || {});
     next.endpoint = String(next.endpoint || "").replace(/\/+$/, "");
     next.site = String(next.site || next.siteId || "store-1");
@@ -162,7 +163,8 @@
     next.maxItems = Math.max(1, Math.min(50, parseInt(next.maxItems, 10) || 5));
     next.showExcerpt = next.showExcerpt === true || next.showExcerpt === "true" || next.showExcerpt === 1 || next.showExcerpt === "1";
     next.locale = String(next.locale || "en");
-    next.accent = /^#[0-9a-f]{6}$/i.test(next.accent) ? next.accent : "#000000";
+    next.accent = /^#[0-9a-f]{6}$/i.test(next.accent) ? next.accent : "#0a0a0a";
+    next.hasCustomAccent = hasCustomAccent && /^#[0-9a-f]{6}$/i.test(next.accent);
     next.canonicalUrl = next.canonicalUrl || next.endpoint.replace(/\/api$/, "");
     return next;
   }
@@ -172,10 +174,10 @@
     var style = document.createElement("style");
     style.id = "tinyblog-widget-style";
     style.textContent = [
-      ".tbw{--tbw-bg:#fff;--tbw-text:#050505;--tbw-muted:#626262;--tbw-line:#e6e6e6;--tbw-soft:#f7f7f7;--tbw-accent:#000;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--tbw-text);background:var(--tbw-bg);letter-spacing:0;max-width:760px}",
+      ".tbw{--tbw-paper:#f4f3ee;--tbw-panel:#faf9f5;--tbw-ink:#0a0a0a;--tbw-ink-soft:#2b2a27;--tbw-muted:#6c6a62;--tbw-line:#dcd9d0;--tbw-line-strong:#0a0a0a;--tbw-accent:#0a0a0a;--tbw-accent-soft:#eceaf9;--tbw-bg:var(--tbw-paper);--tbw-text:var(--tbw-ink);--tbw-soft:var(--tbw-panel);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--tbw-text);background:var(--tbw-bg);letter-spacing:0;max-width:760px}",
       ".tbw *{box-sizing:border-box}",
       ".tbw a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}",
-      ".tbw__frame{border:1px solid var(--tbw-line);background:var(--tbw-bg);padding:18px}",
+      ".tbw__frame{border:1px solid var(--tbw-line);background:var(--tbw-panel);padding:18px}",
       ".tbw__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}",
       ".tbw__title{font-size:15px;font-weight:800;margin:0}",
       ".tbw__list{display:grid;gap:0;margin:0;padding:0;list-style:none}",
@@ -184,18 +186,18 @@
       ".tbw__link{display:block;text-decoration:none}",
       ".tbw__post-title{font-size:clamp(20px,5vw,30px);line-height:1.08;font-weight:800;margin:0 0 7px}",
       ".tbw__meta,.tbw__excerpt,.tbw__fallback{font-size:14px;line-height:1.55;color:var(--tbw-muted);margin:0}",
-      ".tbw__excerpt{color:var(--tbw-text);margin-top:8px}",
+      ".tbw__excerpt{color:var(--tbw-ink-soft);margin-top:8px}",
       ".tbw__image{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--tbw-line);margin:0 0 12px}",
       ".tbw__content{font-size:16px;line-height:1.72}",
       ".tbw__content p,.tbw__content ul,.tbw__content ol,.tbw__content blockquote{margin:0 0 1em}",
-      ".tbw__content blockquote{border-left:2px solid var(--tbw-text);padding-left:12px}",
+      ".tbw__content blockquote{border-left:2px solid var(--tbw-text);padding-left:12px;color:var(--tbw-ink-soft)}",
       ".tbw__content code{background:var(--tbw-soft);border:1px solid var(--tbw-line);padding:2px 5px}",
       ".tbw__form{display:grid;gap:10px}",
       ".tbw__label{font-size:13px;font-weight:700}",
-      ".tbw__input{width:100%;border:1px solid var(--tbw-line);padding:11px 12px;background:#fff;color:var(--tbw-text);font:inherit}",
+      ".tbw__input{width:100%;border:1px solid var(--tbw-line);padding:11px 12px;background:var(--tbw-panel);color:var(--tbw-text);font:inherit}",
       ".tbw__button{border:1px solid var(--tbw-text);background:var(--tbw-text);color:var(--tbw-bg);padding:11px 13px;font:inherit;font-size:14px;font-weight:750;cursor:pointer}",
       ".tbw__button:focus,.tbw a:focus,.tbw__input:focus{outline:2px solid var(--tbw-accent);outline-offset:2px}",
-      ".tbw[data-theme='dark']{--tbw-bg:#050505;--tbw-text:#fff;--tbw-muted:#bdbdbd;--tbw-line:#292929;--tbw-soft:#111}.tbw[data-theme='dark'] .tbw__input{background:#050505;color:#fff}"
+      ".tbw[data-theme='dark']{--tbw-paper:#131210;--tbw-panel:#1a1917;--tbw-ink:#f2f1ec;--tbw-ink-soft:#d7d5cd;--tbw-muted:#9d9a90;--tbw-line:#2c2a26;--tbw-line-strong:#f2f1ec;--tbw-accent:#9aa6ff;--tbw-accent-soft:#1e2033;--tbw-bg:var(--tbw-paper);--tbw-text:var(--tbw-ink);--tbw-soft:var(--tbw-panel)}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -247,7 +249,7 @@
     var frame = document.createElement("section");
     frame.className = "tbw";
     frame.dataset.theme = config.theme === "dark" ? "dark" : "light";
-    frame.style.setProperty("--tbw-accent", config.accent);
+    if (config.hasCustomAccent) frame.style.setProperty("--tbw-accent", config.accent);
     frame.setAttribute("aria-label", "TinyBlog Widget");
     container.appendChild(frame);
     return frame;

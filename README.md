@@ -95,7 +95,7 @@ Manual initialization:
     widgetType: "feed",
     maxItems: 3,
     showExcerpt: true,
-    accent: "#000000"
+    accent: "#0a0a0a"
   });
 </script>
 ```
@@ -110,7 +110,7 @@ Manual initialization:
 - `maxItems` - feed item count, 1 to 50.
 - `showExcerpt` - `true` or `false`.
 - `theme` - `light` or `dark`; default is minimal black-and-white light.
-- `accent` - CSS accent color, default `#000000`.
+- `accent` - CSS accent color, default `#0a0a0a`.
 - `locale` - date formatting locale, default `en`.
 - `container` - optional CSS selector for manual placement.
 

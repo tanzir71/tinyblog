@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Ported the marketing design tokens into the PHP app and widget defaults so public, admin, and embed surfaces share one palette.
 - Removed Google Fonts from the PHP app/admin, tightened CSP font/style sources, and documented the system-font/no-tracker deployment claim.
 
 ## 2026-07-06

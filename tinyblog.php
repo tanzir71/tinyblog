@@ -237,7 +237,7 @@ function init_db(PDO $pdo): void
         'posts_per_page' => '10',
         'subscribe_mail_enabled' => '0',
         'allowed_origins' => '',
-        'accent_color' => '#000000',
+        'accent_color' => '#2436d4',
         'canonical_base' => base_url(),
         'about_text' => 'TinyBlog Widget is a small privacy-friendly publishing feed. No third-party trackers are enabled by default.',
     ];
@@ -1267,7 +1267,7 @@ function handle_api(PDO $pdo, string $path): void
 function render_page(PDO $pdo, string $title, string $body, array $meta = []): void
 {
     $blogTitle = setting($pdo, 'blog_title', 'TinyBlog Widget');
-    $accent = setting($pdo, 'accent_color', '#000000');
+    $accent = setting($pdo, 'accent_color', '#2436d4');
     $description = $meta['description'] ?? 'A tiny privacy-friendly embeddable blog feed.';
     $canonical = $meta['canonical'] ?? canonical_url($pdo, route_path());
     $ogImage = $meta['og_image'] ?? '';
@@ -1339,9 +1339,9 @@ function render_page(PDO $pdo, string $title, string $body, array $meta = []): v
 
 function css_base(string $accent): string
 {
-    $safeAccent = preg_match('/^#[0-9a-f]{6}$/i', $accent) ? $accent : '#000000';
+    $safeAccent = preg_match('/^#[0-9a-f]{6}$/i', $accent) ? $accent : '#2436d4';
     return "
-        :root{--bg:#fff;--text:#050505;--muted:#5f5f5f;--line:#e6e6e6;--soft:#f7f7f7;--accent:{$safeAccent};--max:1120px;--measure:760px}
+        :root{--paper:#f4f3ee;--panel:#faf9f5;--ink:#0a0a0a;--ink-soft:#2b2a27;--muted:#6c6a62;--line:#dcd9d0;--line-strong:#0a0a0a;--accent:{$safeAccent};--accent-soft:#eceaf9;--bg:var(--paper);--text:var(--ink);--soft:var(--panel);--max:1120px;--measure:760px}
         *{box-sizing:border-box}
         body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;letter-spacing:0}
         a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
@@ -1361,33 +1361,33 @@ function css_base(string $accent): string
         .post-row h2{font-size:clamp(28px,6vw,46px);line-height:1.05;margin:0 0 10px}
         .post-row h2 a{text-decoration:none}
         .meta,.muted{color:var(--muted);font-size:14px;line-height:1.5}
-        .excerpt{font-size:17px;line-height:1.65;color:#202020;max-width:var(--measure)}
+        .excerpt{font-size:17px;line-height:1.65;color:var(--ink-soft);max-width:var(--measure)}
         .article{max-width:var(--measure);padding:42px 0}
         .article h1{font-size:clamp(40px,8vw,72px);line-height:1;margin:0 0 14px}
         .content{font-size:18px;line-height:1.78}
         .content p,.content ul,.content ol,.content blockquote{margin:0 0 1.2em}
-        .content blockquote{border-left:2px solid var(--text);padding-left:16px;color:#222}
+        .content blockquote{border-left:2px solid var(--text);padding-left:16px;color:var(--ink-soft)}
         .content code{background:var(--soft);border:1px solid var(--line);padding:2px 5px;border-radius:4px}
         .content pre{position:relative;overflow:auto;background:var(--soft);border:1px solid var(--line);padding:46px 14px 14px}
         .content pre code{display:block;border:0;padding:0;background:transparent;white-space:pre}
         .content .tok-key{font-weight:800;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
-        [data-copy-code]{position:absolute;top:10px;right:10px;border:1px solid var(--text);background:#fff;color:var(--text);padding:6px 9px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
+        [data-copy-code]{position:absolute;top:10px;right:10px;border:1px solid var(--text);background:var(--panel);color:var(--text);padding:6px 9px;font:inherit;font-size:12px;font-weight:650;cursor:pointer}
         .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
         .tag{border:1px solid var(--line);padding:5px 9px;border-radius:999px;text-decoration:none;font-size:13px}
         .pagination{display:flex;gap:10px;margin:24px 0 0}
         .pagination a{border:1px solid var(--text);padding:9px 12px;text-decoration:none;font-weight:650}
-        .panel{border:1px solid var(--line);padding:18px;background:#fff}
+        .panel{border:1px solid var(--line);padding:18px;background:var(--panel)}
         .admin-layout{display:grid;grid-template-columns:1fr;gap:20px;padding:28px 0}
         .admin-nav{display:flex;flex-wrap:wrap;gap:8px}
-        .admin-nav a,.button,button{border:1px solid var(--text);background:var(--text);color:#fff;text-decoration:none;padding:10px 13px;border-radius:0;cursor:pointer;font-weight:650;font-size:14px}
-        .button.secondary,button.secondary{background:#fff;color:var(--text)}
+        .admin-nav a,.button,button{border:1px solid var(--text);background:var(--text);color:var(--paper);text-decoration:none;padding:10px 13px;border-radius:0;cursor:pointer;font-weight:650;font-size:14px}
+        .button.secondary,button.secondary{background:var(--panel);color:var(--text)}
         label{display:grid;gap:7px;font-size:13px;font-weight:650;margin:0 0 14px}
-        input,textarea,select{width:100%;border:1px solid var(--line);padding:11px 12px;background:#fff;color:var(--text)}
+        input,textarea,select{width:100%;border:1px solid var(--line);padding:11px 12px;background:var(--panel);color:var(--text)}
         textarea{min-height:230px;line-height:1.55}
         table{width:100%;border-collapse:collapse;font-size:14px}
         th,td{text-align:left;border-bottom:1px solid var(--line);padding:10px 8px;vertical-align:top}
         .notice{padding:12px 14px;border:1px solid var(--line);background:var(--soft);margin:0 0 18px}
-        .error{border-color:#111;background:#fff}
+        .error{border-color:var(--line-strong);background:var(--panel)}
         .footer{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted);font-size:13px;line-height:1.6}
         @media(min-width:820px){.grid{grid-template-columns:minmax(0,1fr) 280px}.admin-layout{grid-template-columns:190px minmax(0,1fr)}.admin-nav{display:grid;align-content:start}}
     ";
@@ -1848,7 +1848,7 @@ function render_admin(PDO $pdo): void
 function admin_head(PDO $pdo, string $title): string
 {
     security_headers('html');
-    $accent = setting($pdo, 'accent_color', '#000000');
+    $accent = setting($pdo, 'accent_color', '#2436d4');
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . htmlEscape($title) . ' - TinyBlog Admin</title><style>' . css_base($accent) . '.editor-preview{border:1px solid var(--line);padding:14px;min-height:180px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}</style></head><body>';
 }
 
@@ -2184,7 +2184,7 @@ function save_settings(PDO $pdo): void
     foreach ($fields as $field) {
         $value = trim((string) ($_POST[$field] ?? ''));
         if ($field === 'accent_color' && !preg_match('/^#[0-9a-f]{6}$/i', $value)) {
-            $value = '#000000';
+            $value = '#2436d4';
         }
         if ($field === 'canonical_base') {
             $value = rtrim($value ?: base_url(), '/');

@@ -42,6 +42,20 @@ if (is_file($root . '/tinyblog.php')) {
     if (!str_contains($php, 'font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif')) {
         $failures[] = 'tinyblog.php should use the system-first app font stack.';
     }
+    foreach ([
+        '--paper:#f4f3ee',
+        '--panel:#faf9f5',
+        '--ink:#0a0a0a',
+        '--ink-soft:#2b2a27',
+        '--muted:#6c6a62',
+        '--line:#dcd9d0',
+        '--line-strong:#0a0a0a',
+        '--accent-soft:#eceaf9',
+    ] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing shared design token: {$needle}";
+        }
+    }
     foreach (['function visible_post_where', 'publish_at <= :now', 'reading_minutes', "'hasMore'", 'application/ld+json', 'BlogPosting', 'rel="next"', 'rel="prev"'] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing expected feature hook: {$needle}";
@@ -90,6 +104,30 @@ if (is_file($root . '/tinyblog-widget.js')) {
             $failures[] = "tinyblog-widget.js missing expected polish: {$needle}";
         }
     }
+    foreach ([
+        'accent: "#0a0a0a"',
+        '--tbw-paper:#f4f3ee',
+        '--tbw-panel:#faf9f5',
+        '--tbw-ink:#0a0a0a',
+        '--tbw-ink-soft:#2b2a27',
+        '--tbw-muted:#6c6a62',
+        '--tbw-line:#dcd9d0',
+        '--tbw-line-strong:#0a0a0a',
+        '--tbw-accent-soft:#eceaf9',
+        "--tbw-paper:#131210",
+        "--tbw-panel:#1a1917",
+        "--tbw-ink:#f2f1ec",
+        "--tbw-muted:#9d9a90",
+        "--tbw-line:#2c2a26",
+        "--tbw-accent:#9aa6ff",
+        "--tbw-accent-soft:#1e2033",
+        'hasCustomAccent',
+        'if (config.hasCustomAccent) frame.style.setProperty("--tbw-accent", config.accent);',
+    ] as $needle) {
+        if (!str_contains($js, $needle)) {
+            $failures[] = "tinyblog-widget.js missing shared design token/default: {$needle}";
+        }
+    }
 }
 
 if (is_file($root . '/index.html')) {
@@ -121,6 +159,21 @@ if (is_file($root . '/assets/site.css')) {
     foreach (['prefers-color-scheme', '.docs-shell', '.docs-toc', '.docs-table'] as $needle) {
         if (!str_contains($css, $needle)) {
             $failures[] = "assets/site.css missing expected site styling: {$needle}";
+        }
+    }
+    foreach ([
+        '--paper: #f4f3ee',
+        '--panel: #faf9f5',
+        '--ink: #0a0a0a',
+        '--ink-soft: #2b2a27',
+        '--muted: #6c6a62',
+        '--line: #dcd9d0',
+        '--line-strong: #0a0a0a',
+        '--accent: #2436d4',
+        '--accent-soft: #eceaf9',
+    ] as $needle) {
+        if (!str_contains($css, $needle)) {
+            $failures[] = "assets/site.css missing canonical design token: {$needle}";
         }
     }
 }

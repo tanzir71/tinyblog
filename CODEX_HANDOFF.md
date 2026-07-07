@@ -108,7 +108,7 @@ Researched July 2026. Two competitor groups matter.
 **Do:** Delete all `fonts.googleapis.com` / `fonts.gstatic.com` references (4 occurrences across the two functions). Change `css_base()` font stack to system-first: `font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif`. Do NOT self-host font files (adds repo weight, violates "tiny").
 **Accept:** `grep -c "googleapis" tinyblog.php` returns 0. Public pages and admin render with system fonts. README "no external fonts" claim is now true. Note: `index.html`/`docs.html` (marketing, served from GitHub Pages, not the user's blog) MAY keep Google Fonts — the claim is about the reader-facing blog. Add one clarifying sentence to README.
 
-### T1.2 — Single design-token set shared by all three surfaces `[ ]`
+### T1.2 — Single design-token set shared by all three surfaces `[x]`
 **Files:** `tinyblog.php` (`css_base()`), `assets/site.css`, `tinyblog-widget.js` (style block ~line 174).
 **Do:** Adopt the marketing palette as canonical and port it into `css_base()` and the widget defaults:
 
