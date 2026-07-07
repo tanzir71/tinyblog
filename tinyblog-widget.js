@@ -160,6 +160,7 @@
     next.endpoint = String(next.endpoint || "").replace(/\/+$/, "");
     next.site = String(next.site || next.siteId || "store-1");
     next.widgetType = ["feed", "post", "subscribe"].indexOf(next.widgetType) >= 0 ? next.widgetType : "feed";
+    next.theme = ["light", "dark", "card"].indexOf(next.theme) >= 0 ? next.theme : "light";
     next.maxItems = Math.max(1, Math.min(50, parseInt(next.maxItems, 10) || 5));
     next.showExcerpt = next.showExcerpt === true || next.showExcerpt === "true" || next.showExcerpt === 1 || next.showExcerpt === "1";
     next.locale = String(next.locale || "en");
@@ -197,6 +198,7 @@
       ".tbw__input{width:100%;border:1px solid var(--tbw-line);padding:11px 12px;background:var(--tbw-panel);color:var(--tbw-text);font:inherit}",
       ".tbw__button{border:1px solid var(--tbw-text);background:var(--tbw-text);color:var(--tbw-bg);padding:11px 13px;font:inherit;font-size:14px;font-weight:750;cursor:pointer}",
       ".tbw__button:focus,.tbw a:focus,.tbw__input:focus{outline:2px solid var(--tbw-accent);outline-offset:2px}",
+      ".tbw[data-theme='card']{--tbw-bg:transparent}.tbw[data-theme='card'] .tbw__frame{border-color:var(--tbw-line-strong);background:var(--tbw-panel);box-shadow:0 10px 30px rgba(10,10,10,.08);padding:22px}.tbw[data-theme='card'] .tbw__item{padding:16px 0}.tbw[data-theme='card'] .tbw__post-title{font-size:clamp(18px,4vw,26px)}",
       ".tbw[data-theme='dark']{--tbw-paper:#131210;--tbw-panel:#1a1917;--tbw-ink:#f2f1ec;--tbw-ink-soft:#d7d5cd;--tbw-muted:#9d9a90;--tbw-line:#2c2a26;--tbw-line-strong:#f2f1ec;--tbw-accent:#9aa6ff;--tbw-accent-soft:#1e2033;--tbw-bg:var(--tbw-paper);--tbw-text:var(--tbw-ink);--tbw-soft:var(--tbw-panel)}"
     ].join("");
     document.head.appendChild(style);
@@ -248,7 +250,7 @@
     container.innerHTML = "";
     var frame = document.createElement("section");
     frame.className = "tbw";
-    frame.dataset.theme = config.theme === "dark" ? "dark" : "light";
+    frame.dataset.theme = config.theme === "dark" ? "dark" : config.theme === "card" ? "card" : "light";
     if (config.hasCustomAccent) frame.style.setProperty("--tbw-accent", config.accent);
     frame.setAttribute("aria-label", "TinyBlog Widget");
     container.appendChild(frame);

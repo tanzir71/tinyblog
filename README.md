@@ -111,7 +111,7 @@ Manual initialization:
 - `slug` - required for `post` widgets.
 - `maxItems` - feed item count, 1 to 50.
 - `showExcerpt` - `true` or `false`.
-- `theme` - `light` or `dark`; default is minimal black-and-white light.
+- `theme` - `light`, `dark`, or `card`; default is minimal black-and-white light.
 - `accent` - CSS accent color, default `#0a0a0a`.
 - `locale` - date formatting locale, default `en`.
 - `container` - optional CSS selector for manual placement.

@@ -222,6 +222,14 @@ if (is_file($root . '/tinyblog-widget.js')) {
             $failures[] = "tinyblog-widget.js missing shared design token/default: {$needle}";
         }
     }
+    foreach (['["light", "dark", "card"]', "data-theme='card'", 'config.theme === "card" ? "card"', ".tbw[data-theme='card']"] as $needle) {
+        if (!str_contains($js, $needle)) {
+            $failures[] = "tinyblog-widget.js missing card theme hook: {$needle}";
+        }
+    }
+    if (filesize($root . '/tinyblog-widget.js') > 19149) {
+        $failures[] = 'tinyblog-widget.js card theme should add less than 1 KB.';
+    }
 }
 
 if (is_file($root . '/index.html')) {
@@ -451,6 +459,9 @@ if (is_file($root . '/README.md')) {
     }
     if (!str_contains($readme, 'GET /archive?month=2026-07')) {
         $failures[] = 'README.md missing archive month route documentation.';
+    }
+    if (!str_contains($readme, '`light`, `dark`, or `card`')) {
+        $failures[] = 'README.md missing card widget theme documentation.';
     }
 }
 
