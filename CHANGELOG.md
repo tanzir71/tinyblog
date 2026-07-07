@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Added month-filtered archive pages with a right-rail month list and month-aware pagination metadata.
 - Added `/llms.txt` with a plain-text blog summary and published-post list for LLM crawlers.
 - Added a landing-page admin screenshots section with optimized dashboard, editor, and media PNG assets.
 - Swept static landing/docs/comparison pages for single-h1 structure, absolute social images, focus-visible coverage, and labeled demo-region semantics.

@@ -1501,6 +1501,79 @@ function render_home(PDO $pdo, int $page = 1): void
     ]);
 }
 
+function valid_archive_month(string $month): bool
+{
+    return $month === '' || preg_match('/^\d{4}-\d{2}$/', $month) === 1;
+}
+
+function archive_months(PDO $pdo, string $site): array
+{
+    $stmt = $pdo->prepare("SELECT strftime('%Y-%m', publish_at) AS month, COUNT(*) AS count FROM posts WHERE " . visible_post_where() . " AND publish_at IS NOT NULL GROUP BY month ORDER BY month DESC LIMIT 60");
+    $stmt->execute(visible_post_params($site));
+    return array_values(array_filter($stmt->fetchAll(), fn (array $row): bool => !empty($row['month'])));
+}
+
+function render_archive(PDO $pdo): void
+{
+    $site = setting($pdo, 'site_key', 'store-1');
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $month = trim((string) ($_GET['month'] ?? ''));
+    if (!valid_archive_month($month)) {
+        $month = '';
+    }
+    $perPage = posts_per_page($pdo);
+    $offset = max(0, ($page - 1) * $perPage);
+    $where = visible_post_where();
+    if ($month !== '') {
+        $where .= " AND strftime('%Y-%m', publish_at) = :month";
+    }
+    $stmt = $pdo->prepare('SELECT * FROM posts WHERE ' . $where . ' ORDER BY pinned DESC, datetime(publish_at) DESC, id DESC LIMIT :limit OFFSET :offset');
+    foreach (visible_post_params($site) as $key => $value) {
+        $stmt->bindValue($key, $value, PDO::PARAM_STR);
+    }
+    if ($month !== '') {
+        $stmt->bindValue(':month', $month, PDO::PARAM_STR);
+    }
+    $stmt->bindValue(':limit', $perPage + 1, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll();
+    $hasMore = count($rows) > $perPage;
+    $posts = array_slice($rows, 0, $perPage);
+    $title = $month !== '' ? 'Archive for ' . $month : 'Archive';
+    $body = '<main class="grid"><section class="post-list"><h1>' . htmlEscape($title) . '</h1>';
+    if (!$posts) {
+        $body .= '<p class="muted">No published posts found for this archive view.</p>';
+    }
+    foreach ($posts as $post) {
+        $body .= post_row($post);
+    }
+    if ($month !== '') {
+        $body .= pagination_links('/archive', $page, $hasMore, ['month' => $month]);
+    } else {
+        $body .= pagination_links('/archive', $page, $hasMore);
+    }
+    $body .= '</section><aside class="panel archive-months"><h2>By month</h2><p><a href="' . htmlEscape(url_for('/archive')) . '">All posts</a></p>';
+    foreach (archive_months($pdo, $site) as $row) {
+        $label = (string) $row['month'];
+        $body .= '<p><a href="' . htmlEscape(url_for('/archive') . '?month=' . rawurlencode($label)) . '">' . htmlEscape($label) . '</a> <span class="muted">(' . (int) $row['count'] . ')</span></p>';
+    }
+    $body .= '</aside></main>';
+    $prev = '';
+    $next = '';
+    if ($page > 1) {
+        $prev = $month !== '' ? canonical_url($pdo, page_url('/archive', $page - 1, ['month' => $month])) : canonical_url($pdo, page_url('/archive', $page - 1));
+    }
+    if ($hasMore) {
+        $next = $month !== '' ? canonical_url($pdo, page_url('/archive', $page + 1, ['month' => $month])) : canonical_url($pdo, page_url('/archive', $page + 1));
+    }
+    render_page($pdo, $title, $body, [
+        'description' => 'Browse published posts by month.',
+        'prev' => $prev,
+        'next' => $next,
+    ]);
+}
+
 function post_row(array $post): string
 {
     $tags = split_tags($post['tags']);
@@ -2878,7 +2951,7 @@ try {
         render_about($pdo);
     }
     if ($path === '/archive') {
-        render_home($pdo, max(1, (int) ($_GET['page'] ?? 1)));
+        render_archive($pdo);
     }
     render_home($pdo);
 } catch (Throwable $e) {

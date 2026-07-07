@@ -104,6 +104,11 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing llms.txt hook: {$needle}";
         }
     }
+    foreach (['function valid_archive_month', 'function archive_months', 'function render_archive', "strftime('%Y-%m', publish_at)", "preg_match('/^\\d{4}-\\d{2}$/', \$month)", "pagination_links('/archive', \$page, \$hasMore, ['month' => \$month])", "render_archive(\$pdo)", "canonical_url(\$pdo, page_url('/archive', \$page - 1, ['month' => \$month]))"] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing archive-by-month hook: {$needle}";
+        }
+    }
     foreach (['home_heading', 'home_intro', "setting(\$pdo, 'home_heading'", "setting(\$pdo, 'home_intro'", "'home_heading', 'home_intro'"] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing configurable home hero hook: {$needle}";
@@ -443,6 +448,9 @@ if (is_file($root . '/README.md')) {
     }
     if (!str_contains($readme, 'GET /llms.txt')) {
         $failures[] = 'README.md missing llms.txt route documentation.';
+    }
+    if (!str_contains($readme, 'GET /archive?month=2026-07')) {
+        $failures[] = 'README.md missing archive month route documentation.';
     }
 }
 

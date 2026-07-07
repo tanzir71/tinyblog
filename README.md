@@ -136,6 +136,7 @@ Public/canonical:
 - `GET /tag/{tag}?page=2` - paginated tag listing.
 - `GET /search?q=term&page=2` - paginated prepared-statement search.
 - `GET /archive?page=2` - paginated listing route.
+- `GET /archive?month=2026-07` - month-filtered archive listing.
 - `GET /about` - privacy-friendly about page.
 - `GET /feed.xml` - RSS feed.
 - `GET /feed.json` - JSON Feed 1.1 feed.
