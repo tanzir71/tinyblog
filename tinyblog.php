@@ -1427,6 +1427,14 @@ function css_base(string $accent): string
         .editor-preview[aria-busy=\"true\"]{opacity:.72}
         .post-settings{border:1px solid var(--line);background:var(--panel);padding:14px;margin-top:16px}
         .post-settings summary{cursor:pointer;font-weight:800;margin:-2px 0 12px}
+        .upload-dropzone{border:1px dashed var(--line-strong);background:var(--panel);padding:16px;margin:0 0 20px}
+        .upload-dropzone.is-dragover{background:var(--accent-soft);border-color:var(--accent)}
+        .media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin:20px 0 0}
+        .media-card{border:1px solid var(--line);background:var(--panel);min-width:0}
+        .media-thumb{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-bottom:1px solid var(--line)}
+        .media-card-body{padding:12px;display:grid;gap:8px}
+        .media-card-body code{font-size:12px;word-break:break-all}
+        .media-card-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .button,button{border:1px solid var(--text);background:var(--text);color:var(--paper);text-decoration:none;padding:10px 13px;border-radius:0;cursor:pointer;font-weight:650;font-size:14px}
         .button.secondary,button.secondary{background:var(--panel);color:var(--text)}
         .admin-logout{border:0;background:transparent;padding:0}
@@ -2364,14 +2372,52 @@ function delete_media(PDO $pdo): string
 
 function render_media_admin(PDO $pdo): void
 {
-    echo '<h1>Media</h1><form method="post" enctype="multipart/form-data">' . csrf_field() . '<input type="hidden" name="admin_action" value="upload_media"><label>Image<input type="file" name="media" accept="image/jpeg,image/png,image/gif,image/webp" required></label><label>Alt text<input name="alt_text" maxlength="180" placeholder="Describe the image"></label><button>Upload</button></form>';
+    echo '<h1>Media</h1><form class="upload-dropzone" id="uploadDropzone" method="post" enctype="multipart/form-data">' . csrf_field() . '<input type="hidden" name="admin_action" value="upload_media"><label>Image<input type="file" name="media" accept="image/jpeg,image/png,image/gif,image/webp" required></label><label>Alt text<input name="alt_text" maxlength="180" placeholder="Describe the image"></label><button>Upload</button></form>';
     $stmt = $pdo->prepare('SELECT * FROM media ORDER BY datetime(created_at) DESC LIMIT 60');
     $stmt->execute();
-    echo '<table><thead><tr><th>Preview</th><th>URL</th><th>Size</th><th>Action</th></tr></thead><tbody>';
-    foreach ($stmt->fetchAll() as $media) {
-        echo '<tr><td><img src="' . htmlEscape($media['url']) . '" alt="' . htmlEscape((string) ($media['alt_text'] ?? '')) . '" style="width:86px"></td><td><code>' . htmlEscape($media['url']) . '</code><br><span class="muted">' . htmlEscape($media['original_name']) . '</span><br><span class="muted">' . htmlEscape((string) ($media['alt_text'] ?? '')) . '</span></td><td>' . (int) $media['size'] . '</td><td><form method="post" onsubmit="return confirm(\'Delete this media file?\')">' . csrf_field() . '<input type="hidden" name="admin_action" value="delete_media"><input type="hidden" name="media_id" value="' . (int) $media['id'] . '"><button class="secondary">Delete</button></form></td></tr>';
+    $rows = $stmt->fetchAll();
+    if (!$rows) {
+        echo '<section class="empty-state"><h2>No media yet</h2><p class="muted">Upload an image to reuse it in Markdown posts.</p></section>';
+    } else {
+        echo '<section class="media-grid" aria-label="Uploaded media">';
+        foreach ($rows as $media) {
+            $alt = trim((string) ($media['alt_text'] ?? ''));
+            $label = $alt !== '' ? $alt : (string) ($media['original_name'] ?? 'image');
+            $markdown = '![' . $label . '](' . (string) $media['url'] . ')';
+            echo '<article class="media-card"><img class="media-thumb" src="' . htmlEscape($media['url']) . '" alt="' . htmlEscape($alt) . '" loading="lazy"><div class="media-card-body"><strong>' . htmlEscape($media['original_name']) . '</strong><span class="muted">' . (int) $media['size'] . ' bytes</span><code>' . htmlEscape($media['url']) . '</code>';
+            if ($alt !== '') {
+                echo '<span class="muted">' . htmlEscape($alt) . '</span>';
+            }
+            echo '<div class="media-card-actions"><button type="button" class="secondary" data-markdown="' . htmlEscape($markdown) . '">Copy Markdown</button><form method="post" onsubmit="return confirm(\'Delete this media file?\')">' . csrf_field() . '<input type="hidden" name="admin_action" value="delete_media"><input type="hidden" name="media_id" value="' . (int) $media['id'] . '"><button class="secondary">Delete</button></form></div></div></article>';
+        }
+        echo '</section>';
     }
-    echo '</tbody></table>';
+    echo '<script>
+        const dropzone = document.getElementById("uploadDropzone");
+        if (dropzone) {
+          ["dragenter", "dragover"].forEach((eventName) => dropzone.addEventListener(eventName, (event) => { event.preventDefault(); dropzone.classList.add("is-dragover"); }));
+          ["dragleave", "drop"].forEach((eventName) => dropzone.addEventListener(eventName, () => dropzone.classList.remove("is-dragover")));
+        }
+        const copyMarkdown = (button) => {
+          const value = button.dataset.markdown || "";
+          const done = () => { button.textContent = "Copied"; setTimeout(() => { button.textContent = "Copy Markdown"; }, 1200); };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(value).then(done).catch(() => {});
+          } else {
+            const helper = document.createElement("textarea");
+            helper.value = value;
+            helper.setAttribute("readonly", "");
+            helper.style.position = "fixed";
+            helper.style.left = "-9999px";
+            document.body.appendChild(helper);
+            helper.select();
+            document.execCommand("copy");
+            document.body.removeChild(helper);
+            done();
+          }
+        };
+        document.querySelectorAll("[data-markdown]").forEach((button) => button.addEventListener("click", () => copyMarkdown(button)));
+    </script>';
 }
 
 function render_subscribers_admin(PDO $pdo): void

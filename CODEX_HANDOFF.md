@@ -189,7 +189,7 @@ Design direction: same spec-sheet aesthetic as the landing page — paper backgr
 **Do:** At ≥1000px, editor becomes side-by-side textarea | live preview (existing preview JS already renders; make it live-on-input with 300ms debounce instead of toggle-only; keep toggle for narrow screens). Add above the textarea: a compact mono toolbar with B / I / code / link / image buttons that wrap selection with Markdown (pure JS, ~30 lines). Move Excerpt/hero/tags/date/status/pinned into a collapsible right rail or `<details>` "Post settings" so writing is the default focus. Autosave status stays. Add `Ctrl/Cmd+S` → submit form.
 **Accept:** Typing updates preview live; toolbar inserts correct Markdown around selection; Cmd+S saves; mobile layout unbroken; no external editor libs.
 
-### T3.4 — Media grid + upload polish `[ ]`
+### T3.4 — Media grid + upload polish `[x]`
 **Files:** `tinyblog.php` (`render_media_admin()`).
 **Do:** Replace the media table with a responsive thumbnail grid (square crop via CSS `object-fit`), each cell showing filename, alt text, a "Copy Markdown" button (`![alt](url)` to clipboard), and delete-with-confirm. Upload form gets a drag-over highlight (CSS `:has()`-free, simple JS class toggle) — still a normal `<input type=file>` POST underneath, no XHR required.
 **Accept:** Grid at 3–4 cols desktop / 2 mobile; Copy Markdown works; delete still removes file + row; upload still image-only server-side.

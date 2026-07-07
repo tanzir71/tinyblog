@@ -105,6 +105,11 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing editor ergonomics hook: {$needle}";
         }
     }
+    foreach (['media-grid', 'media-card', 'Copy Markdown', 'data-markdown', 'upload-dropzone', 'dragover', 'copyMarkdown'] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing media grid hook: {$needle}";
+        }
+    }
     foreach ([
         'confirm_token',
         'unsub_token',

@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Replaced the admin media table with a responsive thumbnail grid, Markdown copy buttons, and drag-over upload highlighting.
 - Added the two-pane admin editor layout with Markdown toolbar buttons, live preview debounce, post settings rail, and Cmd/Ctrl+S save.
 - Added dashboard stat cells, status badges, relative dates, empty state, and quick publish/draft row actions.
 - Reworked the admin shell with a product top bar, text navigation, active section state, and a constrained content column.
