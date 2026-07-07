@@ -124,7 +124,7 @@ Researched July 2026. Two competitor groups matter.
 Keep the admin "accent color" setting working: it overrides `--accent` only (validate hex as today). Widget default `accent` changes from `#000000` to `--ink` equivalent; the `data-theme='dark'` block maps to the dark tokens.
 **Accept:** Visual spot-check: landing page → public blog → admin → embedded widget all read as one product. No hex literals outside the token blocks (grep for `#[0-9a-f]{6}` in style strings and verify each is a token definition or the validated accent).
 
-### T1.3 — `prefers-color-scheme` dark mode on public blog + admin `[ ]`
+### T1.3 — `prefers-color-scheme` dark mode on public blog + admin `[x]`
 **Files:** `tinyblog.php` (`css_base()`).
 **Do:** Wrap the dark token overrides from T1.2 in `@media (prefers-color-scheme: dark){:root{...}}`. Audit every rule that hardcodes `#fff`/`#222`/`#202020` (e.g. `.panel`, `.excerpt`, `[data-copy-code]`, blockquote) and switch to tokens.
 **Accept:** Both public post page and admin dashboard fully legible in OS dark mode; borders visible; code blocks readable; no white flash panels.

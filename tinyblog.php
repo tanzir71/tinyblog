@@ -1341,7 +1341,8 @@ function css_base(string $accent): string
 {
     $safeAccent = preg_match('/^#[0-9a-f]{6}$/i', $accent) ? $accent : '#2436d4';
     return "
-        :root{--paper:#f4f3ee;--panel:#faf9f5;--ink:#0a0a0a;--ink-soft:#2b2a27;--muted:#6c6a62;--line:#dcd9d0;--line-strong:#0a0a0a;--accent:{$safeAccent};--accent-soft:#eceaf9;--bg:var(--paper);--text:var(--ink);--soft:var(--panel);--max:1120px;--measure:760px}
+        :root{color-scheme:light;--paper:#f4f3ee;--panel:#faf9f5;--ink:#0a0a0a;--ink-soft:#2b2a27;--muted:#6c6a62;--line:#dcd9d0;--line-strong:#0a0a0a;--accent:{$safeAccent};--accent-soft:#eceaf9;--bg:var(--paper);--text:var(--ink);--soft:var(--panel);--max:1120px;--measure:760px}
+        @media (prefers-color-scheme: dark){:root{color-scheme:dark;--paper:#131210;--panel:#1a1917;--ink:#f2f1ec;--ink-soft:#d7d5cd;--muted:#9d9a90;--line:#2c2a26;--line-strong:#f2f1ec;--accent-soft:#1e2033;--bg:var(--paper);--text:var(--ink);--soft:var(--panel)}}
         *{box-sizing:border-box}
         body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;letter-spacing:0}
         a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}

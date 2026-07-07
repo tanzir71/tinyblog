@@ -56,6 +56,19 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing shared design token: {$needle}";
         }
     }
+    foreach ([
+        '@media (prefers-color-scheme: dark){:root{',
+        '--paper:#131210',
+        '--panel:#1a1917',
+        '--ink:#f2f1ec',
+        '--muted:#9d9a90',
+        '--line:#2c2a26',
+        '--accent-soft:#1e2033',
+    ] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing dark-mode design token: {$needle}";
+        }
+    }
     foreach (['function visible_post_where', 'publish_at <= :now', 'reading_minutes', "'hasMore'", 'application/ld+json', 'BlogPosting', 'rel="next"', 'rel="prev"'] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing expected feature hook: {$needle}";
