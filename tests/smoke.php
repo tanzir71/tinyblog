@@ -28,6 +28,30 @@ foreach ($required as $file) {
     }
 }
 
+function hex_channel(float $channel): float
+{
+    $channel /= 255;
+    return $channel <= 0.03928 ? $channel / 12.92 : (($channel + 0.055) / 1.055) ** 2.4;
+}
+
+function hex_luminance(string $hex): float
+{
+    $hex = ltrim($hex, '#');
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+    return 0.2126 * hex_channel((float) $r) + 0.7152 * hex_channel((float) $g) + 0.0722 * hex_channel((float) $b);
+}
+
+function contrast_ratio(string $a, string $b): float
+{
+    $l1 = hex_luminance($a);
+    $l2 = hex_luminance($b);
+    $lighter = max($l1, $l2);
+    $darker = min($l1, $l2);
+    return ($lighter + 0.05) / ($darker + 0.05);
+}
+
 if (is_file($root . '/tinyblog.php')) {
     $php = file_get_contents($root . '/tinyblog.php');
     foreach (['password_hash', 'hash_equals', 'PDO', 'csrf_token', 'sanitize_markdown', 'check_cors_or_fail', 'security_headers', 'Content-Security-Policy', 'require_admin', 'can_manage_post', 'function sync_configured_admin', 'TB_ADMIN_EMAIL', 'TB_ADMIN_PASSWORD_HASH'] as $needle) {
@@ -270,6 +294,51 @@ if (is_file($root . '/tinyblog-vs-disqus-embed.html')) {
     }
 }
 
+$staticPages = [
+    'index.html',
+    'docs.html',
+    'compare.html',
+    'tinyblog-vs-dropinblog.html',
+    'tinyblog-vs-substack.html',
+    'tinyblog-vs-ghost.html',
+    'tinyblog-vs-wordpress.html',
+    'tinyblog-vs-disqus-embed.html',
+];
+
+foreach ($staticPages as $doc) {
+    $path = $root . '/' . $doc;
+    if (!is_file($path)) {
+        $failures[] = "Missing static page for metadata/a11y sweep: {$doc}";
+        continue;
+    }
+    $html = file_get_contents($path);
+    if (preg_match_all('/<h1\b/i', $html) !== 1) {
+        $failures[] = "{$doc} should contain exactly one h1.";
+    }
+    $canonical = $doc === 'index.html'
+        ? 'https://tanzir71.github.io/tinyblog/'
+        : 'https://tanzir71.github.io/tinyblog/' . $doc;
+    if (!str_contains($html, '<link rel="canonical" href="' . $canonical . '">')) {
+        $failures[] = "{$doc} should use the canonical GitHub Pages URL.";
+    }
+    if (!str_contains($html, '<meta property="og:image" content="https://tanzir71.github.io/tinyblog/assets/og.png">')) {
+        $failures[] = "{$doc} should use an absolute Open Graph image URL.";
+    }
+    if (str_contains($html, 'content="assets/og.png"')) {
+        $failures[] = "{$doc} should not use a relative social image URL.";
+    }
+    if (str_contains($html, 'name="twitter:image"') && !str_contains($html, '<meta name="twitter:image" content="https://tanzir71.github.io/tinyblog/assets/og.png">')) {
+        $failures[] = "{$doc} should use an absolute Twitter image URL.";
+    }
+}
+
+if (is_file($root . '/index.html')) {
+    $landing = file_get_contents($root . '/index.html');
+    if (!str_contains($landing, '<figure class="live-demo-card" role="region" aria-label="Live TinyBlog widget demo">')) {
+        $failures[] = 'index.html live widget demo should be an explicitly labeled region.';
+    }
+}
+
 if (is_file($root . '/assets/site.css')) {
     $css = file_get_contents($root . '/assets/site.css');
     foreach (['prefers-color-scheme', '.docs-shell', '.docs-toc', '.docs-table'] as $needle) {
@@ -290,6 +359,18 @@ if (is_file($root . '/assets/site.css')) {
     ] as $needle) {
         if (!str_contains($css, $needle)) {
             $failures[] = "assets/site.css missing canonical design token: {$needle}";
+        }
+    }
+    if (preg_match('/--paper:\s*(#[0-9a-f]{6})/i', $css, $paper) && preg_match('/--muted:\s*(#[0-9a-f]{6})/i', $css, $muted)) {
+        if (contrast_ratio($paper[1], $muted[1]) < 4.5) {
+            $failures[] = 'assets/site.css muted text contrast on paper should be at least 4.5:1.';
+        }
+    } else {
+        $failures[] = 'assets/site.css should expose paper and muted colors for contrast checking.';
+    }
+    foreach (['a:focus-visible', 'button:focus-visible', 'input:focus-visible', 'textarea:focus-visible', 'select:focus-visible'] as $needle) {
+        if (!str_contains($css, $needle)) {
+            $failures[] = "assets/site.css missing explicit focus-visible selector: {$needle}";
         }
     }
 }

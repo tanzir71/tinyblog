@@ -75,7 +75,15 @@ body {
   text-rendering: optimizeLegibility;
 }
 a { color: inherit; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
 code, pre, kbd { font-family: var(--mono); }
 img, svg { max-width: 100%; }
 

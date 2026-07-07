@@ -163,7 +163,7 @@ Keep the admin "accent color" setting working: it overrides `--accent` only (val
 **Do:** Replace the "SYS · 0N" filler labels with plain section labels ("How it works", "Setup", …) in the same mono style. In the stats strip, replace "$0 / MIT" duplication with verifiable facts: file count (`2 files to deploy`), backend size (`~110 KB, no deps`), `0 external requests on your blog` (true after T1.1), `5-min cPanel install`. Add a quiet link "Read the source — it's one file" → GitHub blob link.
 **Accept:** Every number on the page is verifiable from the repo; no invented stats, no fake testimonials.
 
-### T2.5 — Landing a11y + meta sweep `[ ]`
+### T2.5 — Landing a11y + meta sweep `[x]`
 **Files:** `index.html`, `docs.html`, compare pages.
 **Do:** One pass: heading order (single `h1`), `:focus-visible` on all interactive elements, color-contrast check of `--muted` on `--paper` (must be ≥ 4.5:1 — current `#6c6a62` on `#f4f3ee` is ~4.6:1, verify), `aria-label` on the demo region, canonical URLs consistent (decide: GitHub Pages URL until a domain exists), `og:image` absolute URL (scrapers require absolute).
 **Accept:** Lighthouse a11y ≥ 95 on index.html; OG validator renders card correctly.
