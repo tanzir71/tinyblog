@@ -160,6 +160,11 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing settings health panel hook: {$needle}";
         }
     }
+    foreach (['width INTEGER', 'height INTEGER', 'ALTER TABLE media ADD COLUMN width INTEGER', 'ALTER TABLE media ADD COLUMN height INTEGER', 'getimagesize((string) $target)', 'function media_dimensions_by_url', 'function add_media_dimensions_to_html', 'function render_post_content_html', "render_post_content_html(\$pdo, (string) \$post['content_html'])", "width=\"' . (int) \$media['width'] . '\" height=\"' . (int) \$media['height'] . '\"", 'SELECT filename, original_name, mime, size, url, alt_text, width, height, created_at FROM media ORDER BY id', 'INSERT OR IGNORE INTO media (filename, original_name, mime, size, url, alt_text, width, height, created_at)'] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing image nicety hook: {$needle}";
+        }
+    }
     foreach ([
         'confirm_token',
         'unsub_token',
@@ -231,6 +236,9 @@ if (is_file($root . '/tinyblog-widget.js')) {
         if (!str_contains($js, $needle)) {
             $failures[] = "tinyblog-widget.js missing card theme hook: {$needle}";
         }
+    }
+    if (!str_contains($js, 'img: ["src", "alt", "width", "height"]')) {
+        $failures[] = 'tinyblog-widget.js should preserve safe image dimensions in sanitized content.';
     }
     if (filesize($root . '/tinyblog-widget.js') > 19149) {
         $failures[] = 'tinyblog-widget.js card theme should add less than 1 KB.';

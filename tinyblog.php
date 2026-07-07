@@ -181,6 +181,8 @@ function init_db(PDO $pdo): void
             size INTEGER NOT NULL,
             url TEXT NOT NULL,
             alt_text TEXT NOT NULL DEFAULT '',
+            width INTEGER,
+            height INTEGER,
             user_id INTEGER,
             created_at TEXT NOT NULL,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -273,6 +275,12 @@ function migrate_schema(PDO $pdo): void
     }
     if (!column_exists($pdo, 'media', 'alt_text')) {
         $pdo->exec("ALTER TABLE media ADD COLUMN alt_text TEXT NOT NULL DEFAULT ''");
+    }
+    if (!column_exists($pdo, 'media', 'width')) {
+        $pdo->exec('ALTER TABLE media ADD COLUMN width INTEGER');
+    }
+    if (!column_exists($pdo, 'media', 'height')) {
+        $pdo->exec('ALTER TABLE media ADD COLUMN height INTEGER');
     }
     if (!column_exists($pdo, 'subscribers', 'confirm_token')) {
         $pdo->exec('ALTER TABLE subscribers ADD COLUMN confirm_token TEXT');
@@ -755,6 +763,65 @@ function render_inline_markdown(string $text): string
     return $escaped;
 }
 
+function media_dimensions_by_url(PDO $pdo): array
+{
+    $rows = $pdo->query('SELECT url, width, height FROM media WHERE width IS NOT NULL AND height IS NOT NULL')->fetchAll();
+    $dimensions = [];
+    foreach ($rows as $row) {
+        $url = (string) ($row['url'] ?? '');
+        $width = (int) ($row['width'] ?? 0);
+        $height = (int) ($row['height'] ?? 0);
+        if ($url === '' || $width <= 0 || $height <= 0) {
+            continue;
+        }
+        $dimensions[$url] = ['width' => $width, 'height' => $height];
+        $path = parse_url($url, PHP_URL_PATH);
+        if (is_string($path) && $path !== '') {
+            $dimensions[$path] = ['width' => $width, 'height' => $height];
+        }
+    }
+    return $dimensions;
+}
+
+function image_dimension_attrs(array $dimensions, string $src): string
+{
+    $key = $src;
+    if (!isset($dimensions[$key])) {
+        $path = parse_url($src, PHP_URL_PATH);
+        $key = is_string($path) ? $path : $src;
+    }
+    if (!isset($dimensions[$key])) {
+        return '';
+    }
+    return ' width="' . (int) $dimensions[$key]['width'] . '" height="' . (int) $dimensions[$key]['height'] . '"';
+}
+
+function add_media_dimensions_to_html(string $html, array $dimensions): string
+{
+    if ($html === '' || !$dimensions) {
+        return $html;
+    }
+    return preg_replace_callback('/<img\b([^>]*)>/i', function (array $m) use ($dimensions): string {
+        $attrs = (string) $m[1];
+        if (!preg_match('/\ssrc="([^"]+)"/i', $attrs, $srcMatch)) {
+            return $m[0];
+        }
+        $next = $attrs;
+        if (!preg_match('/\sloading=/i', $next)) {
+            $next .= ' loading="lazy"';
+        }
+        if (!preg_match('/\swidth=/i', $next) && !preg_match('/\sheight=/i', $next)) {
+            $next .= image_dimension_attrs($dimensions, html_entity_decode($srcMatch[1], ENT_QUOTES, 'UTF-8'));
+        }
+        return '<img' . $next . '>';
+    }, $html) ?? $html;
+}
+
+function render_post_content_html(PDO $pdo, string $html): string
+{
+    return add_media_dimensions_to_html($html, media_dimensions_by_url($pdo));
+}
+
 function highlight_code(string $code, string $language): string
 {
     $escaped = htmlEscape($code);
@@ -1159,7 +1226,7 @@ function post_to_api(PDO $pdo, array $post, bool $includeContent): array
         'view_count' => (int) $post['view_count'],
     ];
     if ($includeContent) {
-        $payload['content_html'] = $post['content_html'];
+        $payload['content_html'] = render_post_content_html($pdo, (string) $post['content_html']);
     }
     return $payload;
 }
@@ -1633,11 +1700,12 @@ function render_post(PDO $pdo, string $slug): void
     track_post_view($pdo, (int) $post['id']);
     $reading = reading_time_label(post_reading_minutes($post));
     $meta = htmlEscape(post_publish_at($post)) . ($reading !== '' ? ' &middot; ' . htmlEscape($reading) : '');
+    $imageDimensions = media_dimensions_by_url($pdo);
     $body = '<main class="article"><p class="meta">' . $meta . '</p><h1>' . htmlEscape($post['title']) . '</h1>';
     if (!empty($post['hero_image_url'])) {
-        $body .= '<img src="' . htmlEscape($post['hero_image_url']) . '" alt="" loading="lazy">';
+        $body .= '<img src="' . htmlEscape($post['hero_image_url']) . '" alt="" loading="lazy"' . image_dimension_attrs($imageDimensions, (string) $post['hero_image_url']) . '>';
     }
-    $body .= '<div class="content">' . $post['content_html'] . '</div>';
+    $body .= '<div class="content">' . add_media_dimensions_to_html((string) $post['content_html'], $imageDimensions) . '</div>';
     $body .= '<div class="tags">';
     foreach (split_tags($post['tags']) as $tag) {
         $body .= '<a class="tag" href="' . htmlEscape(url_for('/tag/' . rawurlencode($tag))) . '">#' . htmlEscape($tag) . '</a>';
@@ -2490,8 +2558,11 @@ function upload_media(PDO $pdo, array $user): string
         return 'Could not store upload.';
     }
     chmod($target, 0644);
+    $imageInfo = getimagesize((string) $target);
+    $width = is_array($imageInfo) ? (int) ($imageInfo[0] ?? 0) : 0;
+    $height = is_array($imageInfo) ? (int) ($imageInfo[1] ?? 0) : 0;
     $url = rtrim(setting($pdo, 'canonical_base', base_url()), '/') . '/uploads/' . rawurlencode($filename);
-    $stmt = $pdo->prepare('INSERT INTO media (filename, original_name, mime, size, url, alt_text, user_id, created_at) VALUES (:filename, :original_name, :mime, :size, :url, :alt_text, :user_id, :created_at)');
+    $stmt = $pdo->prepare('INSERT INTO media (filename, original_name, mime, size, url, alt_text, width, height, user_id, created_at) VALUES (:filename, :original_name, :mime, :size, :url, :alt_text, :width, :height, :user_id, :created_at)');
     $stmt->execute([
         ':filename' => $filename,
         ':original_name' => $original,
@@ -2499,6 +2570,8 @@ function upload_media(PDO $pdo, array $user): string
         ':size' => (int) $file['size'],
         ':url' => $url,
         ':alt_text' => $altText,
+        ':width' => $width > 0 ? $width : null,
+        ':height' => $height > 0 ? $height : null,
         ':user_id' => (int) $user['id'],
         ':created_at' => now_utc(),
     ]);
@@ -2653,7 +2726,11 @@ function render_media_admin(PDO $pdo): void
             $alt = trim((string) ($media['alt_text'] ?? ''));
             $label = $alt !== '' ? $alt : (string) ($media['original_name'] ?? 'image');
             $markdown = '![' . $label . '](' . (string) $media['url'] . ')';
-            echo '<article class="media-card"><img class="media-thumb" src="' . htmlEscape($media['url']) . '" alt="' . htmlEscape($alt) . '" loading="lazy"><div class="media-card-body"><strong>' . htmlEscape($media['original_name']) . '</strong><span class="muted">' . (int) $media['size'] . ' bytes</span><code>' . htmlEscape($media['url']) . '</code>';
+            $imageDimensions = '';
+            if ((int) ($media['width'] ?? 0) > 0 && (int) ($media['height'] ?? 0) > 0) {
+                $imageDimensions = ' width="' . (int) $media['width'] . '" height="' . (int) $media['height'] . '"';
+            }
+            echo '<article class="media-card"><img class="media-thumb" src="' . htmlEscape($media['url']) . '" alt="' . htmlEscape($alt) . '" loading="lazy"' . $imageDimensions . '><div class="media-card-body"><strong>' . htmlEscape($media['original_name']) . '</strong><span class="muted">' . (int) $media['size'] . ' bytes</span><code>' . htmlEscape($media['url']) . '</code>';
             if ($alt !== '') {
                 echo '<span class="muted">' . htmlEscape($alt) . '</span>';
             }
@@ -2795,7 +2872,7 @@ function export_data(PDO $pdo): void
     echo ',"posts":';
     stream_json_rows($pdo->query('SELECT * FROM posts ORDER BY id'));
     echo ',"media":';
-    stream_json_rows($pdo->query('SELECT filename, original_name, mime, size, url, alt_text, created_at FROM media ORDER BY id'));
+    stream_json_rows($pdo->query('SELECT filename, original_name, mime, size, url, alt_text, width, height, created_at FROM media ORDER BY id'));
     echo ',"subscribers":';
     $stmt = $pdo->prepare('SELECT site, email, status, consent_at, confirmed_at, unsub_token FROM subscribers WHERE site = :site AND status = :status ORDER BY id');
     $stmt->execute([':site' => $site, ':status' => 'active']);
@@ -2860,7 +2937,7 @@ function import_data(PDO $pdo): string
                 ':updated_at' => (string) ($post['updated_at'] ?? now_utc()),
             ]);
         }
-        $mediaStmt = $pdo->prepare('INSERT OR IGNORE INTO media (filename, original_name, mime, size, url, alt_text, created_at) VALUES (:filename, :original_name, :mime, :size, :url, :alt_text, :created_at)');
+        $mediaStmt = $pdo->prepare('INSERT OR IGNORE INTO media (filename, original_name, mime, size, url, alt_text, width, height, created_at) VALUES (:filename, :original_name, :mime, :size, :url, :alt_text, :width, :height, :created_at)');
         foreach (($data['media'] ?? []) as $media) {
             if (!empty($media['filename']) && !empty($media['url'])) {
                 $mediaStmt->execute([
@@ -2870,6 +2947,8 @@ function import_data(PDO $pdo): string
                     ':size' => (int) ($media['size'] ?? 0),
                     ':url' => (string) $media['url'],
                     ':alt_text' => (string) ($media['alt_text'] ?? ''),
+                    ':width' => isset($media['width']) ? (int) $media['width'] : null,
+                    ':height' => isset($media['height']) ? (int) $media['height'] : null,
                     ':created_at' => (string) ($media['created_at'] ?? now_utc()),
                 ]);
             }

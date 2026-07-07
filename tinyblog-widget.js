@@ -76,7 +76,7 @@
       ul: [],
       ol: [],
       li: [],
-      img: ["src", "alt"],
+      img: ["src", "alt", "width", "height"],
       blockquote: [],
       pre: [],
       code: ["class"],
@@ -102,6 +102,7 @@
         var value = node.getAttribute(attr);
         if (!value) return;
         if ((attr === "href" || attr === "src") && !safeUrl(value)) return;
+        if ((attr === "width" || attr === "height") && !/^[1-9][0-9]{0,4}$/.test(value)) return;
         if (attr === "class" && !/^(language-[a-z0-9_-]+|tok-key)$/i.test(value)) return;
         safe.setAttribute(attr, attr === "href" || attr === "src" ? safeUrl(value) : value.slice(0, 180));
       });
