@@ -4,6 +4,8 @@ Repository: https://github.com/tanzir71/tinyblog
 
 TinyBlog Widget is an embeddable blog MVP: one JavaScript file renders a feed, a single post, or a subscribe box on any site, while a minimal PHP 8 + SQLite backend gives authors a secure browser admin UI for publishing without returning to cPanel for day-to-day content work.
 
+The reader-facing PHP blog, admin, and widget use system fonts and load no external font or tracker services by default; the static marketing pages in this repo are separate from the blog you deploy.
+
 ## Security Summary
 
 Top threats are SQL injection, cross-site scripting, cross-site request forgery, unsafe uploads, credential attacks, and unwanted cross-origin data exposure. TinyBlog Widget mitigates them with PDO prepared statements, output escaping, server-side sanitized Markdown, browser-side widget sanitization, CSRF tokens, session timeout, password hashing, CORS origin allowlists, rate limits, and image-only uploads.

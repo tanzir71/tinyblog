@@ -493,7 +493,7 @@ function security_headers(string $context = 'html'): void
     header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
     // Customize CSP carefully if you add third-party scripts, analytics, or remote media.
     if ($context === 'html') {
-        header("Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self'");
+        header("Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'");
     }
 }
 
@@ -1297,9 +1297,6 @@ function render_page(PDO $pdo, string $title, string $body, array $meta = []): v
     }
     echo '<link rel="alternate" type="application/rss+xml" title="' . htmlEscape($blogTitle) . '" href="' . htmlEscape(url_for('/feed.xml')) . '">';
     echo '<link rel="alternate" type="application/feed+json" title="' . htmlEscape($blogTitle) . '" href="' . htmlEscape(url_for('/feed.json')) . '">';
-    echo '<link rel="preconnect" href="https://fonts.googleapis.com">';
-    echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
-    echo '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">';
     echo '<style>';
     echo css_base($accent);
     echo '</style></head><body><div class="site">';
@@ -1346,7 +1343,7 @@ function css_base(string $accent): string
     return "
         :root{--bg:#fff;--text:#050505;--muted:#5f5f5f;--line:#e6e6e6;--soft:#f7f7f7;--accent:{$safeAccent};--max:1120px;--measure:760px}
         *{box-sizing:border-box}
-        body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:0}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;letter-spacing:0}
         a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
         img{max-width:100%;height:auto}
         input,textarea,select,button{font:inherit}
@@ -1852,7 +1849,7 @@ function admin_head(PDO $pdo, string $title): string
 {
     security_headers('html');
     $accent = setting($pdo, 'accent_color', '#000000');
-    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . htmlEscape($title) . ' - TinyBlog Admin</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>' . css_base($accent) . '.editor-preview{border:1px solid var(--line);padding:14px;min-height:180px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}</style></head><body>';
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . htmlEscape($title) . ' - TinyBlog Admin</title><style>' . css_base($accent) . '.editor-preview{border:1px solid var(--line);padding:14px;min-height:180px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}</style></head><body>';
 }
 
 function render_dashboard_admin(PDO $pdo, array $user): void

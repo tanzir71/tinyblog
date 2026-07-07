@@ -2,6 +2,10 @@
 
 Repository: https://github.com/tanzir71/tinyblog
 
+## 2026-07-07
+
+- Removed Google Fonts from the PHP app/admin, tightened CSP font/style sources, and documented the system-font/no-tracker deployment claim.
+
 ## 2026-07-06
 
 - Documented auth-flow caveats on the landing docs and setup surface: first-admin timing, plaintext `.env` password risk, recovery credential cleanup, and HTTPS enforcement.

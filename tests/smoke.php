@@ -34,6 +34,14 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing expected safeguard: {$needle}";
         }
     }
+    foreach (['fonts.googleapis.com', 'fonts.gstatic.com'] as $needle) {
+        if (str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php should not load external font host: {$needle}";
+        }
+    }
+    if (!str_contains($php, 'font-family:ui-sans-serif,system-ui,-apple-system,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif')) {
+        $failures[] = 'tinyblog.php should use the system-first app font stack.';
+    }
     foreach (['function visible_post_where', 'publish_at <= :now', 'reading_minutes', "'hasMore'", 'application/ld+json', 'BlogPosting', 'rel="next"', 'rel="prev"'] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing expected feature hook: {$needle}";
