@@ -54,6 +54,14 @@ TB_ADMIN_PASSWORD=change-this-long-password
 
 Edit those values in cPanel/File Manager or another private server-side file editor, then log in from the frontend at the known link `/admin`. `TB_ADMIN_PASSWORD_HASH` can be used instead of `TB_ADMIN_PASSWORD` if you prefer pasting a PHP `password_hash()` value.
 
+## Demo site
+
+Use PHP hosting for the backend: the PHP app itself deploys to PHP hosting, not Vercel. Vercel is only for the marketing site and live demo feed in this repo: `index.html` is static, and `/api/posts` serves demo JSON for the landing-page widget.
+
+1. Fork the repo -> vercel.com -> "Add New Project" -> import the fork.
+2. Framework preset: **Other**. No build command. Output dir: root. Deploy.
+3. Done - `index.html` is the site, `/api/posts` serves the demo feed.
+
 ## Embed Snippets
 
 Feed widget:

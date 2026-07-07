@@ -225,7 +225,7 @@ Design direction: same spec-sheet aesthetic as the landing page — paper backgr
 - **Product hosting** (real users): any PHP shared host — that's the product's whole point. `SETUP.md` already covers it.
 - **Vercel** (this phase): the *marketing site + live demo*, so the project has a fast public URL with a working widget demo — the "proof" pillar from §3.
 
-### T5.1 — Create the Vercel demo artifact `[ ]`
+### T5.1 — Create the Vercel demo artifact `[x]`
 
 Create these files at repo root (they're inert on shared hosting; `.htaccess` and `_config.yml` already exclude patterns — add these to `_config.yml` excludes):
 

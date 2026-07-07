@@ -12,6 +12,7 @@ exclude:
   - SETUP.md
   - tinyblog.php
   - tests/
+  - api/
   - data/
   - uploads/
   - .env.example

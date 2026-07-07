@@ -8,6 +8,8 @@ $required = [
     'index.html',
     'docs.html',
     'tinyblog-vs-dropinblog.html',
+    'vercel.json',
+    'api/posts.js',
     '_config.yml',
     'README.md',
     'SETUP.md',
@@ -263,9 +265,14 @@ if (is_file($root . '/index.html')) {
     if (preg_match('/href="[^"]+\.md(?:#[^"]*)?"/', $landing)) {
         $failures[] = 'index.html should link to docs.html instead of raw Markdown docs.';
     }
-    foreach (['id="live-demo"', 'tinyblog-widget.js', 'TinyBlogWidget.init', 'endpoint: "demo"', 'This is the actual widget, rendering the actual JSON.', '<noscript>'] as $needle) {
+    foreach (['id="live-demo"', 'tinyblog-widget.js', 'TinyBlogWidget.init', 'This is the actual widget, rendering the actual JSON.', '<noscript>'] as $needle) {
         if (!str_contains($landing, $needle)) {
             $failures[] = "index.html missing live widget demo hook: {$needle}";
+        }
+    }
+    foreach (['demoEndpoint', 'vercel.app', '"/api"', '"demo"', 'endpoint: demoEndpoint'] as $needle) {
+        if (!str_contains($landing, $needle)) {
+            $failures[] = "index.html missing Vercel/GitHub Pages demo endpoint switch: {$needle}";
         }
     }
     foreach (['tinyblog-vs-dropinblog.html', 'vs DropInBlog', 'from $49/mo'] as $needle) {
@@ -421,9 +428,27 @@ if (is_file($root . '/assets/site.css')) {
 
 if (is_file($root . '/_config.yml')) {
     $config = file_get_contents($root . '/_config.yml');
-    foreach (['exclude:', 'README.md', 'tinyblog.php', 'tests/', 'data/', 'uploads/'] as $needle) {
+    foreach (['exclude:', 'README.md', 'tinyblog.php', 'tests/', 'data/', 'uploads/', 'api/'] as $needle) {
         if (!str_contains($config, $needle)) {
             $failures[] = "_config.yml missing Pages exclude: {$needle}";
+        }
+    }
+}
+
+if (is_file($root . '/vercel.json')) {
+    $vercel = file_get_contents($root . '/vercel.json');
+    foreach (['"cleanUrls": true', '"source": "/api/posts"', '"Access-Control-Allow-Origin"', '"value": "*"', '"Cache-Control"', '"public, max-age=300"'] as $needle) {
+        if (!str_contains($vercel, $needle)) {
+            $failures[] = "vercel.json missing demo deployment config: {$needle}";
+        }
+    }
+}
+
+if (is_file($root . '/api/posts.js')) {
+    $api = file_get_contents($root . '/api/posts.js');
+    foreach (['export default function handler', 'const posts = [', 'TinyBlog demo', 'posts, items: posts, page: 1, hasMore: false', 'reading_minutes'] as $needle) {
+        if (!str_contains($api, $needle)) {
+            $failures[] = "api/posts.js missing Vercel demo API hook: {$needle}";
         }
     }
 }
@@ -483,6 +508,11 @@ if (is_file($root . '/README.md')) {
     }
     if (!str_contains($readme, '`light`, `dark`, or `card`')) {
         $failures[] = 'README.md missing card widget theme documentation.';
+    }
+    foreach (['## Demo site', 'the PHP app itself deploys to PHP hosting, not Vercel', 'Framework preset: **Other**', 'No build command. Output dir: root.', '`/api/posts` serves the demo feed'] as $needle) {
+        if (!str_contains($readme, $needle)) {
+            $failures[] = "README.md missing Vercel demo site guidance: {$needle}";
+        }
     }
 }
 

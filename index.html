@@ -297,9 +297,11 @@ curl -LO https://blog.example.com/tinyblog-widget.js</code></pre>
   <script>
     (function () {
       if (!window.TinyBlogWidget) return;
+      const isVercelDemo = window.location.hostname === "vercel.app" || window.location.hostname.endsWith(".vercel.app");
+      const demoEndpoint = isVercelDemo ? "/api" : "demo";
       TinyBlogWidget.init({
         container: "#live-demo",
-        endpoint: "demo",
+        endpoint: demoEndpoint,
         widgetType: "feed",
         maxItems: 3,
         showExcerpt: true,
