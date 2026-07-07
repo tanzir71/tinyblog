@@ -95,6 +95,11 @@ if (is_file($root . '/tinyblog.php')) {
     if (str_contains($php, '<div class="site admin-layout"><aside class="admin-nav">')) {
         $failures[] = 'tinyblog.php should use the refined admin shell instead of the old button sidebar.';
     }
+    foreach (['function dashboard_stats', 'function relative_time', 'function dashboard_status_label', 'toggle_post_status', 'admin_action" value="toggle_post_status"', 'stat-strip', 'status-badge', 'views_30d', 'Write your first post', 'row-actions'] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing dashboard refinement hook: {$needle}";
+        }
+    }
     foreach ([
         'confirm_token',
         'unsub_token',

@@ -179,7 +179,7 @@ Design direction: same spec-sheet aesthetic as the landing page — paper backgr
 **Do:** Replace the button-pile sidebar with a proper shell: top bar (TB mark + blog title + "View site" link + logout), left nav with *text links* + active state (underline/accent, `aria-current="page"`), content column max-width. Nav buttons stop looking like primary CTAs — reserve the solid-ink button style for the one primary action per screen.
 **Accept:** Exactly one visually-primary button per admin screen; active nav item obvious; keyboard navigable; works at 360px (nav collapses to horizontal scroll row or simple stacked links — no JS hamburger needed).
 
-### T3.2 — Dashboard: stats + status badges + relative dates `[ ]`
+### T3.2 — Dashboard: stats + status badges + relative dates `[x]`
 **Files:** `tinyblog.php` (`render_dashboard_admin()`).
 **Do:** Add a 3–4 cell stat strip (published count, drafts, confirmed subscribers, views 30d — all from existing tables). Posts table gets: status as a small badge (`draft` = outline, `published` = solid, `scheduled` = accent outline when `publish_at` future), pinned indicator, relative dates ("2d ago", title attr = full UTC), row hover, and per-row quick actions (Edit / View / Unpublish-Publish as small links). Empty state when no posts: bordered panel with "Write your first post" primary button + "Load sample posts" secondary.
 **Accept:** Fresh install shows the empty state; seeded install shows badges/relative dates; all quick actions CSRF-protected forms or plain GET links to existing routes; no new SQL beyond simple prepared aggregates.

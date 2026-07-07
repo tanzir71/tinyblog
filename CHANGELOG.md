@@ -4,6 +4,7 @@ Repository: https://github.com/tanzir71/tinyblog
 
 ## 2026-07-07
 
+- Added dashboard stat cells, status badges, relative dates, empty state, and quick publish/draft row actions.
 - Reworked the admin shell with a product top bar, text navigation, active section state, and a constrained content column.
 - Added guarded favicon and light/dark theme-color metadata to public and admin PHP pages.
 - Added configurable home-page heading and intro settings, with the blog title as the default hero heading.

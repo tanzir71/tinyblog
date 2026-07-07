@@ -1403,6 +1403,19 @@ function css_base(string $accent): string
         .admin-nav-link:hover{color:var(--text)}
         .admin-nav-link[aria-current=\"page\"]{color:var(--text);border-color:var(--accent)}
         .admin-content{width:100%;max-width:920px;min-width:0}
+        .stat-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));border:1px solid var(--line);background:var(--panel);margin:0 0 20px}
+        .stat-cell{padding:16px;border-right:1px solid var(--line);min-width:0}
+        .stat-cell:last-child{border-right:0}
+        .stat-value{font-size:28px;line-height:1;font-weight:800;letter-spacing:0;margin:0 0 8px}
+        .stat-label{font-size:12px;font-weight:750;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:0}
+        .status-badge{display:inline-flex;align-items:center;border:1px solid var(--line-strong);padding:3px 8px;font-size:12px;font-weight:750;text-transform:uppercase;letter-spacing:.08em}
+        .status-badge.published{background:var(--text);color:var(--paper)}
+        .status-badge.draft{background:transparent;color:var(--text)}
+        .status-badge.scheduled{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+        tr:hover td{background:var(--accent-soft)}
+        .row-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:13px}
+        .link-button{border:0;background:transparent;color:inherit;padding:0;font:inherit;font-weight:650;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+        .empty-state{border:1px solid var(--line);background:var(--panel);padding:22px;margin:18px 0}
         .button,button{border:1px solid var(--text);background:var(--text);color:var(--paper);text-decoration:none;padding:10px 13px;border-radius:0;cursor:pointer;font-weight:650;font-size:14px}
         .button.secondary,button.secondary{background:var(--panel);color:var(--text)}
         .admin-logout{border:0;background:transparent;padding:0}
@@ -1796,6 +1809,10 @@ function render_admin(PDO $pdo): void
                 $message = delete_post($pdo, $user);
                 $action = 'dashboard';
             }
+            if ($postAction === 'toggle_post_status') {
+                $message = toggle_post_status($pdo, $user);
+                $action = 'dashboard';
+            }
             if ($postAction === 'upload_media') {
                 $message = upload_media($pdo, $user);
                 $action = 'media';
@@ -1888,22 +1905,122 @@ function admin_head(PDO $pdo, string $title): string
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' . htmlEscape($title) . ' - TinyBlog Admin</title>' . app_icon_head_tags() . '<style>' . css_base($accent) . '.editor-preview{border:1px solid var(--line);padding:14px;min-height:180px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}</style></head><body>';
 }
 
+function dashboard_stats(PDO $pdo, string $site): array
+{
+    $now = now_utc();
+    $since = gmdate('Y-m-d H:i:s', time() - 30 * 86400);
+    $stats = [];
+
+    $published = $pdo->prepare("SELECT COUNT(*) FROM posts WHERE site = :site AND status = 'published' AND (publish_at IS NULL OR publish_at <= :now)");
+    $published->execute([':site' => $site, ':now' => $now]);
+    $stats['published'] = (int) $published->fetchColumn();
+
+    $drafts = $pdo->prepare("SELECT COUNT(*) FROM posts WHERE site = :site AND status = 'draft'");
+    $drafts->execute([':site' => $site]);
+    $stats['drafts'] = (int) $drafts->fetchColumn();
+
+    $subscribers = $pdo->prepare("SELECT COUNT(*) FROM subscribers WHERE site = :site AND status = 'active'");
+    $subscribers->execute([':site' => $site]);
+    $stats['subscribers'] = (int) $subscribers->fetchColumn();
+
+    $views = $pdo->prepare('SELECT COUNT(pv.id) FROM post_views pv JOIN posts p ON p.id = pv.post_id WHERE p.site = :site AND pv.viewed_at >= :since');
+    $views->execute([':site' => $site, ':since' => $since]);
+    $stats['views_30d'] = (int) $views->fetchColumn();
+
+    return $stats;
+}
+
+function relative_time(?string $datetime): string
+{
+    $time = strtotime((string) $datetime);
+    if ($time === false) {
+        return 'unknown';
+    }
+    $delta = time() - $time;
+    $future = $delta < 0;
+    $delta = abs($delta);
+    $units = [
+        'y' => 31536000,
+        'mo' => 2592000,
+        'd' => 86400,
+        'h' => 3600,
+        'm' => 60,
+    ];
+    foreach ($units as $label => $seconds) {
+        if ($delta >= $seconds) {
+            $value = max(1, (int) floor($delta / $seconds));
+            return $future ? 'in ' . $value . $label : $value . $label . ' ago';
+        }
+    }
+    return $future ? 'soon' : 'just now';
+}
+
+function dashboard_status_label(array $post): string
+{
+    if (($post['status'] ?? '') === 'published') {
+        $publishAt = strtotime(post_publish_at($post));
+        if ($publishAt !== false && $publishAt > time()) {
+            return 'scheduled';
+        }
+        return 'published';
+    }
+    return 'draft';
+}
+
 function render_dashboard_admin(PDO $pdo, array $user): void
 {
+    $site = setting($pdo, 'site_key', 'store-1');
+    $stats = dashboard_stats($pdo, $site);
     $stmt = $pdo->prepare('SELECT * FROM posts WHERE site = :site ORDER BY datetime(updated_at) DESC LIMIT 20');
-    $stmt->execute([':site' => setting($pdo, 'site_key', 'store-1')]);
+    $stmt->execute([':site' => $site]);
+    $posts = $stmt->fetchAll();
     echo '<h1>Dashboard</h1><div class="toolbar"><a class="button" href="' . htmlEscape(url_for('/admin?action=edit')) . '">Write post</a>';
     if (($user['role'] ?? '') === 'admin') {
         echo '<form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="seed_samples"><button class="secondary">Load sample posts</button></form>';
     }
     echo '</div>';
-    echo '<table><thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Updated</th></tr></thead><tbody>';
-    foreach ($stmt->fetchAll() as $post) {
-        echo '<tr><td><a href="' . htmlEscape(url_for('/admin?action=edit&id=' . (int) $post['id'])) . '">' . htmlEscape($post['title']) . '</a><br><span class="muted">/' . htmlEscape($post['slug']) . '</span></td><td>' . htmlEscape($post['status']) . '</td><td>' . (int) $post['view_count'] . '</td><td>' . htmlEscape($post['updated_at']) . '</td></tr>';
+
+    echo '<section class="stat-strip" aria-label="Dashboard stats">';
+    foreach ([
+        'published' => 'Published',
+        'drafts' => 'Drafts',
+        'subscribers' => 'Confirmed subscribers',
+        'views_30d' => 'Views 30d',
+    ] as $key => $label) {
+        echo '<div class="stat-cell"><p class="stat-value">' . (int) ($stats[$key] ?? 0) . '</p><p class="stat-label">' . htmlEscape($label) . '</p></div>';
     }
-    echo '</tbody></table>';
+    echo '</section>';
+
+    if (!$posts) {
+        echo '<section class="empty-state"><h2>Write your first post</h2><p class="muted">Start with a short update, or load the sample posts to explore the admin.</p><div class="toolbar"><a class="button" href="' . htmlEscape(url_for('/admin?action=edit')) . '">Write your first post</a>';
+        if (($user['role'] ?? '') === 'admin') {
+            echo '<form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="seed_samples"><button class="secondary">Load sample posts</button></form>';
+        }
+        echo '</div></section>';
+    } else {
+        echo '<table aria-label="Recent posts"><thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Updated</th></tr></thead><tbody>';
+        foreach ($posts as $post) {
+            $status = dashboard_status_label($post);
+            $statusClass = preg_replace('/[^a-z-]/', '', $status) ?: 'draft';
+            $updatedAt = (string) ($post['updated_at'] ?? '');
+            $viewUrl = url_for('/post/' . rawurlencode((string) $post['slug']));
+            $editUrl = url_for('/admin?action=edit&id=' . (int) $post['id']);
+            $toggleLabel = ($post['status'] ?? '') === 'published' ? 'Unpublish' : 'Publish';
+            echo '<tr><td><a href="' . htmlEscape($editUrl) . '">' . htmlEscape($post['title']) . '</a>';
+            if ((int) ($post['pinned'] ?? 0) === 1) {
+                echo ' <span class="muted" title="Pinned">Pinned</span>';
+            }
+            echo '<br><span class="muted">/' . htmlEscape($post['slug']) . '</span><div class="row-actions"><a href="' . htmlEscape($editUrl) . '">Edit</a>';
+            if ($status !== 'draft') {
+                echo '<a href="' . htmlEscape($viewUrl) . '">View</a>';
+            }
+            echo '<form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="toggle_post_status"><input type="hidden" name="id" value="' . (int) $post['id'] . '"><button class="link-button" type="submit">' . htmlEscape($toggleLabel) . '</button></form></div></td>';
+            echo '<td><span class="status-badge ' . htmlEscape($statusClass) . '">' . htmlEscape($status) . '</span></td><td>' . (int) $post['view_count'] . '</td><td><time datetime="' . htmlEscape($updatedAt) . '" title="' . htmlEscape($updatedAt) . '">' . htmlEscape(relative_time($updatedAt)) . '</time></td></tr>';
+        }
+        echo '</tbody></table>';
+    }
     $top = $pdo->prepare('SELECT title, slug, view_count FROM posts WHERE site = :site AND view_count > 0 ORDER BY view_count DESC, datetime(updated_at) DESC LIMIT 5');
-    $top->execute([':site' => setting($pdo, 'site_key', 'store-1')]);
+    $top->execute([':site' => $site]);
     echo '<h2>Top posts</h2><table><thead><tr><th>Post</th><th>Views</th></tr></thead><tbody>';
     foreach ($top->fetchAll() as $post) {
         echo '<tr><td><a href="' . htmlEscape(url_for('/post/' . rawurlencode($post['slug']))) . '">' . htmlEscape($post['title']) . '</a></td><td>' . (int) $post['view_count'] . '</td></tr>';
@@ -2095,6 +2212,37 @@ function delete_post(PDO $pdo, array $user): string
         ':site' => setting($pdo, 'site_key', 'store-1'),
     ]);
     return $stmt->rowCount() > 0 ? 'Post deleted.' : 'Post not found.';
+}
+
+function toggle_post_status(PDO $pdo, array $user): string
+{
+    $id = (int) ($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        return 'Choose a post to update.';
+    }
+    if (!can_manage_post($pdo, $user, $id)) {
+        http_response_code(403);
+        exit('You cannot update that post.');
+    }
+    $site = setting($pdo, 'site_key', 'store-1');
+    $stmt = $pdo->prepare('SELECT status FROM posts WHERE id = :id AND site = :site LIMIT 1');
+    $stmt->execute([':id' => $id, ':site' => $site]);
+    $current = (string) ($stmt->fetchColumn() ?: '');
+    if ($current === '') {
+        return 'Post not found.';
+    }
+    $next = $current === 'published' ? 'draft' : 'published';
+    $now = now_utc();
+    $update = $pdo->prepare('UPDATE posts SET status = :status, published_at = :published_at, publish_at = :publish_at, updated_at = :updated_at WHERE id = :id AND site = :site');
+    $update->execute([
+        ':status' => $next,
+        ':published_at' => $next === 'published' ? $now : null,
+        ':publish_at' => $next === 'published' ? $now : null,
+        ':updated_at' => $now,
+        ':id' => $id,
+        ':site' => $site,
+    ]);
+    return $next === 'published' ? 'Post published.' : 'Post moved to drafts.';
 }
 
 function upload_media(PDO $pdo, array $user): string
