@@ -54,6 +54,7 @@
           </div>
         </div>
 
+        <div class="hero-proof">
         <div class="code-card" aria-label="Embed snippet">
           <div class="code-bar">
             <span>store-page.html</span>
@@ -69,6 +70,12 @@
 <span class="tok-com">// That's the whole client-side integration.</span>
 <span class="tok-com">// Posts render from JSON your PHP host serves —</span>
 <span class="tok-com">// prepared SQL, CORS allowlist, no third parties.</span></code></pre>
+        </div>
+        <figure class="live-demo-card" aria-label="Live TinyBlog widget demo">
+          <div id="live-demo"></div>
+          <noscript><p class="copy muted">Enable JavaScript to see the live TinyBlog widget demo.</p></noscript>
+          <figcaption>This is the actual widget, rendering the actual JSON.</figcaption>
+        </figure>
         </div>
       </section>
 
@@ -256,6 +263,20 @@ curl -LO https://blog.example.com/tinyblog-widget.js</code></pre>
     </footer>
   </div>
 
+  <script src="tinyblog-widget.js"></script>
+  <script>
+    (function () {
+      if (!window.TinyBlogWidget) return;
+      TinyBlogWidget.init({
+        container: "#live-demo",
+        endpoint: "demo",
+        widgetType: "feed",
+        maxItems: 3,
+        showExcerpt: true,
+        canonicalUrl: "https://github.com/tanzir71/tinyblog"
+      });
+    })();
+  </script>
   <script>
     document.querySelectorAll('.copy-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {

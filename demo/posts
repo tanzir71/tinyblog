@@ -1,0 +1,69 @@
+{
+  "title": "TinyBlog demo",
+  "posts": [
+    {
+      "title": "Why TinyBlog exists",
+      "slug": "why-tinyblog-exists",
+      "canonical_url": "https://github.com/tanzir71/tinyblog#readme",
+      "excerpt": "One PHP file, SQLite, and a one-line embed. The blog your shared host can actually run.",
+      "published_at": "2026-07-01T09:00:00Z",
+      "tags": ["updates"],
+      "reading_minutes": 3,
+      "reading_time": "3 min read"
+    },
+    {
+      "title": "Secure defaults on cheap hosting",
+      "slug": "secure-defaults",
+      "canonical_url": "https://github.com/tanzir71/tinyblog/blob/main/SECURITY.md",
+      "excerpt": "CSRF everywhere, prepared statements, image-only uploads, CORS allowlists.",
+      "published_at": "2026-06-24T09:00:00Z",
+      "tags": ["security"],
+      "reading_minutes": 4,
+      "reading_time": "4 min read"
+    },
+    {
+      "title": "Embed a feed on any page",
+      "slug": "embed-a-feed",
+      "canonical_url": "https://github.com/tanzir71/tinyblog#embed-snippets",
+      "excerpt": "Feed, single post, or subscribe box: one script tag, zero dependencies.",
+      "published_at": "2026-06-15T09:00:00Z",
+      "tags": ["how-to"],
+      "reading_minutes": 2,
+      "reading_time": "2 min read"
+    }
+  ],
+  "items": [
+    {
+      "title": "Why TinyBlog exists",
+      "slug": "why-tinyblog-exists",
+      "canonical_url": "https://github.com/tanzir71/tinyblog#readme",
+      "excerpt": "One PHP file, SQLite, and a one-line embed. The blog your shared host can actually run.",
+      "published_at": "2026-07-01T09:00:00Z",
+      "tags": ["updates"],
+      "reading_minutes": 3,
+      "reading_time": "3 min read"
+    },
+    {
+      "title": "Secure defaults on cheap hosting",
+      "slug": "secure-defaults",
+      "canonical_url": "https://github.com/tanzir71/tinyblog/blob/main/SECURITY.md",
+      "excerpt": "CSRF everywhere, prepared statements, image-only uploads, CORS allowlists.",
+      "published_at": "2026-06-24T09:00:00Z",
+      "tags": ["security"],
+      "reading_minutes": 4,
+      "reading_time": "4 min read"
+    },
+    {
+      "title": "Embed a feed on any page",
+      "slug": "embed-a-feed",
+      "canonical_url": "https://github.com/tanzir71/tinyblog#embed-snippets",
+      "excerpt": "Feed, single post, or subscribe box: one script tag, zero dependencies.",
+      "published_at": "2026-06-15T09:00:00Z",
+      "tags": ["how-to"],
+      "reading_minutes": 2,
+      "reading_time": "2 min read"
+    }
+  ],
+  "page": 1,
+  "hasMore": false
+}

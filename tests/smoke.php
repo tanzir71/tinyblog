@@ -199,6 +199,22 @@ if (is_file($root . '/index.html')) {
     if (preg_match('/href="[^"]+\.md(?:#[^"]*)?"/', $landing)) {
         $failures[] = 'index.html should link to docs.html instead of raw Markdown docs.';
     }
+    foreach (['id="live-demo"', 'tinyblog-widget.js', 'TinyBlogWidget.init', 'endpoint: "demo"', 'This is the actual widget, rendering the actual JSON.', '<noscript>'] as $needle) {
+        if (!str_contains($landing, $needle)) {
+            $failures[] = "index.html missing live widget demo hook: {$needle}";
+        }
+    }
+}
+
+if (is_file($root . '/demo/posts')) {
+    $demo = file_get_contents($root . '/demo/posts');
+    foreach (['TinyBlog demo', 'Why TinyBlog exists', 'Secure defaults on cheap hosting', 'Embed a feed on any page'] as $needle) {
+        if (!str_contains($demo, $needle)) {
+            $failures[] = "demo/posts missing expected demo data: {$needle}";
+        }
+    }
+} else {
+    $failures[] = 'Missing static demo/posts widget JSON file.';
 }
 
 if (is_file($root . '/docs.html')) {

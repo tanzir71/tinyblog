@@ -160,6 +160,17 @@ em { font-style: italic; }
 /* ---------- Hero ---------- */
 .hero { display: grid; grid-template-columns: 1fr; gap: var(--s-7); padding: var(--s-8) 0; }
 .hero-copy { align-self: center; }
+.hero-proof { display: grid; gap: var(--s-4); align-self: start; }
+.live-demo-card {
+  margin: 0; border: 1px solid var(--line-strong); background: var(--panel);
+  padding: var(--s-4);
+}
+.live-demo-card figcaption {
+  margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line);
+  font: 600 var(--fs-label)/1.5 var(--mono); letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted);
+}
+.live-demo-card .tbw { max-width: none; }
 
 /* ---------- Stats row ---------- */
 .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; margin-top: var(--s-7); border-top: 1px solid var(--line); }

@@ -143,7 +143,7 @@ Keep the admin "accent color" setting working: it overrides `--accent` only (val
 
 ## 5. Phase 2 — Landing page: from claims to proof
 
-### T2.1 — Live widget demo in the hero `[ ]`
+### T2.1 — Live widget demo in the hero `[x]`
 **Files:** `index.html`, new `demo/posts.json` (static), `tinyblog-widget.js` (no changes expected).
 **Do:** Replace the static "code card" *adjacent* hero panel (keep the code card itself — it's good) with a real mounted widget: load `tinyblog-widget.js` from the repo and `TinyBlogWidget.init({ container:"#live-demo", endpoint:"demo", widgetType:"feed", maxItems:3 })` won't work against static hosting because the widget fetches `{endpoint}/posts`. So: add a tiny fetch-shim OR (preferred, zero widget changes) host `demo/posts` as a static JSON file and set `endpoint:"demo"` → verify the widget's `apiUrl()` produces `demo/posts?...` and GitHub Pages serves extensionless files; if it doesn't, name the file `demo/posts` with a `_headers`-equivalent or fall back to a 10-line inline mock of `window.fetch` scoped to the demo URL. Caption it: "This is the actual widget, rendering the actual JSON."
 **Accept:** Landing page hero area renders a real feed via `tinyblog-widget.js` with 3 demo posts; JS console clean; graceful static fallback (`<noscript>` + error state) if fetch fails.
