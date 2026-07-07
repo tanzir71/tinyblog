@@ -174,7 +174,7 @@ Keep the admin "accent color" setting working: it overrides `--accent` only (val
 
 Design direction: same spec-sheet aesthetic as the landing page — paper background, hairline borders, mono labels, one accent. Not a SaaS dashboard cosplay; a precise tool.
 
-### T3.1 — Admin shell: header + nav + layout `[ ]`
+### T3.1 — Admin shell: header + nav + layout `[x]`
 **Files:** `tinyblog.php` (`admin_head()`, `render_admin()`, `css_base()` admin rules).
 **Do:** Replace the button-pile sidebar with a proper shell: top bar (TB mark + blog title + "View site" link + logout), left nav with *text links* + active state (underline/accent, `aria-current="page"`), content column max-width. Nav buttons stop looking like primary CTAs — reserve the solid-ink button style for the one primary action per screen.
 **Accept:** Exactly one visually-primary button per admin screen; active nav item obvious; keyboard navigable; works at 360px (nav collapses to horizontal scroll row or simple stacked links — no JS hamburger needed).

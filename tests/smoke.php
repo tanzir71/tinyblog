@@ -87,6 +87,14 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing favicon/theme-color head parity hook: {$needle}";
         }
     }
+    foreach (['admin-shell', 'admin-topbar', 'admin-brand-mark', 'View site', 'admin-nav-link', 'aria-current="page"', 'admin-content', 'admin-logout'] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing admin shell hook: {$needle}";
+        }
+    }
+    if (str_contains($php, '<div class="site admin-layout"><aside class="admin-nav">')) {
+        $failures[] = 'tinyblog.php should use the refined admin shell instead of the old button sidebar.';
+    }
     foreach ([
         'confirm_token',
         'unsub_token',

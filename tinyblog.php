@@ -1389,10 +1389,23 @@ function css_base(string $accent): string
         .pagination{display:flex;gap:10px;margin:24px 0 0}
         .pagination a{border:1px solid var(--text);padding:9px 12px;text-decoration:none;font-weight:650}
         .panel{border:1px solid var(--line);padding:18px;background:var(--panel)}
-        .admin-layout{display:grid;grid-template-columns:1fr;gap:20px;padding:28px 0}
-        .admin-nav{display:flex;flex-wrap:wrap;gap:8px}
-        .admin-nav a,.button,button{border:1px solid var(--text);background:var(--text);color:var(--paper);text-decoration:none;padding:10px 13px;border-radius:0;cursor:pointer;font-weight:650;font-size:14px}
+        .admin-shell{padding:0 0 40px}
+        .admin-topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 0;border-bottom:1px solid var(--line)}
+        .admin-brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-weight:750;min-width:0}
+        .admin-brand-mark{display:inline-grid;place-items:center;width:28px;height:28px;background:var(--text);color:var(--paper);font-size:12px;font-weight:800;letter-spacing:0}
+        .admin-brand-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .admin-topbar-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end}
+        .admin-topbar-link,.admin-logout{color:var(--muted);font-size:14px;font-weight:650;text-decoration:none}
+        .admin-topbar-link:hover,.admin-logout:hover{color:var(--text)}
+        .admin-layout{display:grid;grid-template-columns:1fr;gap:20px;padding:24px 0}
+        .admin-nav{display:flex;gap:16px;overflow-x:auto;padding:0 0 10px;border-bottom:1px solid var(--line)}
+        .admin-nav-link{color:var(--muted);text-decoration:none;font-size:14px;font-weight:700;padding:8px 0 9px;border-bottom:2px solid transparent;white-space:nowrap}
+        .admin-nav-link:hover{color:var(--text)}
+        .admin-nav-link[aria-current=\"page\"]{color:var(--text);border-color:var(--accent)}
+        .admin-content{width:100%;max-width:920px;min-width:0}
+        .button,button{border:1px solid var(--text);background:var(--text);color:var(--paper);text-decoration:none;padding:10px 13px;border-radius:0;cursor:pointer;font-weight:650;font-size:14px}
         .button.secondary,button.secondary{background:var(--panel);color:var(--text)}
+        .admin-logout{border:0;background:transparent;padding:0}
         label{display:grid;gap:7px;font-size:13px;font-weight:650;margin:0 0 14px}
         input,textarea,select{width:100%;border:1px solid var(--line);padding:11px 12px;background:var(--panel);color:var(--text)}
         textarea{min-height:230px;line-height:1.55}
@@ -1401,7 +1414,7 @@ function css_base(string $accent): string
         .notice{padding:12px 14px;border:1px solid var(--line);background:var(--soft);margin:0 0 18px}
         .error{border-color:var(--line-strong);background:var(--panel)}
         .footer{border-top:1px solid var(--line);padding:28px 0 42px;color:var(--muted);font-size:13px;line-height:1.6}
-        @media(min-width:820px){.grid{grid-template-columns:minmax(0,1fr) 280px}.admin-layout{grid-template-columns:190px minmax(0,1fr)}.admin-nav{display:grid;align-content:start}}
+        @media(min-width:820px){.grid{grid-template-columns:minmax(0,1fr) 280px}.admin-layout{grid-template-columns:180px minmax(0,1fr);align-items:start}.admin-nav{display:grid;gap:4px;align-content:start;border-bottom:0;border-right:1px solid var(--line);padding:0 18px 0 0;overflow:visible}.admin-nav-link{padding:9px 0}.admin-content{max-width:980px}}
     ";
 }
 
@@ -1834,18 +1847,20 @@ function render_admin(PDO $pdo): void
         exit;
     }
 
+    $blogTitle = setting($pdo, 'blog_title', 'TinyBlog Widget');
     echo admin_head($pdo, 'Admin');
-    echo '<div class="site admin-layout"><aside class="admin-nav">';
+    echo '<div class="site admin-shell"><header class="admin-topbar"><a class="admin-brand" href="' . htmlEscape(url_for('/admin')) . '"><span class="admin-brand-mark">TB</span><span class="admin-brand-name">' . htmlEscape($blogTitle) . '</span></a><div class="admin-topbar-actions"><a class="admin-topbar-link" href="' . htmlEscape(url_for('/')) . '">View site</a><form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="logout"><button class="admin-logout" type="submit">Logout</button></form></div></header><div class="admin-layout"><nav class="admin-nav" aria-label="Admin sections">';
     $nav = ['dashboard' => 'Dashboard', 'edit' => 'New post', 'media' => 'Media'];
     if (($user['role'] ?? '') === 'admin') {
         $nav['subscribers'] = 'Subscribers';
         $nav['settings'] = 'Settings';
     }
     foreach ($nav as $key => $label) {
-        echo '<a class="button secondary" href="' . htmlEscape(url_for('/admin?action=' . $key)) . '">' . htmlEscape($label) . '</a>';
+        $href = $key === 'dashboard' ? url_for('/admin') : url_for('/admin?action=' . $key);
+        $current = $key === $action ? ' aria-current="page"' : '';
+        echo '<a class="admin-nav-link" href="' . htmlEscape($href) . '"' . $current . '>' . htmlEscape($label) . '</a>';
     }
-    echo '<form method="post">' . csrf_field() . '<input type="hidden" name="admin_action" value="logout"><button class="secondary">Logout</button></form>';
-    echo '</aside><main>';
+    echo '</nav><main class="admin-content">';
     if ($message) {
         echo '<p class="notice">' . htmlEscape($message) . '</p>';
     }
@@ -1862,7 +1877,7 @@ function render_admin(PDO $pdo): void
     } else {
         render_dashboard_admin($pdo, $user);
     }
-    echo '</main></div></body></html>';
+    echo '</main></div></div></body></html>';
     exit;
 }
 
