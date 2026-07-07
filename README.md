@@ -140,6 +140,7 @@ Public/canonical:
 - `GET /feed.xml` - RSS feed.
 - `GET /feed.json` - JSON Feed 1.1 feed.
 - `GET /sitemap.xml` - sitemap.
+- `GET /llms.txt` - plain-text blog summary and published post list for LLM crawlers.
 - `GET /subscribe/confirm/{token}` - double opt-in confirmation link.
 - `GET /unsubscribe/{token}` - one-click unsubscribe link.
 

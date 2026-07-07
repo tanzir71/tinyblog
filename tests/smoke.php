@@ -99,6 +99,11 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing expected feature hook: {$needle}";
         }
     }
+    foreach (['function render_llms_txt', "'/llms.txt'", 'Content-Type: text/plain; charset=utf-8', 'visible_post_where()', 'canonical_url($pdo, \'/post/\' . rawurlencode($post[\'slug\']))'] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing llms.txt hook: {$needle}";
+        }
+    }
     foreach (['home_heading', 'home_intro', "setting(\$pdo, 'home_heading'", "setting(\$pdo, 'home_intro'", "'home_heading', 'home_intro'"] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing configurable home hero hook: {$needle}";
@@ -435,6 +440,9 @@ if (is_file($root . '/README.md')) {
         if (!str_contains($readme, $needle)) {
             $failures[] = "README.md missing account/users admin guidance: {$needle}";
         }
+    }
+    if (!str_contains($readme, 'GET /llms.txt')) {
+        $failures[] = 'README.md missing llms.txt route documentation.';
     }
 }
 

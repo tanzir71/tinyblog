@@ -209,7 +209,7 @@ Design direction: same spec-sheet aesthetic as the landing page — paper backgr
 
 ## 7. Phase 4 — Small features (each ≤ 1 loop iteration, minimal-stack safe)
 
-- **T4.1 `[ ]` `llms.txt`** — serve `GET /llms.txt` from `tinyblog.php`: blog title, description, canonical URL, and a plain list of post titles + URLs (published only). Competitor parity (Superblog markets this). *Accept:* valid llms.txt format, respects visibility rules, linked in README routes.
+- **T4.1 `[x]` `llms.txt`** — serve `GET /llms.txt` from `tinyblog.php`: blog title, description, canonical URL, and a plain list of post titles + URLs (published only). Competitor parity (Superblog markets this). *Accept:* valid llms.txt format, respects visibility rules, linked in README routes.
 - **T4.2 `[ ]` Archive by month** — `/archive` gains a right-rail month list (`strftime('%Y-%m', publish_at)` GROUP BY) linking to `/archive?month=2026-07` (validated `YYYY-MM`). *Accept:* prepared statements, pagination still works, `rel=prev/next` correct.
 - **T4.3 `[ ]` Widget "card" theme variant** — third built-in look (`theme:"card"`): soft panel bg, spacing per the token set; still CSS-variable overridable. *Accept:* README config table updated; no size bloat beyond +1 KB.
 - **T4.4 `[ ]` Settings health panel** — read-only checks on the Settings page: PHP version, SQLite version, FTS5 available?, `data/` & `uploads/` writable?, HTTPS on?, `.env` present?, mail() available?. Green/amber dot per row. *Accept:* no secrets displayed; renders fast; helps the shared-hosting beginner self-diagnose.

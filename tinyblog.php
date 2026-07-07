@@ -1751,6 +1751,39 @@ function render_json_feed(PDO $pdo): void
     exit;
 }
 
+function llms_text(string $value): string
+{
+    return trim((string) preg_replace('/\s+/', ' ', $value));
+}
+
+function render_llms_txt(PDO $pdo): void
+{
+    $site = setting($pdo, 'site_key', 'store-1');
+    $title = llms_text(setting($pdo, 'blog_title', 'TinyBlog Widget'));
+    $description = llms_text(setting($pdo, 'home_intro', ''));
+    if ($description === '') {
+        $description = llms_text(setting($pdo, 'about_text', 'A tiny embeddable blog.'));
+    }
+    $stmt = $pdo->prepare('SELECT title, slug, excerpt FROM posts WHERE ' . visible_post_where() . ' ORDER BY datetime(publish_at) DESC, id DESC LIMIT 200');
+    $stmt->execute(visible_post_params($site));
+    security_headers('text');
+    header('Content-Type: text/plain; charset=utf-8');
+    echo '# ' . $title . "\n\n";
+    echo '> ' . $description . "\n\n";
+    echo 'Home: ' . canonical_url($pdo, '/') . "\n\n";
+    echo "## Posts\n\n";
+    foreach ($stmt->fetchAll() as $post) {
+        $url = canonical_url($pdo, '/post/' . rawurlencode($post['slug']));
+        $line = '- [' . llms_text((string) $post['title']) . '](' . $url . ')';
+        $excerpt = llms_text((string) ($post['excerpt'] ?? ''));
+        if ($excerpt !== '') {
+            $line .= ': ' . $excerpt;
+        }
+        echo $line . "\n";
+    }
+    exit;
+}
+
 function render_sitemap(PDO $pdo): void
 {
     $site = setting($pdo, 'site_key', 'store-1');
@@ -2819,6 +2852,9 @@ try {
     }
     if ($path === '/sitemap.xml') {
         render_sitemap($pdo);
+    }
+    if ($path === '/llms.txt') {
+        render_llms_txt($pdo);
     }
     if ($path === '/admin') {
         render_admin($pdo);
