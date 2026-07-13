@@ -6,6 +6,30 @@ TinyBlog Widget is an embeddable blog MVP: one JavaScript file renders a feed, a
 
 The reader-facing PHP blog, admin, and widget use system fonts and load no external font or tracker services by default; the static marketing pages in this repo are separate from the blog you deploy.
 
+## Architecture
+
+Two deployable pieces — a backend you host once, and a widget you paste anywhere:
+
+```
+ Your store / any website                Your PHP hosting (cPanel etc.)
+┌─────────────────────────┐            ┌─────────────────────────────────┐
+│  <script                 │   JSON     │  tinyblog.php — everything:      │
+│   src=tinyblog-widget.js>│ ◄────────► │  ├─ /api      JSON API (CORS     │
+│  renders: feed · single  │  API       │  │            origin allowlist)  │
+│  post · subscribe box    │            │  ├─ /admin    author UI (CSRF,   │
+│  (dependency-free,       │            │  │            sessions, hashing) │
+│  sanitizes everything)   │            │  ├─ public canonical post pages  │
+└─────────────────────────┘            │  ├─ RSS + sitemap                │
+                                        │  └─ image-only uploads           │
+ Readers can also visit                 │        │                         │
+ canonical pages directly ────────────► │        ▼                         │
+                                        │  SQLite in data/  ·  uploads/    │
+                                        │  (.htaccess denies direct access)│
+                                        └─────────────────────────────────┘
+```
+
+The widget is display-only and sanitizes what it renders; the PHP backend is the source of truth and defends itself (prepared statements, sanitized Markdown, CSRF tokens, rate limits, origin allowlists). One backend can serve multiple sites via `site` ids with per-site allowed origins.
+
 ## Security Summary
 
 Top threats are SQL injection, cross-site scripting, cross-site request forgery, unsafe uploads, credential attacks, and unwanted cross-origin data exposure. TinyBlog Widget mitigates them with PDO prepared statements, output escaping, server-side sanitized Markdown, browser-side widget sanitization, CSRF tokens, session timeout, password hashing, CORS origin allowlists, rate limits, and image-only uploads.
