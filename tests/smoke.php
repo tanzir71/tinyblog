@@ -16,6 +16,9 @@ $required = [
     'SECURITY.md',
     'CHANGELOG.md',
     '.gitignore',
+    'assets/logo.svg',
+    'assets/wordmark.svg',
+    'assets/apple-touch-icon.png',
     '.env.example',
     '.htaccess',
     'data/.htaccess',
@@ -70,14 +73,15 @@ if (is_file($root . '/tinyblog.php')) {
         $failures[] = 'tinyblog.php should use the system-first app font stack.';
     }
     foreach ([
-        '--paper:#f4f3ee',
-        '--panel:#faf9f5',
-        '--ink:#0a0a0a',
-        '--ink-soft:#2b2a27',
-        '--muted:#6c6a62',
-        '--line:#dcd9d0',
-        '--line-strong:#0a0a0a',
-        '--accent-soft:#eceaf9',
+        '--paper:#f7f5f0',
+        '--panel:#ffffff',
+        '--ink:#15130f',
+        '--ink-soft:#4a463d',
+        '--muted:#6b665b',
+        '--line:#e6e1d6',
+        '--line-strong:#cec7b8',
+        '--accent-soft:#fdebdd',
+        "const TB_BRAND_ACCENT = '#c2410c';",
     ] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing shared design token: {$needle}";
@@ -85,12 +89,12 @@ if (is_file($root . '/tinyblog.php')) {
     }
     foreach ([
         '@media (prefers-color-scheme: dark){:root{',
-        '--paper:#131210',
-        '--panel:#1a1917',
-        '--ink:#f2f1ec',
-        '--muted:#9d9a90',
-        '--line:#2c2a26',
-        '--accent-soft:#1e2033',
+        '--paper:#15130f',
+        '--panel:#1d1a15',
+        '--ink:#f4f1ea',
+        '--muted:#b5aea0',
+        '--line:#38332a',
+        '--accent-soft:#3a2214',
     ] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing dark-mode design token: {$needle}";
@@ -119,7 +123,7 @@ if (is_file($root . '/tinyblog.php')) {
     if (str_contains($php, 'Small posts, clean embeds.')) {
         $failures[] = 'tinyblog.php should not hardcode the old home hero tagline.';
     }
-    foreach (['function app_icon_head_tags', "is_file(__DIR__ . '/assets/logo.svg')", '<link rel="icon" href="/assets/logo.svg">', 'name="theme-color" content="#f4f3ee"', 'name="theme-color" content="#131210"', 'echo app_icon_head_tags();', "app_icon_head_tags() . '<style>' . css_base(\$accent)"] as $needle) {
+    foreach (['function app_icon_head_tags', "is_file(__DIR__ . '/assets/logo.svg')", "<link rel=\"icon\" href=\"' . htmlEscape(url_for('/assets/logo.svg'))", 'name="theme-color" content="#f7f5f0"', 'name="theme-color" content="#15130f"', 'echo app_icon_head_tags();', "app_icon_head_tags() . '<style>' . css_base(\$accent)"] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing favicon/theme-color head parity hook: {$needle}";
         }
@@ -147,7 +151,7 @@ if (is_file($root . '/tinyblog.php')) {
             $failures[] = "tinyblog.php missing media grid hook: {$needle}";
         }
     }
-    foreach ([':focus-visible', 'notice success', 'role="alert"', 'auth-card', 'auth-mark', '<caption>', 'button:hover'] as $needle) {
+    foreach ([':focus-visible', 'notice success', 'role="alert"', 'auth-card', 'auth-mark', '<caption', 'button:hover'] as $needle) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing form/focus polish hook: {$needle}";
         }
@@ -171,6 +175,33 @@ if (is_file($root . '/tinyblog.php')) {
         if (!str_contains($php, $needle)) {
             $failures[] = "tinyblog.php missing styled error-page hook: {$needle}";
         }
+    }
+    foreach ([
+        // Home: setup checklist
+        'function setup_steps', 'Finish setting up', 'admin_action" value="dismiss_setup"', 'setup_dismissed',
+        // Posts list with filters and search
+        'function render_posts_admin', "['all', 'published', 'scheduled', 'draft']", 'role="search"',
+        // Publish-first editor
+        'name="publish_mode"', "['draft', 'publish', 'schedule']", 'function local_input_to_utc', 'tz_offset', 'function unique_post_slug', "'saved' => \$result['created'] ? 'new' : '1'", 'preview_markdown', 'restoreBanner', 'function render_media_picker', '<dialog class="media-picker"', 'serp-title', 'excerptCount',
+        // Alt text is required on upload
+        'Add alt text that describes the image.',
+        // Add to site
+        'function render_embed_admin', 'function platform_steps', 'Shopify', 'Squarespace', 'Webflow', 'Wix', 'WordPress', 'function embed_snippet', '<noscript><a href=', 'function update_allowed_origins', 'admin_action" value="allow_origin"', 'Refused requests',
+        // Embed observability and CORS refusal reason
+        'CREATE TABLE IF NOT EXISTS embed_seen', 'UNIQUE(site, origin)', 'function record_embed_seen', '< time() - 600', '>= 20', "'code' => 'origin_not_allowed'", 'PRAGMA user_version = 4',
+        // Subscribers tools
+        'function export_subscribers_csv', 'text/csv', 'function delete_subscriber', 'Copy confirm link',
+        // Settings tabs, test email, site id
+        'function settings_tab', "['general', 'email', 'backup']", 'function send_test_email', 'function change_site_key', 'type="color"', 'function mail_headers',
+        // Server-rendered fragment and dev server
+        'function render_embed_feed', "'/embed/feed.html'", "PHP_SAPI === 'cli-server'", 'function script_base_dir',
+    ] as $needle) {
+        if (!str_contains($php, $needle)) {
+            $failures[] = "tinyblog.php missing v0.2 admin/embed hook: {$needle}";
+        }
+    }
+    if (str_contains($php, "'confirm_url' => \$confirmUrl")) {
+        $failures[] = 'tinyblog.php must not return the subscription confirm link to the subscriber API caller.';
     }
     if (str_contains($php, '<!doctype html><meta charset="utf-8"><title>TinyBlog error</title><p>A server error occurred. Check the server log.</p>')) {
         $failures[] = 'tinyblog.php should use the styled error page instead of the bare error fallback.';
@@ -219,22 +250,22 @@ if (is_file($root . '/tinyblog-widget.js')) {
         }
     }
     foreach ([
-        'accent: "#0a0a0a"',
-        '--tbw-paper:#f4f3ee',
-        '--tbw-panel:#faf9f5',
-        '--tbw-ink:#0a0a0a',
-        '--tbw-ink-soft:#2b2a27',
-        '--tbw-muted:#6c6a62',
-        '--tbw-line:#dcd9d0',
-        '--tbw-line-strong:#0a0a0a',
-        '--tbw-accent-soft:#eceaf9',
-        "--tbw-paper:#131210",
-        "--tbw-panel:#1a1917",
-        "--tbw-ink:#f2f1ec",
-        "--tbw-muted:#9d9a90",
-        "--tbw-line:#2c2a26",
-        "--tbw-accent:#9aa6ff",
-        "--tbw-accent-soft:#1e2033",
+        'accent: "#15130f"',
+        '--tbw-paper:#f7f5f0',
+        '--tbw-panel:#ffffff',
+        '--tbw-ink:#15130f',
+        '--tbw-ink-soft:#4a463d',
+        '--tbw-muted:#6b665b',
+        '--tbw-line:#e6e1d6',
+        '--tbw-line-strong:#cec7b8',
+        '--tbw-accent-soft:#fdebdd',
+        "--tbw-paper:#15130f",
+        "--tbw-panel:#1d1a15",
+        "--tbw-ink:#f4f1ea",
+        "--tbw-muted:#b5aea0",
+        "--tbw-line:#38332a",
+        "--tbw-accent:#f97316",
+        "--tbw-accent-soft:#3a2214",
         'hasCustomAccent',
         'if (config.hasCustomAccent) frame.style.setProperty("--tbw-accent", config.accent);',
     ] as $needle) {
@@ -242,7 +273,7 @@ if (is_file($root . '/tinyblog-widget.js')) {
             $failures[] = "tinyblog-widget.js missing shared design token/default: {$needle}";
         }
     }
-    foreach (['["light", "dark", "card"]', "data-theme='card'", 'config.theme === "card" ? "card"', ".tbw[data-theme='card']"] as $needle) {
+    foreach (['["light", "dark", "card", "inherit"]', "data-theme='card'", 'frame.dataset.theme = config.theme;', ".tbw[data-theme='card']", ".tbw[data-theme='inherit']", 'function renderBadge', 'tbw-seen-', 'function warn', 'console.warn', 'origin_not_allowed'] as $needle) {
         if (!str_contains($js, $needle)) {
             $failures[] = "tinyblog-widget.js missing card theme hook: {$needle}";
         }
@@ -250,8 +281,8 @@ if (is_file($root . '/tinyblog-widget.js')) {
     if (!str_contains($js, 'img: ["src", "alt", "width", "height"]')) {
         $failures[] = 'tinyblog-widget.js should preserve safe image dimensions in sanitized content.';
     }
-    if (filesize($root . '/tinyblog-widget.js') > 19149) {
-        $failures[] = 'tinyblog-widget.js card theme should add less than 1 KB.';
+    if (filesize($root . '/tinyblog-widget.js') > 23 * 1024) {
+        $failures[] = 'tinyblog-widget.js should stay under 23 KB unminified.';
     }
 }
 
@@ -275,17 +306,17 @@ if (is_file($root . '/index.html')) {
             $failures[] = "index.html missing Vercel/GitHub Pages demo endpoint switch: {$needle}";
         }
     }
-    foreach (['tinyblog-vs-dropinblog.html', 'vs DropInBlog', 'from $49/mo'] as $needle) {
+    foreach (['tinyblog-vs-dropinblog.html', 'vs DropInBlog', '$99/mo', '$79/mo billed yearly'] as $needle) {
         if (!str_contains($landing, $needle)) {
             $failures[] = "index.html missing DropInBlog comparison hook: {$needle}";
         }
     }
-    foreach (['How it works', 'Setup', 'Features', 'Compare', 'Scope', 'Quick start', '2 files to deploy', '~140 KB, no deps', '0 external requests on your blog', '5-min cPanel install', 'Read the source', 'github.com/tanzir71/tinyblog/blob/main/tinyblog.php'] as $needle) {
+    foreach (['How it works', 'Setup', 'Features', 'Compare', 'Scope', 'Quick start', '2 files to deploy', '~250 KB, one PHP file, no deps', '0 external requests on your blog', '5-min cPanel install', 'Read the source', 'github.com/tanzir71/tinyblog/blob/main/tinyblog.php'] as $needle) {
         if (!str_contains($landing, $needle)) {
             $failures[] = "index.html missing honest proof copy: {$needle}";
         }
     }
-    foreach (['What the admin looks like', 'assets/shot-admin-dashboard.png', 'assets/shot-admin-editor.png', 'assets/shot-admin-media.png', 'loading="lazy"', 'width="720"', 'height="450"'] as $needle) {
+    foreach (['What the admin looks like', 'assets/shot-admin-dashboard.png', 'assets/shot-admin-editor.png', 'assets/shot-admin-media.png', 'assets/shot-admin-embed.png', 'loading="lazy"', 'width="720"', 'height="450"', 'Add to site', '/embed/feed.html'] as $needle) {
         if (!str_contains($landing, $needle)) {
             $failures[] = "index.html missing admin screenshot proof: {$needle}";
         }
@@ -322,7 +353,7 @@ if (is_file($root . '/docs.html')) {
 
 if (is_file($root . '/compare.html')) {
     $compare = file_get_contents($root . '/compare.html');
-    foreach (['tinyblog-vs-dropinblog.html', 'TinyBlog vs DropInBlog', 'from $49/mo'] as $needle) {
+    foreach (['tinyblog-vs-dropinblog.html', 'TinyBlog vs DropInBlog', '$99/mo'] as $needle) {
         if (!str_contains($compare, $needle)) {
             $failures[] = "compare.html missing DropInBlog comparison hook: {$needle}";
         }
@@ -331,7 +362,7 @@ if (is_file($root . '/compare.html')) {
 
 if (is_file($root . '/tinyblog-vs-dropinblog.html')) {
     $dropinblog = file_get_contents($root . '/tinyblog-vs-dropinblog.html');
-    foreach (['TinyBlog vs DropInBlog', 'from $49/mo', '$0 self-hosted', 'managed convenience', 'no trackers'] as $needle) {
+    foreach (['TinyBlog vs DropInBlog', '$99/mo', '$79/mo billed yearly', '$0 self-hosted', 'managed convenience', 'no trackers'] as $needle) {
         if (!str_contains($dropinblog, $needle)) {
             $failures[] = "tinyblog-vs-dropinblog.html missing expected copy: {$needle}";
         }
@@ -398,15 +429,14 @@ if (is_file($root . '/assets/site.css')) {
         }
     }
     foreach ([
-        '--paper: #f4f3ee',
-        '--panel: #faf9f5',
-        '--ink: #0a0a0a',
-        '--ink-soft: #2b2a27',
-        '--muted: #6c6a62',
-        '--line: #dcd9d0',
-        '--line-strong: #0a0a0a',
-        '--accent: #2436d4',
-        '--accent-soft: #eceaf9',
+        '--paper: #f7f5f0',
+        '--panel: #ffffff',
+        '--ink: #15130f',
+        '--ink-soft: #4a463d',
+        '--muted: #6b665b',
+        '--line: #e6e1d6',
+        '--accent: #c2410c',
+        '--accent-soft: #fdebdd',
     ] as $needle) {
         if (!str_contains($css, $needle)) {
             $failures[] = "assets/site.css missing canonical design token: {$needle}";
@@ -469,7 +499,7 @@ if (is_file($root . '/assets/og.png')) {
     }
 }
 
-foreach (['dashboard', 'editor', 'media'] as $shot) {
+foreach (['dashboard', 'editor', 'media', 'embed'] as $shot) {
     $file = $root . "/assets/shot-admin-{$shot}.png";
     if (!is_file($file)) {
         $failures[] = "Missing admin screenshot asset: assets/shot-admin-{$shot}.png";

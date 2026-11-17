@@ -1,6 +1,6 @@
 /*!
- * TinyBlog Widget v0.1.0
- * One-line embed for TinyBlog feeds, posts, and subscribe boxes.
+ * TinyBlog Widget v0.2.0
+ * One-line embed for TinyBlog feeds, posts, subscribe boxes, and a what's-new badge.
  * Repository: https://github.com/tanzir71/tinyblog
  */
 (function () {
@@ -14,7 +14,7 @@
     maxItems: 5,
     showExcerpt: true,
     theme: "light",
-    accent: "#0a0a0a",
+    accent: "#15130f",
     locale: "en",
     container: "",
     canonicalUrl: ""
@@ -128,6 +128,21 @@
     return box.innerHTML;
   }
 
+  var FIX = " Copy a fresh snippet from Admin -> Add to site.";
+  var HELP = {
+    origin_not_allowed: "this website is not allowed yet. In Admin -> Add to site, allow ",
+    unknown_site: "the site id in your snippet does not match your blog." + FIX,
+    invalid_site_key: "this blog requires a siteKey." + FIX
+  };
+
+  function warn(config, error) {
+    var code = error && error.code;
+    var why = HELP[code] ? HELP[code] + (code === "origin_not_allowed" ? location.origin : "")
+      : error && error.status ? "the server answered " + error.status + " for " + config.endpoint
+      : "could not reach " + (config.endpoint || "an endpoint (none set)") + ". Check the endpoint in your snippet.";
+    if (window.console && console.warn) console.warn("TinyBlog: " + why);
+  }
+
   function merge(target, source) {
     Object.keys(source || {}).forEach(function (key) {
       if (source[key] !== undefined && source[key] !== null) {
@@ -160,12 +175,12 @@
     var next = merge(merge({}, DEFAULTS), config || {});
     next.endpoint = String(next.endpoint || "").replace(/\/+$/, "");
     next.site = String(next.site || next.siteId || "store-1");
-    next.widgetType = ["feed", "post", "subscribe"].indexOf(next.widgetType) >= 0 ? next.widgetType : "feed";
-    next.theme = ["light", "dark", "card"].indexOf(next.theme) >= 0 ? next.theme : "light";
+    next.widgetType = ["feed", "post", "subscribe", "badge"].indexOf(next.widgetType) >= 0 ? next.widgetType : "feed";
+    next.theme = ["light", "dark", "card", "inherit"].indexOf(next.theme) >= 0 ? next.theme : "light";
     next.maxItems = Math.max(1, Math.min(50, parseInt(next.maxItems, 10) || 5));
     next.showExcerpt = next.showExcerpt === true || next.showExcerpt === "true" || next.showExcerpt === 1 || next.showExcerpt === "1";
     next.locale = String(next.locale || "en");
-    next.accent = /^#[0-9a-f]{6}$/i.test(next.accent) ? next.accent : "#0a0a0a";
+    next.accent = /^#[0-9a-f]{6}$/i.test(next.accent) ? next.accent : "#15130f";
     next.hasCustomAccent = hasCustomAccent && /^#[0-9a-f]{6}$/i.test(next.accent);
     next.canonicalUrl = next.canonicalUrl || next.endpoint.replace(/\/api$/, "");
     return next;
@@ -176,31 +191,33 @@
     var style = document.createElement("style");
     style.id = "tinyblog-widget-style";
     style.textContent = [
-      ".tbw{--tbw-paper:#f4f3ee;--tbw-panel:#faf9f5;--tbw-ink:#0a0a0a;--tbw-ink-soft:#2b2a27;--tbw-muted:#6c6a62;--tbw-line:#dcd9d0;--tbw-line-strong:#0a0a0a;--tbw-accent:#0a0a0a;--tbw-accent-soft:#eceaf9;--tbw-bg:var(--tbw-paper);--tbw-text:var(--tbw-ink);--tbw-soft:var(--tbw-panel);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--tbw-text);background:var(--tbw-bg);letter-spacing:0;max-width:760px}",
+      ".tbw{--tbw-paper:#f7f5f0;--tbw-panel:#ffffff;--tbw-ink:#15130f;--tbw-ink-soft:#4a463d;--tbw-muted:#6b665b;--tbw-line:#e6e1d6;--tbw-line-strong:#cec7b8;--tbw-accent:#15130f;--tbw-accent-soft:#fdebdd;--tbw-bg:var(--tbw-paper);--tbw-text:var(--tbw-ink);--tbw-soft:var(--tbw-paper);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--tbw-text);background:var(--tbw-bg);letter-spacing:0;max-width:760px}",
       ".tbw *{box-sizing:border-box}",
       ".tbw a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}",
-      ".tbw__frame{border:1px solid var(--tbw-line);background:var(--tbw-panel);padding:18px}",
+      ".tbw__frame{border:1px solid var(--tbw-line);border-radius:10px;background:var(--tbw-panel);padding:18px}",
       ".tbw__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}",
-      ".tbw__title{font-size:15px;font-weight:800;margin:0}",
+      ".tbw__title{font-size:15px;font-weight:700;margin:0}",
       ".tbw__list{display:grid;gap:0;margin:0;padding:0;list-style:none}",
       ".tbw__item{border-top:1px solid var(--tbw-line);padding:14px 0}",
       ".tbw__item:first-child{border-top:0;padding-top:0}",
       ".tbw__link{display:block;text-decoration:none}",
-      ".tbw__post-title{font-size:clamp(20px,5vw,30px);line-height:1.08;font-weight:800;margin:0 0 7px}",
+      ".tbw__post-title{font-size:clamp(19px,4.6vw,26px);line-height:1.15;font-weight:700;letter-spacing:-.01em;margin:0 0 6px}",
       ".tbw__meta,.tbw__excerpt,.tbw__fallback{font-size:14px;line-height:1.55;color:var(--tbw-muted);margin:0}",
       ".tbw__excerpt{color:var(--tbw-ink-soft);margin-top:8px}",
-      ".tbw__image{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--tbw-line);margin:0 0 12px}",
+      ".tbw__image{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;margin:0 0 12px}",
       ".tbw__content{font-size:16px;line-height:1.72}",
       ".tbw__content p,.tbw__content ul,.tbw__content ol,.tbw__content blockquote{margin:0 0 1em}",
-      ".tbw__content blockquote{border-left:2px solid var(--tbw-text);padding-left:12px;color:var(--tbw-ink-soft)}",
-      ".tbw__content code{background:var(--tbw-soft);border:1px solid var(--tbw-line);padding:2px 5px}",
+      ".tbw__content blockquote{border-left:3px solid var(--tbw-accent);padding-left:12px;color:var(--tbw-ink-soft)}",
+      ".tbw__content code{background:var(--tbw-soft);border:1px solid var(--tbw-line);border-radius:4px;padding:1px 5px}",
       ".tbw__form{display:grid;gap:10px}",
-      ".tbw__label{font-size:13px;font-weight:700}",
-      ".tbw__input{width:100%;border:1px solid var(--tbw-line);padding:11px 12px;background:var(--tbw-panel);color:var(--tbw-text);font:inherit}",
-      ".tbw__button{border:1px solid var(--tbw-text);background:var(--tbw-text);color:var(--tbw-bg);padding:11px 13px;font:inherit;font-size:14px;font-weight:750;cursor:pointer}",
+      ".tbw__label{font-size:13px;font-weight:600}",
+      ".tbw__input{width:100%;border:1px solid var(--tbw-line-strong);border-radius:7px;padding:10px 12px;background:var(--tbw-panel);color:var(--tbw-text);font:inherit}",
+      ".tbw__button{border:1px solid var(--tbw-accent);border-radius:7px;background:var(--tbw-accent);color:#fff;padding:10px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}",
       ".tbw__button:focus,.tbw a:focus,.tbw__input:focus{outline:2px solid var(--tbw-accent);outline-offset:2px}",
-      ".tbw[data-theme='card']{--tbw-bg:transparent}.tbw[data-theme='card'] .tbw__frame{border-color:var(--tbw-line-strong);background:var(--tbw-panel);box-shadow:0 10px 30px rgba(10,10,10,.08);padding:22px}.tbw[data-theme='card'] .tbw__item{padding:16px 0}.tbw[data-theme='card'] .tbw__post-title{font-size:clamp(18px,4vw,26px)}",
-      ".tbw[data-theme='dark']{--tbw-paper:#131210;--tbw-panel:#1a1917;--tbw-ink:#f2f1ec;--tbw-ink-soft:#d7d5cd;--tbw-muted:#9d9a90;--tbw-line:#2c2a26;--tbw-line-strong:#f2f1ec;--tbw-accent:#9aa6ff;--tbw-accent-soft:#1e2033;--tbw-bg:var(--tbw-paper);--tbw-text:var(--tbw-ink);--tbw-soft:var(--tbw-panel)}"
+      ".tbw[data-theme='card']{--tbw-bg:transparent}.tbw[data-theme='card'] .tbw__frame{box-shadow:0 10px 30px rgba(21,19,15,.08);padding:22px}.tbw[data-theme='card'] .tbw__item{padding:16px 0}.tbw[data-theme='card'] .tbw__post-title{font-size:clamp(18px,4vw,24px)}",
+      ".tbw[data-theme='dark']{--tbw-paper:#15130f;--tbw-panel:#1d1a15;--tbw-ink:#f4f1ea;--tbw-ink-soft:#d6d0c4;--tbw-muted:#b5aea0;--tbw-line:#38332a;--tbw-line-strong:#4d463b;--tbw-accent:#f97316;--tbw-accent-soft:#3a2214;--tbw-bg:var(--tbw-paper);--tbw-text:var(--tbw-ink);--tbw-soft:var(--tbw-paper)}",
+      ".tbw[data-theme='inherit']{--tbw-bg:transparent;--tbw-panel:transparent;--tbw-text:inherit;--tbw-ink-soft:inherit;--tbw-muted:inherit;--tbw-line:rgba(127,127,127,.28);--tbw-line-strong:rgba(127,127,127,.5);font-family:inherit;color:inherit}.tbw[data-theme='inherit'] .tbw__frame{border:0;padding:0}.tbw[data-theme='inherit'] .tbw__meta{opacity:.75}",
+      ".tbw[data-type='badge']{display:inline-block;position:relative;background:transparent;max-width:none}.tbw__badge{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--tbw-line-strong);border-radius:999px;background:var(--tbw-panel);color:var(--tbw-text);padding:7px 13px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}.tbw__count{min-width:20px;padding:1px 6px;border-radius:99px;background:var(--tbw-accent);color:#fff;font-size:12px;text-align:center}.tbw__pop{position:absolute;z-index:2147483000;top:calc(100% + 8px);right:0;width:min(340px,90vw);box-shadow:0 18px 40px rgba(21,19,15,.18)}.tbw__pop .tbw__post-title{font-size:15px}"
     ].join("");
     document.head.appendChild(style);
   }
@@ -239,10 +256,13 @@
     if (config.siteKey) headers["X-TinyBlog-Site-Key"] = config.siteKey;
     if (options && options.body) headers["Content-Type"] = "application/json";
     return fetch(apiUrl(config, path, params), merge({ headers: headers }, options || {})).then(function (response) {
-      if (!response.ok) {
-        throw new Error("TinyBlog request failed with status " + response.status);
-      }
-      return response.json();
+      if (response.ok) return response.json();
+      return response.json().catch(function () { return {}; }).then(function (body) {
+        var error = new Error("TinyBlog request failed with status " + response.status);
+        error.status = response.status;
+        error.code = body && body.code;
+        throw error;
+      });
     });
   }
 
@@ -251,7 +271,8 @@
     container.innerHTML = "";
     var frame = document.createElement("section");
     frame.className = "tbw";
-    frame.dataset.theme = config.theme === "dark" ? "dark" : config.theme === "card" ? "card" : "light";
+    frame.dataset.theme = config.theme;
+    frame.dataset.type = config.widgetType;
     if (config.hasCustomAccent) frame.style.setProperty("--tbw-accent", config.accent);
     frame.setAttribute("aria-label", "TinyBlog Widget");
     container.appendChild(frame);
@@ -307,6 +328,7 @@
       emit("loaded", { type: "feed", posts: posts, instance: instance });
     }).catch(function (error) {
       renderFallback(config, frame, "Couldn't load posts.");
+      warn(config, error);
       emit("error", { error: error, instance: instance });
     });
   }
@@ -333,6 +355,7 @@
       emit("loaded", { type: "post", post: post, instance: instance });
     }).catch(function (error) {
       renderFallback(config, frame, "TinyBlog post could not load.");
+      warn(config, error);
       emit("error", { error: error, instance: instance });
     });
   }
@@ -356,8 +379,41 @@
         emit("loaded", { type: "subscribe", instance: instance });
       }).catch(function (error) {
         status.textContent = "Subscription failed. Open the blog and try again.";
+        warn(config, error);
         emit("error", { error: error, instance: instance });
       });
+    });
+  }
+
+  function renderBadge(instance) {
+    var config = instance.config;
+    var frame = root(config, instance.container);
+    var key = "tbw-seen-" + config.site;
+    var seen = "";
+    try { seen = localStorage.getItem(key) || ""; } catch (e) {}
+    return request(config, "/posts", { limit: config.maxItems }).then(function (data) {
+      var posts = Array.isArray(data.posts) ? data.posts : [];
+      var stamp = function (p) { return String(p.publish_at || p.published_at || ""); };
+      var since = seen || new Date(Date.now() - 14 * 864e5).toISOString().replace("T", " ").slice(0, 19);
+      var fresh = posts.filter(function (p) { return stamp(p) > since; }).length;
+      var html = '<button class="tbw__badge" type="button" aria-expanded="false">What\'s new' + (fresh ? ' <span class="tbw__count" aria-label="' + fresh + ' new">' + fresh + '</span>' : "") + '</button><div class="tbw__frame tbw__pop" hidden><ul class="tbw__list" role="list">';
+      posts.forEach(function (post) {
+        html += '<li class="tbw__item"><a class="tbw__link" href="' + escapeHtml(safeUrl(post.canonical_url) || "#") + '"><h3 class="tbw__post-title">' + escapeHtml(post.title) + '</h3><p class="tbw__meta">' + escapeHtml(formatMeta(post, config.locale)) + '</p></a></li>';
+      });
+      frame.innerHTML = html + (posts.length ? "" : '<li class="tbw__fallback">No posts yet.</li>') + '</ul><p class="tbw__meta"><a href="' + escapeHtml(safeUrl(config.canonicalUrl) || "#") + '">View all</a></p></div>';
+      var button = frame.querySelector("button");
+      var pop = frame.querySelector(".tbw__pop");
+      button.addEventListener("click", function () {
+        pop.hidden = !pop.hidden;
+        button.setAttribute("aria-expanded", String(!pop.hidden));
+        var count = button.querySelector(".tbw__count");
+        if (count) count.parentNode.removeChild(count);
+        try { if (posts.length) localStorage.setItem(key, stamp(posts[0])); } catch (e) {}
+      });
+      emit("loaded", { type: "badge", posts: posts, unread: fresh, instance: instance });
+    }).catch(function (error) {
+      warn(config, error);
+      emit("error", { error: error, instance: instance });
     });
   }
 
@@ -381,6 +437,7 @@
       refresh: function () {
         if (normalized.widgetType === "post") return renderPost(instance);
         if (normalized.widgetType === "subscribe") return renderSubscribe(instance);
+        if (normalized.widgetType === "badge") return renderBadge(instance);
         return renderFeed(instance);
       }
     };
