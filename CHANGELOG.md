@@ -11,6 +11,7 @@ Brand and landing
 - Warm paper/ink/ember palette shared by the landing page, PHP app, admin, and widget, with matching dark mode. The PHP app still uses system fonts and loads nothing external.
 - Rewrote `index.html` and `assets/site.css` from the Figma design: audience, how it works, setup, widget modes, features, real admin screenshots (now including Add to site), security, compare, scope, FAQ, and quick start. Kept every previous claim and link.
 - Corrected DropInBlog pricing everywhere: Solo is $99/mo monthly or $79/mo billed yearly (checked November 2026).
+- "Buy me a coffee" support callout at the top of every marketing page footer (https://buymeacoffee.com/tanzir).
 
 Admin (Phase 1-3)
 - Sidebar navigation by job: Home, Posts, Media, Subscribers, Add to site, Settings, with account and logout in the footer and a compact top bar on phones.

@@ -594,6 +594,20 @@ details.faq-item[open] summary::after { content: "\2212"; }
 footer { padding: var(--s-8) 0 var(--s-6); border-top: 1px solid var(--line); }
 .site-foot { background: var(--paper); }
 .site-foot footer { border-top: 0; }
+/* Support callout (top of every footer) */
+.support { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: var(--s-3) var(--s-4); margin: 0 0 var(--s-7); padding: var(--s-5); border: 1px solid var(--accent-soft); border-radius: var(--r-lg); background: var(--accent-tint); }
+.support-ico { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); }
+.support-text { min-width: 0; }
+.support-title { margin: 0; font-size: var(--fs-body); font-weight: 600; line-height: 1.45; color: var(--ink); }
+.support-sub { margin: 4px 0 0; font-size: var(--fs-small); line-height: 1.5; color: var(--ink-soft); }
+.support-btn { grid-column: 1 / -1; justify-self: start; }
+@media (prefers-color-scheme: dark) {
+  .btn.accent { color: #15130f; }
+}
+@media (min-width: 720px) {
+  .support { grid-template-columns: auto 1fr auto; }
+  .support-btn { grid-column: auto; justify-self: end; }
+}
 .foot-cols { display: grid; grid-template-columns: 1fr; gap: var(--s-6); }
 .foot-col .label { display: block; margin-bottom: var(--s-3); color: var(--muted); }
 .foot-col a { display: block; font-size: var(--fs-small); color: var(--ink); text-decoration: none; padding: 4px 0; }
