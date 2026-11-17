@@ -118,35 +118,58 @@ If installing in `/blog`, set `RewriteBase /blog/` or leave it as-is on most Apa
 
 1. Visit `https://blog.example.com/admin`.
 2. Create the first admin account with a strong password, or log in with the `.env` credentials if you set `TB_ADMIN_EMAIL` and `TB_ADMIN_PASSWORD`.
-3. Open Settings and set:
-   - `Canonical base URL`, for example `https://blog.example.com`
-   - `Site id`, for example `store-1`
-   - `Allowed widget origins`, one per line, for example `https://store.example.com`
-4. Save settings.
-5. Use "Load sample posts" if desired.
-6. Create, edit, publish, unpublish, and delete posts from `/admin`. cPanel is for installation, backups, and recovery only; normal publishing should stay in the TinyBlog browser UI.
-7. Use Settings -> Backup to export/import TinyBlog JSON backups when moving hosts. Media files are referenced by path, so copy `uploads/` alongside the JSON when restoring elsewhere.
+3. Follow the "Finish setting up" checklist on Home. In Settings -> General, set the blog name, the blog address (canonical base URL, for example `https://blog.example.com`), and your time zone. The site id lives under Settings -> General -> Advanced; changing it moves your posts and subscribers to the new id.
+4. Use "Load sample posts" on Home if desired.
+5. Write, schedule, publish, unpublish, and delete posts from Admin -> Posts. cPanel is for installation, backups, and recovery only; normal publishing stays in the TinyBlog browser UI.
+6. Use Settings -> Backup & health to export/import TinyBlog JSON backups when moving hosts. Media files are referenced by path, so copy `uploads/` alongside the JSON when restoring elsewhere.
 
 ## 6. Embed On Another Site
 
-Paste this on the page where the feed should appear:
+Open Admin -> Add to site:
+
+1. Allow the website that will show your posts, for example `https://store.example.com`. Add `www` and non-`www` separately if both are used.
+2. Pick a layout (post feed, single post, subscribe box, or "What's new" badge), a theme (`Match my site` uses your page's fonts and colors), and an accent.
+3. Choose your platform for exact steps (any HTML, WordPress Custom HTML block, Shopify Custom Liquid section, Squarespace Code block, Webflow Embed, Wix Embed HTML, or a PHP include) and copy the snippet.
+4. Open the page. Add to site shows "Seen on store.example.com" once the embed loads. If the platform serves embeds from another address (Wix and some Shopify previews do), it appears under "Refused requests" with a one-click Allow.
+
+The snippet looks like this:
 
 ```html
 <script
   src="https://blog.example.com/tinyblog-widget.js"
-  data-tb-config='{"site":"store-1","endpoint":"https://blog.example.com/api","widgetType":"feed","maxItems":5}'>
-</script>
+  data-tb-config='{"site":"store-1","endpoint":"https://blog.example.com/api","widgetType":"feed","maxItems":5}'></script>
+<noscript><a href="https://blog.example.com/">Read our blog</a></noscript>
 ```
 
-If you enable "Require public siteKey for API reads" in Settings, add:
+If you enable "Require a public siteKey for API reads" under Settings -> General -> Advanced, Add to site includes the `siteKey` in snippets automatically.
 
-```json
-{"siteKey":"PASTE_PUBLIC_SITE_KEY_FROM_SETTINGS"}
+No JavaScript on the page? PHP sites can include the server-rendered fragment instead (Add to site -> PHP include):
+
+```php
+<?php
+$tinyblog = @file_get_contents('https://blog.example.com/embed/feed.html?site=store-1&limit=5');
+echo $tinyblog !== false ? $tinyblog : '';
+?>
 ```
+
+## Subfolder Installs And Reverse Proxies
+
+- Subfolder: upload into `public_html/blog/`, set `RewriteBase /blog/` in `.htaccess`, and set Settings -> Blog address to `https://example.com/blog`. Snippets then use `https://example.com/blog/api`.
+- Reverse proxy or CDN that terminates TLS (Cloudflare, nginx in front of Apache): forward `X-Forwarded-Proto: https` so TinyBlog marks cookies secure and the HTTPS health check passes, and keep the proxy's `Host` header as the public host. Set the Blog address explicitly so feeds and snippets never use an internal hostname.
+- Rate limits and view counts use `REMOTE_ADDR`. Behind a proxy that hides client IPs, configure the web server to restore the real client IP (for example Apache `mod_remoteip`) rather than trusting `X-Forwarded-For` in PHP.
+- Clean URLs unavailable: every route also works as `tinyblog.php?route=/api/posts`.
+
+## Local Development
+
+```bash
+php -S localhost:8080 tinyblog.php
+```
+
+The built-in server serves the widget, `assets/`, and `uploads/` directly and refuses `data/`, `.env`, dotfiles, `tests/`, and Markdown files. Open `http://localhost:8080/admin`.
 
 ## 7. Cron Examples
 
-RSS and sitemap are generated dynamically, but you can warm them and make simple backups:
+No cron is needed for scheduled posts: they appear on the blog, feeds, widget, and fragment as soon as their time passes. RSS and sitemap are generated dynamically, but you can warm them and make simple backups:
 
 ```cron
 # Warm feed and sitemap every hour
@@ -168,6 +191,7 @@ Use your real cPanel home path. Some shared hosts require the full path to `wget
 - 500 error on first run: check PHP error logs and confirm `data/` is writable.
 - App log: by default, security/runtime errors go to `data/tinyblog.log`; override with `TB_LOG_FILE`.
 - Upload fails: confirm `uploads/` is writable and `fileinfo` is enabled.
-- Widget fails on another domain: add that exact origin to Settings, for example `https://www.example.com`.
+- Widget fails on another domain: open the page with the browser console open. TinyBlog logs the reason, for example `TinyBlog: this website is not allowed yet...`. Then check Admin -> Add to site -> Refused requests and click Allow, or add the exact origin, for example `https://www.example.com`.
+- Confirmation emails never arrive: Settings -> Email -> "Send a test confirmation to me". If the host blocks `mail()`, leave emails off and use "Copy confirm link" in Admin -> Subscribers.
 - Clean URLs fail: confirm Apache `mod_rewrite` is enabled, or use `tinyblog.php?route=/api/posts`.
 - SQLite missing: enable `pdo_sqlite` in cPanel or ask hosting support.

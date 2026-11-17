@@ -2,7 +2,7 @@
 
 Repository: https://github.com/tanzir71/tinyblog
 
-TinyBlog Widget is an embeddable blog MVP: one JavaScript file renders a feed, a single post, or a subscribe box on any site, while a minimal PHP 8 + SQLite backend gives authors a secure browser admin UI for publishing without returning to cPanel for day-to-day content work.
+TinyBlog Widget is a self-hosted blog you add to any site with one script tag: one JavaScript file renders a feed, a single post, a subscribe box, or a "What's new" badge, while a minimal PHP 8 + SQLite backend gives authors a secure browser admin for writing, scheduling, and putting the blog on their site without returning to cPanel.
 
 The reader-facing PHP blog, admin, and widget use system fonts and load no external font or tracker services by default; the static marketing pages in this repo are separate from the blog you deploy.
 
@@ -16,7 +16,7 @@ Two deployable pieces — a backend you host once, and a widget you paste anywhe
 │  <script                 │   JSON     │  tinyblog.php — everything:      │
 │   src=tinyblog-widget.js>│ ◄────────► │  ├─ /api      JSON API (CORS     │
 │  renders: feed · single  │  API       │  │            origin allowlist)  │
-│  post · subscribe box    │            │  ├─ /admin    author UI (CSRF,   │
+│  post · subscribe · badge│            │  ├─ /admin    author UI (CSRF,   │
 │  (dependency-free,       │            │  │            sessions, hashing) │
 │  sanitizes everything)   │            │  ├─ public canonical post pages  │
 └─────────────────────────┘            │  ├─ RSS + sitemap                │
@@ -38,7 +38,8 @@ Top threats are SQL injection, cross-site scripting, cross-site request forgery,
 
 - `tinyblog.php` - backend, admin, public canonical pages, JSON API, RSS, sitemap.
 - `tinyblog-widget.js` - dependency-free embed script.
-- `index.html` - minimal black-and-white landing page.
+- `index.html` - marketing landing page (static; Inter + JetBrains Mono for the marketing site only).
+- `assets/` - `site.css`, the `logo.svg` icon, the `wordmark.svg` logo, social image, and admin screenshots.
 - `docs.html` - public HTML documentation page linked from the marketing site.
 - `_config.yml` - GitHub Pages/Jekyll publish exclusions for source and runtime files.
 - `SETUP.md` - shared hosting and cPanel deployment.
@@ -56,14 +57,12 @@ Top threats are SQL injection, cross-site scripting, cross-site request forgery,
 2. Make sure `data/` and `uploads/` are writable by PHP.
 3. Open `https://your-domain.example/admin`.
 4. Create the first admin account, or set `TB_ADMIN_EMAIL` and `TB_ADMIN_PASSWORD` in the private `.env` file from cPanel/File Manager before visiting `/admin`.
-5. In Admin -> Settings, set:
-   - Blog title
-   - Optional home heading and intro
-   - Canonical base URL
-   - Site id, for example `store-1`
-   - Allowed widget origins, for example `https://your-store.example`
-6. Click "Load sample posts" from the dashboard if you want the 3 sample posts.
-7. Create, edit, publish, unpublish, and delete posts from `/admin`; cPanel is only needed for install/recovery tasks.
+5. Follow the "Finish setting up" checklist on Admin -> Home:
+   - Admin -> Settings: blog name, optional home heading and intro, blog address (canonical base URL), time zone, and accent color.
+   - Admin -> Add to site: allow your website (for example `https://your-store.example`), pick a layout, choose your platform (any HTML, WordPress, Shopify, Squarespace, Webflow, Wix, or a PHP include), and copy the snippet. The page shows "Seen on your-store.example" once the embed loads, and lists refused requests with a one-click Allow.
+   - Admin -> Settings -> Email (optional): turn on double opt-in emails and send yourself a test.
+6. Click "Load sample posts" on Home if you want the 3 sample posts.
+7. Write, schedule, publish, unpublish, and delete posts from Admin -> Posts; cPanel is only needed for install/recovery tasks.
 8. Use Admin -> Account to change your own password. Admin users can use Admin -> Users to add editors/admins or remove users without editing server files.
 
 Optional config: copy `.env.example` to `.env` on the server if you need custom database/upload/log paths, rate-limit thresholds, or backend-editable admin credentials. `.env` is ignored by git.
@@ -115,6 +114,32 @@ Subscribe widget:
 </script>
 ```
 
+"What's new" badge (a small button with an unread count; the panel lists recent posts and remembers what this browser has seen in `localStorage`):
+
+```html
+<script
+  src="https://blog.example.com/tinyblog-widget.js"
+  data-tb-config='{"site":"store-1","endpoint":"https://blog.example.com/api","widgetType":"badge","maxItems":5}'>
+</script>
+```
+
+Admin -> Add to site builds these snippets for you and adds a `<noscript>` link to your blog, so crawlers and no-JavaScript readers still reach your posts:
+
+```html
+<noscript><a href="https://blog.example.com/">Read our blog</a></noscript>
+```
+
+Server-rendered include (no JavaScript; posts arrive in the page HTML). Fetch the sanitized `/embed/feed.html` fragment from any PHP page:
+
+```php
+<?php
+$tinyblog = @file_get_contents('https://blog.example.com/embed/feed.html?site=store-1&limit=5');
+echo $tinyblog !== false ? $tinyblog : '';
+?>
+```
+
+Add `&css=0` to drop the small built-in styles, or `&excerpt=0` to show titles and dates only. Responses carry `ETag` and `Cache-Control: public, max-age=300`.
+
 Manual initialization:
 
 ```html
@@ -129,7 +154,7 @@ Manual initialization:
     widgetType: "feed",
     maxItems: 3,
     showExcerpt: true,
-    accent: "#0a0a0a"
+    theme: "inherit"
   });
 </script>
 ```
@@ -139,18 +164,18 @@ Manual initialization:
 - `endpoint` - required API base URL, for example `https://blog.example.com/api`.
 - `site` - public site id, default `store-1`.
 - `siteKey` - optional public key if Admin -> Settings requires it.
-- `widgetType` - `feed`, `post`, or `subscribe`.
+- `widgetType` - `feed`, `post`, `subscribe`, or `badge`.
 - `slug` - required for `post` widgets.
 - `maxItems` - feed item count, 1 to 50.
 - `showExcerpt` - `true` or `false`.
-- `theme` - `light`, `dark`, or `card`; default is minimal black-and-white light.
-- `accent` - CSS accent color, default `#0a0a0a`.
+- `theme` - `light`, `dark`, or `card`, plus `inherit` to use your page's own font and colors with no box; default is `light`.
+- `accent` - hex accent color for buttons, the badge count, and focus rings; default is ink `#15130f` (dark theme uses ember `#f97316`).
 - `locale` - date formatting locale, default `en`.
 - `container` - optional CSS selector for manual placement.
 
 Feed responses include additive pagination fields (`items`, `page`, and `hasMore`) while keeping the original `posts` array for older embeds. Posts also expose `reading_minutes` and `reading_time` when the body is long enough to make a reading estimate useful.
 
-If the backend returns no posts the feed widget renders an accessible "No posts yet" state. Failed fetches render "Couldn't load posts" and emit the documented `error` event.
+If the backend returns no posts the feed widget renders an accessible "No posts yet" state. Failed fetches render "Couldn't load posts", emit the documented `error` event, and log the cause to the browser console for whoever installs it, for example `TinyBlog: this website is not allowed yet. In Admin -> Add to site, allow https://your-store.example`. Refused API calls return `{"code":"origin_not_allowed"}` (or `unknown_site` / `invalid_site_key`) so the widget can explain them.
 
 The widget exposes:
 
@@ -174,6 +199,7 @@ Public/canonical:
 - `GET /feed.json` - JSON Feed 1.1 feed.
 - `GET /sitemap.xml` - sitemap.
 - `GET /llms.txt` - plain-text blog summary and published post list for LLM crawlers.
+- `GET /embed/feed.html?site=SITE&limit=5` - sanitized HTML fragment of recent posts for server-side includes (`excerpt=0`, `css=0` optional).
 - `GET /subscribe/confirm/{token}` - double opt-in confirmation link.
 - `GET /unsubscribe/{token}` - one-click unsubscribe link.
 
@@ -186,18 +212,23 @@ JSON API:
 
 Admin:
 
-- `GET /admin` - login/register/dashboard.
+- `GET /admin` - login/register, then Home (setup checklist, drafts and scheduled posts, stats, top posts).
+- `GET /admin?action=posts` - all posts with All / Published / Scheduled / Drafts filters and title search.
+- `GET /admin?action=edit[&id=N]` - editor: Write / Preview / Split views with a server-rendered preview (the same sanitizer readers get), Draft / Publish now / Schedule in your local time, featured image and inline images from a media picker, excerpt counter, search preview, and a "restore unsaved changes" banner.
+- `GET /admin?action=embed` - Add to site: allowed websites, refused requests with one-click Allow, layout options, platform steps, copy-ready snippet, live preview, and "Seen on ..." verification.
+- `GET /admin?action=subscribers` - Confirmed / Waiting / Unsubscribed filters, CSV export of confirmed subscribers, copy confirm link, delete.
+- `GET /admin?action=settings[&tab=email|backup]` - General, Email (with a test email), Users, Embed & sites, Backup & health.
 - Admin post actions are CSRF-protected form posts.
 - `TB_ADMIN_EMAIL` + `TB_ADMIN_PASSWORD` in `.env` create or update an admin account from a backend-editable file; the login link remains `/admin`.
 - Posts can be created, edited, published/unpublished, and deleted from the browser admin UI.
-- Posts can be saved as `draft` or `published`; published posts with a future publish date stay hidden from public pages, RSS, sitemap, and the JSON API until that UTC time.
+- Posts are saved as a draft, published now, or scheduled. Scheduled posts stay hidden from public pages, RSS, sitemap, the fragment, and the JSON API until their time; no cron is needed, and caches revalidate when a scheduled post goes live. Duplicate titles get a unique slug (`my-post-2`) instead of an error, and saving keeps you in the editor.
 - Posts can be pinned, which moves them to the top of the home/API listing.
-- Media uploads include alt text and CSRF-protected delete controls.
+- Media uploads require alt text and have CSRF-protected delete controls.
 - Settings includes JSON export/import for posts, settings, confirmed subscribers, and media references.
 
 ## Sample Content
 
-Create the first admin, then click "Load sample posts" on the dashboard. It creates:
+Create the first admin, then click "Load sample posts" on Home. It creates:
 
 - Why TinyBlog Widget exists
 - A secure default for shared hosting
@@ -219,6 +250,14 @@ On a host or CI machine with PHP:
 ```bash
 php -l tinyblog.php
 php tests/smoke.php
+node --check tinyblog-widget.js
+```
+
+Local development with PHP's built-in server (serves the widget, assets, and uploads; refuses `data/`, `.env`, dotfiles, and tests):
+
+```bash
+php -S localhost:8080 tinyblog.php
+# then open http://localhost:8080/admin
 ```
 
 Create first admin with a browser at `/admin` because CSRF tokens are form-bound. A curl flow is still useful for API checks after sample posts are loaded:
@@ -286,10 +325,11 @@ Manual QA checklist:
 - Confirm widget feed renders from an allowed origin.
 - Confirm widget empty feeds show "No posts yet" and blocked/failed fetches show "Couldn't load posts" while firing the `error` event.
 - Confirm the landing page favicon uses `assets/logo.svg`, social cards use `assets/og.png`, the skip link is first in keyboard tab order, the embed snippet copies, Docs links open `docs.html`, and dark mode remains legible.
-- Confirm a blocked Origin receives 403 from `/api/posts`.
-- Upload jpg/png/webp/gif with alt text, confirm a `.txt` or `.php` upload is rejected, then delete an uploaded image and confirm the DB row and file are removed.
+- Confirm a blocked Origin receives 403 with `"code":"origin_not_allowed"` from `/api/posts`, shows under "Refused requests" in Admin -> Add to site, and loads after clicking Allow.
+- Schedule a post a few minutes ahead in your local time; confirm it appears on the blog, feeds, widget, and `/embed/feed.html` once the time passes.
+- Upload jpg/png/webp/gif with alt text (uploads without alt text are refused), confirm a `.txt` or `.php` upload is rejected, then delete an uploaded image and confirm the DB row and file are removed.
 - Submit subscribe form and verify rate limit after repeated attempts.
-- Subscribe, confirm via the token link, then unsubscribe via the one-click link; confirmed subscriber counts and exports should exclude unconfirmed/unsubscribed rows.
+- Subscribe, confirm via the token link (copy it from Admin -> Subscribers when emails are off), then unsubscribe via the one-click link; confirmed subscriber counts, CSV export, and JSON export should exclude unconfirmed/unsubscribed rows. The subscribe API never returns the confirm link to the browser.
 - Visit a canonical post twice from the same IP/day and confirm the privacy-friendly view counter increments once; `DNT: 1` and obvious bot UAs should not increment.
 - Export JSON, import into a fresh install, and confirm posts/settings/confirmed subscribers/media references are restored.
 - Confirm fenced code blocks render as escaped `<pre><code class="language-x">` with a copy button and no external highlighter.

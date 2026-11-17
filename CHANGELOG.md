@@ -2,6 +2,41 @@
 
 Repository: https://github.com/tanzir71/tinyblog
 
+## 2026-11-17 (v0.2.0)
+
+Upgrade plan phases 0-4: a professional landing page, a new identity, and an admin rebuilt around the jobs small businesses actually do (set up, write, publish, put it on the site).
+
+Brand and landing
+- New identity: lowercase `tinyblog` wordmark with an ember i-dot (`assets/wordmark.svg`) and a "b." app icon (`assets/logo.svg`, `apple-touch-icon.png`), plus a new 1200x630 `og.png`.
+- Warm paper/ink/ember palette shared by the landing page, PHP app, admin, and widget, with matching dark mode. The PHP app still uses system fonts and loads nothing external.
+- Rewrote `index.html` and `assets/site.css` from the Figma design: audience, how it works, setup, widget modes, features, real admin screenshots (now including Add to site), security, compare, scope, FAQ, and quick start. Kept every previous claim and link.
+- Corrected DropInBlog pricing everywhere: Solo is $99/mo monthly or $79/mo billed yearly (checked November 2026).
+
+Admin (Phase 1-3)
+- Sidebar navigation by job: Home, Posts, Media, Subscribers, Add to site, Settings, with account and logout in the footer and a compact top bar on phones.
+- Home: dismissible "Finish setting up" checklist, drafts and scheduled posts, 30-day views, confirmed subscribers, and top posts.
+- Posts: All / Published / Scheduled / Drafts filters, title search, pagination, inline Publish now / Unpublish.
+- Editor: Draft / Publish now / Schedule (entered in your local time), save keeps you in the editor with a clear status line, unique slugs instead of errors, validation errors keep your text, Write / Preview / Split with a server-rendered preview, featured image and inline images from a media picker, excerpt counter, search preview, and a "restore unsaved changes" banner instead of silent restores.
+- Add to site: allowed websites with "Seen ... ago" status, refused requests with one-click Allow, layout/theme/accent options, platform steps for WordPress, Shopify, Squarespace, Webflow, Wix, and PHP include, live preview, copy button, and verification.
+- Subscribers: Confirmed / Waiting / Unsubscribed filters, CSV export of confirmed subscribers, copy confirm link, delete.
+- Settings: General / Email / Users / Embed & sites / Backup & health tabs; each tab saves only its own fields; color picker; time zone; From address; "Send a test confirmation to me"; site id change that moves existing content.
+- Media: alt text is now required; dimensions and sizes shown; clearer empty and error states.
+
+Backend
+- New `embed_seen` table (schema v4) records which origins load the widget, throttled and capped. Migrations now run once per schema version instead of on every request.
+- Upgrading installs that still use the old default accent (`#2436d4`) switch to ember `#c2410c`; any other accent you picked is kept.
+- CORS refusals return `code: origin_not_allowed`; unknown site and bad siteKey return `unknown_site` / `invalid_site_key`.
+- Security: the subscribe API no longer returns the confirmation link to the caller.
+- Caching: ETags change when a scheduled post goes live or a post is deleted.
+- `GET /embed/feed.html`: sanitized, cacheable HTML fragment for server-side includes.
+- `php -S localhost:8080 tinyblog.php` works for local development and refuses private files.
+- Public blog: readable dates with `<time>`, a reader-facing sidebar (search, RSS, JSON Feed, archive) instead of the API endpoint, skip link.
+
+Widget
+- `theme: "inherit"` uses the host page's fonts and colors; `widgetType: "badge"` adds a "What's new" button with an unread count.
+- Failed loads log the cause to the console (origin not allowed, unknown site, missing siteKey, unreachable endpoint).
+- New palette defaults (`accent: "#15130f"`, ember in dark mode). Size budget is now 23 KB unminified.
+
 ## 2026-07-07
 
 - Added the Vercel marketing-demo artifact with `/api/posts`, `vercel.json`, GitHub Pages exclusions, and README deploy steps.

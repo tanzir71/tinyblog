@@ -17,6 +17,7 @@
   <meta name="twitter:description" content="Setup, widget config, routes, security, backups, and QA for the single-file PHP + SQLite blog widget.">
   <meta name="twitter:image" content="https://tanzir71.github.io/tinyblog/assets/og.png">
   <link rel="icon" href="assets/logo.svg">
+  <meta name="theme-color" content="#f7f5f0">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,10 +28,7 @@
   <a class="skip" href="#main">Skip to content</a>
   <div class="wrap">
     <header class="top">
-      <a class="brand" href="index.html">
-        <span class="mark" aria-hidden="true">TB</span>
-        <span>TinyBlog</span>
-      </a>
+      <a class="brand" href="index.html"><img class="wordmark" src="assets/wordmark.svg" alt="TinyBlog" width="83" height="27"></a>
       <nav class="nav" aria-label="Primary">
         <a href="index.html#system">How it works</a>
         <a href="index.html#features">Features</a>
@@ -77,7 +75,7 @@
             <div class="step-list">
               <div><span class="num">01</span><p>Upload <code>tinyblog.php</code>, <code>tinyblog-widget.js</code>, <code>.htaccess</code>, <code>assets/</code>, <code>uploads/</code>, and <code>data/.htaccess</code> to your site root or <code>/blog</code> subfolder.</p></div>
               <div><span class="num">02</span><p>Enable PHP 8.0 or newer, plus <code>pdo_sqlite</code>, <code>sqlite3</code>, and <code>fileinfo</code> when your host exposes extension toggles.</p></div>
-              <div><span class="num">03</span><p>Open <code>/admin</code>, or first set <code>TB_ADMIN_EMAIL</code> and <code>TB_ADMIN_PASSWORD</code> in <code>.env</code>, then set the canonical URL, choose the site id, and add allowed widget origins.</p></div>
+              <div><span class="num">03</span><p>Open <code>/admin</code>, or first set <code>TB_ADMIN_EMAIL</code> and <code>TB_ADMIN_PASSWORD</code> in <code>.env</code>, then follow the "Finish setting up" checklist on Home: name the blog, publish a post, and use Add to site to allow your website and copy the snippet.</p></div>
               <div><span class="num">04</span><p>Paste the widget snippet on an allowed page and publish sample posts if you want starter content.</p></div>
             </div>
           </section>
@@ -117,7 +115,7 @@ TB_ADMIN_PASSWORD=change-this-long-password</code></pre>
           <section class="docs-section" id="embed">
             <p class="sys">Docs 03</p>
             <h2>Embed snippets</h2>
-            <p class="copy">The widget is dependency-free and reads JSON from your own TinyBlog endpoint. Put the script on a domain listed in Admin -> Settings -> Allowed widget origins.</p>
+            <p class="copy">The widget is dependency-free and reads JSON from your own TinyBlog endpoint. Admin -> Add to site builds the snippet for you: allow the website, pick a layout and theme, choose your platform (any HTML, WordPress, Shopify, Squarespace, Webflow, Wix, or a PHP include), copy, and it shows "Seen on your-site" once the embed loads. Refused websites appear there with a one-click Allow, and the widget logs the reason in the browser console.</p>
             <div class="docs-code code-card" aria-label="Feed widget snippet">
               <div class="code-bar">
                 <span>feed widget</span>
@@ -125,8 +123,18 @@ TB_ADMIN_PASSWORD=change-this-long-password</code></pre>
               </div>
 <pre id="snippet-feed"><code>&lt;script
   src="https://blog.example.com/tinyblog-widget.js"
-  data-tb-config='{"site":"store-1","endpoint":"https://blog.example.com/api","widgetType":"feed","maxItems":5}'&gt;
-&lt;/script&gt;</code></pre>
+  data-tb-config='{"site":"store-1","endpoint":"https://blog.example.com/api","widgetType":"feed","maxItems":5}'&gt;&lt;/script&gt;
+&lt;noscript&gt;&lt;a href="https://blog.example.com/"&gt;Read our blog&lt;/a&gt;&lt;/noscript&gt;</code></pre>
+            </div>
+            <div class="docs-code code-card" aria-label="Server-side include snippet">
+              <div class="code-bar">
+                <span>php include (no JavaScript)</span>
+                <button class="copy-btn" type="button" data-copy="#snippet-include">Copy</button>
+              </div>
+<pre id="snippet-include"><code>&lt;?php
+$tinyblog = @file_get_contents('https://blog.example.com/embed/feed.html?site=store-1&amp;limit=5');
+echo $tinyblog !== false ? $tinyblog : '';
+?&gt;</code></pre>
             </div>
             <div class="docs-code code-card" aria-label="Manual initialization snippet">
               <div class="code-bar">
@@ -147,7 +155,7 @@ TB_ADMIN_PASSWORD=change-this-long-password</code></pre>
     widgetType: "feed",
     maxItems: 3,
     showExcerpt: true,
-    accent: "#000000"
+    theme: "inherit"
   });
 &lt;/script&gt;</code></pre>
             </div>
@@ -163,12 +171,12 @@ TB_ADMIN_PASSWORD=change-this-long-password</code></pre>
                 <tbody>
                   <tr><th scope="row">endpoint</th><td>Required API base URL, for example <code>https://blog.example.com/api</code>.</td></tr>
                   <tr><th scope="row">site</th><td>Public site id. Defaults to <code>store-1</code>.</td></tr>
-                  <tr><th scope="row">siteKey</th><td>Optional public key if API reads require it in Settings.</td></tr>
-                  <tr><th scope="row">widgetType</th><td><code>feed</code>, <code>post</code>, or <code>subscribe</code>.</td></tr>
+                  <tr><th scope="row">siteKey</th><td>Optional public key if API reads require it (Settings -> General -> Advanced). Add to site includes it automatically.</td></tr>
+                  <tr><th scope="row">widgetType</th><td><code>feed</code>, <code>post</code>, <code>subscribe</code>, or <code>badge</code> (a "What's new" button with an unread count).</td></tr>
                   <tr><th scope="row">slug</th><td>Required for <code>post</code> widgets.</td></tr>
                   <tr><th scope="row">maxItems</th><td>Feed item count from 1 to 50.</td></tr>
-                  <tr><th scope="row">theme</th><td><code>light</code> or <code>dark</code>; both stay monochrome.</td></tr>
-                  <tr><th scope="row">accent</th><td>CSS accent color. Defaults to <code>#000000</code>.</td></tr>
+                  <tr><th scope="row">theme</th><td><code>light</code>, <code>dark</code>, <code>card</code>, or <code>inherit</code> (uses your page's font and colors with no box).</td></tr>
+                  <tr><th scope="row">accent</th><td>Hex color for buttons, the badge count, and focus rings. Defaults to ink <code>#15130f</code>; dark mode uses ember.</td></tr>
                   <tr><th scope="row">container</th><td>Optional CSS selector for manual placement.</td></tr>
                 </tbody>
               </table>
@@ -192,8 +200,9 @@ TB_ADMIN_PASSWORD=change-this-long-password</code></pre>
                   <tr><th scope="row">GET /feed.json</th><td>JSON Feed 1.1.</td></tr>
                   <tr><th scope="row">GET /api/posts?site=SITE</th><td>Widget/API feed payload.</td></tr>
                   <tr><th scope="row">GET /api/posts/{slug}?site=SITE</th><td>Single post API payload.</td></tr>
-                  <tr><th scope="row">POST /api/subscribe</th><td>Rate-limited subscriber capture.</td></tr>
-                  <tr><th scope="row">GET /admin</th><td>Login, dashboard, settings, posts, media, subscribers, and backup tools.</td></tr>
+                  <tr><th scope="row">POST /api/subscribe</th><td>Rate-limited, double opt-in subscriber capture.</td></tr>
+                  <tr><th scope="row">GET /embed/feed.html?site=SITE</th><td>Sanitized HTML fragment of recent posts for server-side includes; <code>limit</code>, <code>excerpt=0</code>, and <code>css=0</code> are optional.</td></tr>
+                  <tr><th scope="row">GET /admin</th><td>Home with setup checklist, Posts, Media, Subscribers, Add to site, and Settings (General, Email, Users, Embed &amp; sites, Backup &amp; health).</td></tr>
                 </tbody>
               </table>
             </div>
@@ -257,7 +266,11 @@ TB_ADMIN_PASSWORD=change-this-long-password</code></pre>
 powershell -ExecutionPolicy Bypass -File tests\security_scan.ps1
 
 php -l tinyblog.php
-php tests/smoke.php</code></pre>
+php tests/smoke.php
+node --check tinyblog-widget.js
+
+# local development
+php -S localhost:8080 tinyblog.php</code></pre>
             </div>
             <div class="docs-code code-card" aria-label="API probes">
               <div class="code-bar">
@@ -284,6 +297,11 @@ curl -X POST "https://blog.example.com/api/subscribe" \
             <p class="sys">Docs 10</p>
             <h2>Changelog highlights</h2>
             <div class="change-list">
+              <article>
+                <span class="num">2026-11-17</span>
+                <h3>v0.2: an admin built around the job</h3>
+                <p>New identity and palette, a rebuilt landing page, and an admin organised as Home, Posts, Media, Subscribers, Add to site, and Settings. Adds a setup checklist, Draft / Publish now / Schedule in local time, server-rendered preview, media picker, required alt text, embed verification with one-click Allow, subscriber CSV export, tabbed settings with a test email, the <code>/embed/feed.html</code> fragment, and the widget's <code>inherit</code> theme and <code>badge</code> mode. The subscribe API no longer returns confirm links.</p>
+              </article>
               <article>
                 <span class="num">2026-07-04</span>
                 <h3>Publishing, widget, docs, and operations polish</h3>
