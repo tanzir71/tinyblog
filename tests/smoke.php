@@ -499,6 +499,18 @@ if (is_file($root . '/assets/og.png')) {
     }
 }
 
+foreach (['index.html', 'docs.html', 'compare.html', 'tinyblog-vs-dropinblog.html', 'tinyblog-vs-substack.html', 'tinyblog-vs-ghost.html', 'tinyblog-vs-wordpress.html', 'tinyblog-vs-disqus-embed.html'] as $page) {
+    $html = (string) @file_get_contents($root . '/' . $page);
+    $footerAt = strpos($html, '<footer>');
+    $supportAt = strpos($html, 'class="support"');
+    if ($footerAt === false || $supportAt === false || $supportAt < $footerAt || !str_contains($html, 'href="https://buymeacoffee.com/tanzir"') || !str_contains($html, 'Tanzir Rahman is fueling open-source code, local utilities, and late-night builds.')) {
+        $failures[] = "{$page} should have the Buy me a coffee support callout in its footer.";
+    }
+}
+if (!str_contains((string) @file_get_contents($root . '/assets/site.css'), '.support {')) {
+    $failures[] = 'assets/site.css should style the footer support callout.';
+}
+
 foreach (['dashboard', 'editor', 'media', 'embed'] as $shot) {
     $file = $root . "/assets/shot-admin-{$shot}.png";
     if (!is_file($file)) {
