@@ -6,6 +6,8 @@
   <title>TinyBlog Widget — Self-hosted embeddable blog in one script tag</title>
   <meta name="description" content="TinyBlog is a free, self-hosted blog backend: one PHP file, SQLite, and a one-line JavaScript embed for feeds, posts, and subscribers. No trackers, no build step, MIT licensed.">
   <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#f7f5f0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#15130f" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://tanzir71.github.io/tinyblog/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="TinyBlog Widget — Self-hosted embeddable blog">
@@ -20,16 +22,45 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
-  <div class="wrap">
-    <header class="top">
-      <a class="brand" href="/">
-        <span class="mark" aria-hidden="true">TB</span>
-        <span>TinyBlog</span>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+      <symbol id="i-arrow-ur" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+      <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+      <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+      <symbol id="i-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+      <symbol id="i-megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+      <symbol id="i-briefcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect x="2" y="6" width="20" height="14" rx="2"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+      <symbol id="i-rss" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+      <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></symbol>
+      <symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+      <symbol id="wm" viewBox="0 0 90 29"><rect style="fill:var(--accent)" x="9.5" y="3.306" width="5.04" height="5.04" rx="0.8"/><g fill="currentColor"><path d="M8.41196 9.90909V12.6364H0.528442V9.90909H8.41196ZM2.31822 6.77273H5.9489V18.9773C5.9489 19.3125 6.00003 19.5739 6.10231 19.7614C6.20458 19.9432 6.34662 20.071 6.52844 20.1449C6.71594 20.2188 6.93185 20.2557 7.17617 20.2557C7.34662 20.2557 7.51708 20.2415 7.68753 20.2131C7.85799 20.179 7.98867 20.1534 8.07958 20.1364L8.6506 22.8381C8.46878 22.8949 8.2131 22.9602 7.88356 23.0341C7.55401 23.1136 7.15344 23.1619 6.68185 23.179C5.80685 23.2131 5.03981 23.0966 4.38072 22.8295C3.72731 22.5625 3.21878 22.1477 2.85515 21.5852C2.49151 21.0227 2.31253 20.3125 2.31822 19.4545V6.77273Z"/><path d="M9.81702 23V9.90909H13.4477V23H9.81702Z"/><path d="M19.0268 15.4318V23H15.3961V9.90909H18.8563V12.2188H19.0097C19.2995 11.4574 19.7853 10.8551 20.4671 10.4119C21.1489 9.96307 21.9756 9.73864 22.9472 9.73864C23.8563 9.73864 24.6489 9.9375 25.3251 10.3352C26.0012 10.733 26.5268 11.3011 26.9018 12.0398C27.2768 12.7727 27.4643 13.6477 27.4643 14.6648V23H23.8336V15.3125C23.8393 14.5114 23.6347 13.8864 23.2199 13.4375C22.8052 12.983 22.2342 12.7557 21.5069 12.7557C21.0182 12.7557 20.5864 12.8608 20.2114 13.071C19.8421 13.2813 19.5523 13.5881 19.3421 13.9915C19.1376 14.3892 19.0324 14.8693 19.0268 15.4318Z"/><path d="M31.1385 27.9091C30.6783 27.9091 30.2465 27.8722 29.843 27.7983C29.4453 27.7301 29.1158 27.642 28.8544 27.5341L29.6726 24.8239C30.0987 24.9545 30.4823 25.0256 30.8232 25.0369C31.1698 25.0483 31.468 24.9688 31.718 24.7983C31.9737 24.6278 32.1811 24.3381 32.3402 23.929L32.5533 23.375L27.8573 9.90909H31.6754L34.3857 19.5227H34.522L37.2578 9.90909H41.1016L36.0135 24.4148C35.7692 25.1193 35.4368 25.733 35.0163 26.2557C34.6016 26.7841 34.076 27.1903 33.4396 27.4744C32.8033 27.7642 32.0362 27.9091 31.1385 27.9091Z"/><path d="M42.0677 23V5.54546H45.6984V12.108H45.8092C45.9683 11.7557 46.1984 11.3977 46.4995 11.0341C46.8063 10.6648 47.2041 10.358 47.6927 10.1136C48.187 9.86364 48.8007 9.73864 49.5336 9.73864C50.4882 9.73864 51.3688 9.98864 52.1757 10.4886C52.9825 10.983 53.6274 11.7301 54.1103 12.7301C54.5933 13.7244 54.8348 14.9716 54.8348 16.4716C54.8348 17.9318 54.599 19.1648 54.1274 20.1705C53.6615 21.1705 53.0251 21.929 52.2183 22.446C51.4171 22.9574 50.5194 23.2131 49.5251 23.2131C48.8205 23.2131 48.2211 23.0966 47.7268 22.8636C47.2382 22.6307 46.8376 22.3381 46.5251 21.9858C46.2126 21.6278 45.974 21.267 45.8092 20.9034H45.6473V23H42.0677ZM45.6217 16.4545C45.6217 17.233 45.7296 17.9119 45.9455 18.4915C46.1615 19.071 46.474 19.5227 46.883 19.8466C47.2921 20.1648 47.7893 20.3239 48.3745 20.3239C48.9654 20.3239 49.4654 20.1619 49.8745 19.8381C50.2836 19.5085 50.5933 19.054 50.8035 18.4744C51.0194 17.8892 51.1274 17.2159 51.1274 16.4545C51.1274 15.6989 51.0223 15.0341 50.812 14.4602C50.6018 13.8864 50.2921 13.4375 49.883 13.1136C49.474 12.7898 48.9711 12.6278 48.3745 12.6278C47.7836 12.6278 47.2836 12.7841 46.8745 13.0966C46.4711 13.4091 46.1615 13.8523 45.9455 14.4261C45.7296 15 45.6217 15.6761 45.6217 16.4545Z"/><path d="M59.928 5.54546V23H56.2973V5.54546H59.928Z"/><path d="M67.7912 23.2557C66.4673 23.2557 65.3224 22.9744 64.3565 22.4119C63.3963 21.8438 62.6548 21.054 62.1321 20.0426C61.6094 19.0256 61.348 17.8466 61.348 16.5057C61.348 15.1534 61.6094 13.9716 62.1321 12.9602C62.6548 11.9432 63.3963 11.1534 64.3565 10.5909C65.3224 10.0227 66.4673 9.73864 67.7912 9.73864C69.115 9.73864 70.2571 10.0227 71.2173 10.5909C72.1832 11.1534 72.9275 11.9432 73.4503 12.9602C73.973 13.9716 74.2344 15.1534 74.2344 16.5057C74.2344 17.8466 73.973 19.0256 73.4503 20.0426C72.9275 21.054 72.1832 21.8438 71.2173 22.4119C70.2571 22.9744 69.115 23.2557 67.7912 23.2557ZM67.8082 20.4432C68.4105 20.4432 68.9133 20.2727 69.3167 19.9318C69.7202 19.5852 70.0241 19.1136 70.2287 18.517C70.4389 17.9205 70.544 17.2415 70.544 16.4801C70.544 15.7188 70.4389 15.0398 70.2287 14.4432C70.0241 13.8466 69.7202 13.375 69.3167 13.0284C68.9133 12.6818 68.4105 12.5085 67.8082 12.5085C67.2003 12.5085 66.6889 12.6818 66.2741 13.0284C65.865 13.375 65.5554 13.8466 65.3451 14.4432C65.1406 15.0398 65.0383 15.7188 65.0383 16.4801C65.0383 17.2415 65.1406 17.9205 65.3451 18.517C65.5554 19.1136 65.865 19.5852 66.2741 19.9318C66.6889 20.2727 67.2003 20.4432 67.8082 20.4432Z"/><path d="M81.5329 28.1818C80.3567 28.1818 79.3482 28.0199 78.5073 27.696C77.6721 27.3778 77.0073 26.9432 76.513 26.392C76.0187 25.8409 75.6976 25.2216 75.5499 24.5341L78.9079 24.0824C79.0101 24.3438 79.1721 24.5881 79.3937 24.8153C79.6153 25.0426 79.9079 25.2244 80.2715 25.3608C80.6408 25.5028 81.0897 25.5739 81.6181 25.5739C82.4079 25.5739 83.0584 25.3807 83.5698 24.9943C84.0868 24.6136 84.3454 23.9744 84.3454 23.0767V20.6818H84.192C84.0329 21.0455 83.7942 21.3892 83.4761 21.7131C83.1579 22.0369 82.7488 22.3011 82.2488 22.5057C81.7488 22.7102 81.1522 22.8125 80.459 22.8125C79.4761 22.8125 78.5812 22.5852 77.7744 22.1307C76.9732 21.6705 76.334 20.9688 75.8567 20.0256C75.3851 19.0767 75.1494 17.8778 75.1494 16.429C75.1494 14.946 75.3908 13.7074 75.8738 12.7131C76.3567 11.7188 76.9988 10.9744 77.7999 10.4801C78.6067 9.9858 79.4903 9.73864 80.4505 9.73864C81.1834 9.73864 81.7971 9.86364 82.2914 10.1136C82.7857 10.358 83.1834 10.6648 83.4846 11.0341C83.7914 11.3977 84.0272 11.7557 84.192 12.108H84.3283V9.90909H87.9334V23.1278C87.9334 24.2415 87.6607 25.1733 87.1153 25.9233C86.5698 26.6733 85.8141 27.2358 84.8482 27.6108C83.888 27.9915 82.7829 28.1818 81.5329 28.1818ZM81.6096 20.0852C82.1948 20.0852 82.6891 19.9403 83.0925 19.6506C83.5016 19.3551 83.8141 18.9347 84.03 18.3892C84.2516 17.8381 84.3624 17.179 84.3624 16.4119C84.3624 15.6449 84.2545 14.9801 84.0386 14.4176C83.8226 13.8494 83.5101 13.4091 83.1011 13.0966C82.692 12.7841 82.1948 12.6278 81.6096 12.6278C81.013 12.6278 80.5101 12.7898 80.1011 13.1136C79.692 13.4318 79.3823 13.875 79.1721 14.4432C78.9619 15.0114 78.8567 15.6676 78.8567 16.4119C78.8567 17.1676 78.9619 17.821 79.1721 18.3722C79.388 18.9176 79.6976 19.3409 80.1011 19.642C80.5101 19.9375 81.013 20.0852 81.6096 20.0852Z"/></g></symbol>
+    </defs>
+  </svg>
+
+  <header class="site-head">
+    <div class="wrap top">
+      <a class="brand" href="./" aria-label="TinyBlog home">
+        <svg class="wordmark" viewBox="0 0 90 29" role="img" aria-label="TinyBlog"><use href="#wm"/></svg>
       </a>
       <nav class="nav" aria-label="Primary">
         <a href="#system">How it works</a>
@@ -37,29 +68,65 @@
         <a href="#setup">Setup</a>
         <a href="#compare">Compare</a>
         <a href="docs.html">Docs</a>
-        <a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a>
+        <a href="#faq">FAQ</a>
+        <a class="nav-btn" href="https://github.com/tanzir71/tinyblog"><svg aria-hidden="true"><use href="#i-github"/></svg>GitHub</a>
+        <a class="nav-btn solid" href="#quick-start">Get started</a>
       </nav>
-    </header>
+    </div>
+  </header>
 
-    <main id="main">
-      <!-- Hero -->
-      <section class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow"><span class="sq" aria-hidden="true"></span>v1.0 · PHP + SQLite · MIT · No trackers</p>
-          <h1>A self-hosted blog in one script tag.</h1>
-          <p class="lede">TinyBlog is a single PHP file with a SQLite database and a one-line JavaScript embed. Render a feed, a single post, or a subscribe box on any site — publishing and data stay on <em>your</em> host, not a vendor cloud.</p>
-          <div class="actions">
-            <a class="btn" href="docs.html">Read the docs</a>
-            <a class="btn ghost" href="https://github.com/tanzir71/tinyblog">View on GitHub</a>
+  <main id="main">
+    <!-- Hero -->
+    <div class="band paper">
+      <div class="wrap">
+        <section class="hero" aria-labelledby="hero-title">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="chip">v0.2</span>PHP + SQLite · MIT · No trackers</p>
+            <h1 id="hero-title">A self-hosted blog in one script tag.</h1>
+            <p class="lede">TinyBlog is a single PHP file with a SQLite database and a one-line JavaScript embed. Render a feed, a single post, or a subscribe box on any site — publishing and data stay on <strong>your</strong> host, not a vendor cloud.</p>
+            <div class="actions">
+              <a class="btn" href="docs.html">Read the docs</a>
+              <a class="btn ghost" href="https://github.com/tanzir71/tinyblog">View on GitHub</a>
+            </div>
+            <ul class="assurances" aria-label="Assurances">
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>MIT licensed</li>
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>Runs on PHP 8 shared hosting</li>
+              <li><svg aria-hidden="true"><use href="#i-check"/></svg>No trackers on readers</li>
+            </ul>
+            <div class="stats" role="group" aria-label="At a glance">
+              <div class="stat" aria-label="2 files to deploy"><div class="stat-num">2 files</div><div class="stat-label">to deploy</div></div>
+              <div class="stat" aria-label="~250 KB, one PHP file, no deps"><div class="stat-num">~250 KB</div><div class="stat-label">one PHP file, no deps</div></div>
+              <div class="stat" aria-label="0 external requests on your blog"><div class="stat-num">0 external</div><div class="stat-label">requests on your blog</div></div>
+              <div class="stat" aria-label="5-min cPanel install"><div class="stat-num">5-min</div><div class="stat-label">cPanel install</div></div>
+            </div>
+            <p class="proof-note"><a href="https://github.com/tanzir71/tinyblog/blob/main/tinyblog.php">Read the source — it's one file</a></p>
           </div>
-        </div>
 
-        <div class="hero-proof">
-        <div class="code-card" aria-label="Embed snippet">
-          <div class="code-bar">
-            <span>store-page.html</span>
-            <button class="copy-btn" type="button" data-copy="#snippet-hero">Copy</button>
-          </div>
+          <div class="hero-proof preview">
+            <figure class="live-demo-card" role="region" aria-label="Live TinyBlog widget demo">
+              <div class="browser">
+                <div class="browser-bar">
+                  <span class="browser-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                  <span class="browser-url"><svg aria-hidden="true"><use href="#i-lock"/></svg>acme-goods.com/journal</span>
+                  <span class="tag ember">live widget</span>
+                </div>
+                <div class="store-nav" aria-hidden="true">
+                  <span class="store-logo">ACME GOODS</span>
+                  <span class="store-links"><span>Shop</span><b>Journal</b><span>About</span></span>
+                </div>
+                <div class="store-content">
+                  <span class="label">From the journal</span>
+                  <div id="live-demo"></div>
+                  <noscript><p class="copy muted">Enable JavaScript to see the live TinyBlog widget demo.</p></noscript>
+                </div>
+              </div>
+              <figcaption><svg aria-hidden="true"><use href="#i-arrow-ur"/></svg>This is the actual widget, rendering the actual JSON.</figcaption>
+            </figure>
+            <div class="code-card" aria-label="Embed snippet">
+              <div class="code-bar">
+                <span>store-page.html</span>
+                <button class="copy-btn" type="button" data-copy="#snippet-hero"><svg width="12" height="12" aria-hidden="true"><use href="#i-copy"/></svg>Copy</button>
+              </div>
 <pre id="snippet-hero"><code><span class="tok-tag">&lt;script</span>
   <span class="tok-attr">src</span>=<span class="tok-str">"https://blog.example.com/tinyblog-widget.js"</span>
   <span class="tok-attr">data-tb-config</span>=<span class="tok-str">'{"site":"store-1",
@@ -70,227 +137,419 @@
 <span class="tok-com">// That's the whole client-side integration.</span>
 <span class="tok-com">// Posts render from JSON your PHP host serves —</span>
 <span class="tok-com">// prepared SQL, CORS allowlist, no third parties.</span></code></pre>
-        </div>
-        <figure class="live-demo-card" role="region" aria-label="Live TinyBlog widget demo">
-          <div id="live-demo"></div>
-          <noscript><p class="copy muted">Enable JavaScript to see the live TinyBlog widget demo.</p></noscript>
-          <figcaption>This is the actual widget, rendering the actual JSON.</figcaption>
-        </figure>
-        </div>
-      </section>
-
-      <!-- Stats -->
-      <div class="stats" role="group" aria-label="At a glance">
-        <div class="stat" aria-label="2 files to deploy"><div class="stat-num">2 files</div><div class="stat-label">to deploy</div></div>
-        <div class="stat" aria-label="~140 KB, no deps"><div class="stat-num">~140 KB</div><div class="stat-label">no deps</div></div>
-        <div class="stat" aria-label="0 external requests on your blog"><div class="stat-num">0 external</div><div class="stat-label">requests on your blog</div></div>
-        <div class="stat" aria-label="5-min cPanel install"><div class="stat-num">5-min</div><div class="stat-label">cPanel install</div></div>
+            </div>
+          </div>
+        </section>
       </div>
-      <p class="proof-note"><a href="https://github.com/tanzir71/tinyblog/blob/main/tinyblog.php">Read the source &mdash; it's one file</a></p>
+    </div>
 
-      <!-- How it works -->
-      <section class="section" id="system">
-        <p class="sys">How it works</p>
+    <!-- Who it's for -->
+    <div class="wrap">
+      <section class="section" id="audience" aria-labelledby="aud-title">
+        <p class="sys">Who it's for</p>
         <div class="section-head">
-          <h2>The whole system, on one sheet.</h2>
-          <p class="copy muted">No CMS fleet, no vendor cloud. One PHP app writes to SQLite, renders canonical pages and RSS, and serves the JSON the embed reads.</p>
+          <h2 id="aud-title">A blog for sites that already exist.</h2>
+          <p class="copy">For a store, portfolio, docs site, or product-updates feed, a full CMS or a hosted platform is often too much. TinyBlog adds the blog without rebuilding the site.</p>
         </div>
-        <div class="flow">
-          <div class="flow-node">
-            <span class="label">Node 01</span>
-            <h3>Any site</h3>
-            <p>One <code>&lt;script&gt;</code> tag renders feed, post, or subscribe. Zero dependencies, no build step.</p>
-          </div>
-          <div class="flow-node">
-            <span class="label">Node 02</span>
-            <h3>Your PHP host</h3>
-            <p><code>tinyblog.php</code> + SQLite: admin, posts, uploads, subscribers, settings. Data never leaves your account.</p>
-          </div>
-          <div class="flow-node">
-            <span class="label">Node 03</span>
-            <h3>Reader surface</h3>
-            <p>Canonical post pages, tag &amp; search, RSS and sitemap, plus a CORS-allowlisted JSON API for the widget.</p>
-          </div>
+        <div class="aud-grid">
+          <article class="aud"><span class="ico"><svg aria-hidden="true"><use href="#i-bag"/></svg></span><h3>Online stores</h3><p>Publish buying guides, launches, and stories beside your products, without a monthly blog-app subscription.</p></article>
+          <article class="aud"><span class="ico"><svg aria-hidden="true"><use href="#i-megaphone"/></svg></span><h3>Product &amp; SaaS teams</h3><p>Run a changelog or product-updates feed on your marketing site or docs, with RSS and JSON Feed built in.</p></article>
+          <article class="aud"><span class="ico"><svg aria-hidden="true"><use href="#i-briefcase"/></svg></span><h3>Agencies &amp; freelancers</h3><p>Drop one small backend onto a client's existing hosting and hand them a browser admin. No plugin treadmill.</p></article>
+          <article class="aud"><span class="ico"><svg aria-hidden="true"><use href="#i-book"/></svg></span><h3>Portfolios &amp; docs sites</h3><p>Add a notes or updates section to a static site. No build step, no framework, no new host.</p></article>
         </div>
       </section>
+    </div>
 
-      <!-- Setup -->
-      <section class="section" id="setup">
-        <p class="sys">Setup</p>
+    <!-- How it works -->
+    <div class="band paper">
+      <div class="wrap">
+        <section class="section" id="system" aria-labelledby="system-title">
+          <p class="sys">How it works</p>
+          <div class="section-head">
+            <h2 id="system-title">The whole system, on one sheet.</h2>
+            <p class="copy">No CMS fleet, no vendor cloud. One PHP app writes to SQLite, renders canonical pages and RSS, and serves the JSON the embed reads.</p>
+          </div>
+          <div class="flow">
+            <div class="flow-node">
+              <span class="label">Node 01</span>
+              <div class="node-title"><span class="ico"><svg aria-hidden="true"><use href="#i-code"/></svg></span><div><h3>Any site</h3><small>one &lt;script&gt; tag</small></div></div>
+              <p>One <code>&lt;script&gt;</code> tag renders feed, post, or subscribe. Zero dependencies, no build step.</p>
+              <div class="chips"><span class="tag">feed</span><span class="tag">post</span><span class="tag">subscribe</span></div>
+            </div>
+            <div class="flow-link" aria-hidden="true"><span>JSON</span><svg><use href="#i-arrow"/></svg><span>allowlisted</span></div>
+            <div class="flow-node">
+              <span class="label">Node 02</span>
+              <div class="node-title"><span class="ico"><svg aria-hidden="true"><use href="#i-server"/></svg></span><div><h3>Your PHP host</h3><small>tinyblog.php + SQLite</small></div></div>
+              <p><code>tinyblog.php</code> + SQLite: admin, posts, uploads, subscribers, settings. Data never leaves your account.</p>
+              <div class="chips"><span class="tag">/admin</span><span class="tag">data/</span><span class="tag">uploads/</span></div>
+            </div>
+            <div class="flow-link" aria-hidden="true"><span>renders</span><svg><use href="#i-arrow"/></svg><span>same host</span></div>
+            <div class="flow-node dark">
+              <span class="label">Node 03</span>
+              <div class="node-title"><span class="ico"><svg aria-hidden="true"><use href="#i-globe"/></svg></span><div><h3>Reader surface</h3><small>canonical pages</small></div></div>
+              <p>Canonical post pages, tag &amp; search, RSS and sitemap, plus a CORS-allowlisted JSON API for the widget.</p>
+              <div class="chips"><span class="tag">/post/{slug}</span><span class="tag">feed.xml</span><span class="tag">sitemap.xml</span></div>
+            </div>
+          </div>
+          <ul class="notes">
+            <li><svg aria-hidden="true"><use href="#i-shield"/></svg>Prepared SQL, CSRF tokens, and an origin allowlist on every hop</li>
+            <li><svg aria-hidden="true"><use href="#i-eye-off"/></svg>No third-party scripts, fonts, or analytics on your blog</li>
+            <li><svg aria-hidden="true"><use href="#i-download"/></svg>Full JSON export for backups and moving hosts</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- Setup -->
+    <div class="band night">
+      <div class="wrap">
+        <section class="section" id="setup" aria-labelledby="setup-title">
+          <p class="sys">Setup</p>
+          <div class="section-head">
+            <h2 id="setup-title">From cPanel to a live feed in minutes.</h2>
+            <p class="copy">Upload one folder, enable PHP 8, and the app creates its own database. Then write and embed.</p>
+          </div>
+          <div class="setup-grid">
+            <div class="steps">
+              <article class="step is-first"><header><span class="num">01 / Deploy</span><h3>Upload &amp; go</h3></header><p>Drop the files on any PHP 8 host with PDO SQLite. The app creates <code>data/tinyblog.db</code> on first run — no migrations to run by hand.</p></article>
+              <article class="step"><header><span class="num">02 / Login</span><h3>Edit credentials in .env</h3></header><p>Set admin email/password from cPanel File Manager, then log in at <code>/admin</code> to write posts, upload media, and manage settings.</p></article>
+              <article class="step"><header><span class="num">03 / Embed</span><h3>One tag, any page</h3></header><p>Paste the script on an allowed site. It fetches only the JSON the widget needs and renders it inline. Admin → Add to site builds the snippet for you.</p></article>
+              <article class="step"><header><span class="num">04 / Audit</span><h3>Read the whole path</h3></header><p>Set admin credentials before public launch, prefer password hashes, remove recovery credentials after use, and force HTTPS.</p></article>
+            </div>
+            <div class="code-card code-window">
+              <div class="code-bar">
+                <div class="tabs" role="tablist" aria-label="Setup snippets">
+                  <button class="tab-btn" role="tab" type="button" id="tab-terminal" aria-controls="panel-terminal" aria-selected="true">terminal</button>
+                  <button class="tab-btn" role="tab" type="button" id="tab-embed" aria-controls="panel-embed" aria-selected="false" tabindex="-1">store-page.html</button>
+                  <button class="tab-btn" role="tab" type="button" id="tab-env" aria-controls="panel-env" aria-selected="false" tabindex="-1">.env</button>
+                </div>
+                <button class="copy-btn" type="button" data-copy-tabs><svg width="12" height="12" aria-hidden="true"><use href="#i-copy"/></svg>Copy snippet</button>
+              </div>
+<pre class="tab-panel" id="panel-terminal" role="tabpanel" aria-labelledby="tab-terminal"><code><span class="tok-com"># clone the repo (backend + widget + docs)</span>
+git clone <span class="tok-str">https://github.com/tanzir71/tinyblog</span>
+
+<span class="tok-com"># upload to a PHP 8 host, make data/ and uploads/ writable,</span>
+<span class="tok-com"># then open /admin to create the first admin account</span>
+chmod 755 <span class="tok-attr">data uploads</span></code></pre>
+<pre class="tab-panel" id="panel-embed" role="tabpanel" aria-labelledby="tab-embed" hidden><code><span class="tok-tag">&lt;script</span>
+  <span class="tok-attr">src</span>=<span class="tok-str">"https://blog.example.com/tinyblog-widget.js"</span>
+  <span class="tok-attr">data-tb-config</span>=<span class="tok-str">'{"site":"store-1","endpoint":"https://blog.example.com/api","widgetType":"feed"}'</span><span class="tok-tag">&gt;&lt;/script&gt;</span></code></pre>
+<pre class="tab-panel" id="panel-env" role="tabpanel" aria-labelledby="tab-env" hidden><code><span class="tok-com"># private, server-side only; never commit this file</span>
+TB_ADMIN_EMAIL=<span class="tok-str">owner@example.com</span>
+TB_ADMIN_NAME=<span class="tok-str">Owner</span>
+TB_ADMIN_PASSWORD_HASH=<span class="tok-str">$2y$10$...</span></code></pre>
+              <div class="code-foot"><span>PHP 8+ · PDO SQLite · no Composer, no build step</span><span>Apache rewrite and file-protection rules included</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Widget modes -->
+    <div class="wrap">
+      <section class="section" id="widget" aria-labelledby="widget-title">
+        <p class="sys">The embed</p>
         <div class="section-head">
-          <h2>From cPanel to a live feed in minutes.</h2>
-          <p class="copy muted">Upload one folder, enable PHP 8, and the app creates its own database. Then write and embed.</p>
+          <h2 id="widget-title">One widget, three modes.</h2>
+          <p class="copy">Feed, single post, or subscribe box from one script tag, plus a small &ldquo;What&rsquo;s new&rdquo; badge for headers and navbars. Light, dark, card, or inherit themes with CSS-variable overrides, and everything it renders is sanitized first.</p>
         </div>
-        <div class="grid">
-          <article class="cell"><span class="num">01 / Deploy</span><h3>Upload &amp; go</h3><p>Drop the files on any PHP 8 host with PDO SQLite. The app creates <code>data/tinyblog.db</code> on first run — no migrations to run by hand.</p></article>
-          <article class="cell"><span class="num">02 / Login</span><h3>Edit credentials in .env</h3><p>Set admin email/password from cPanel File Manager, then log in at <code>/admin</code> to write posts, upload media, and manage settings.</p></article>
-          <article class="cell"><span class="num">03 / Embed</span><h3>One tag, any page</h3><p>Paste the script on an allowed site. It fetches only the JSON the widget needs and renders it inline.</p></article>
-          <article class="cell"><span class="num">04 / Audit</span><h3>Read the whole path</h3><p>Set admin credentials before public launch, prefer password hashes, remove recovery credentials after use, and force HTTPS.</p></article>
+        <div class="modes">
+          <article class="mode">
+            <div class="mode-stage" aria-hidden="true"><div class="mode-render">
+              <div class="mini-head">Latest posts<svg><use href="#i-rss"/></svg></div>
+              <div class="mini-row"><b>Why TinyBlog exists</b><span>Jul 1 · 3 min read</span></div>
+              <div class="mini-row"><b>Secure defaults on cheap hosting</b><span>Jun 24 · 4 min read</span></div>
+              <div class="mini-row"><b>Embed a feed on any page</b><span>Jun 15 · 2 min read</span></div>
+            </div></div>
+            <div class="mode-text"><span class="tag ember">widgetType: "feed"</span><h3>Feed</h3><p>Recent posts with optional excerpts and reading time. Paginated responses keep long archives light.</p></div>
+          </article>
+          <article class="mode">
+            <div class="mode-stage" aria-hidden="true"><div class="mode-render">
+              <div class="mini-title">Why TinyBlog exists</div>
+              <div class="mini-meta">Jul 1, 2026 · 3 min read</div>
+              <p class="mini-body">TinyBlog is for small teams that want owned publishing without a heavy CMS.</p>
+              <p class="mini-quote">Small tools are easier to understand, secure, and move.</p>
+            </div></div>
+            <div class="mode-text"><span class="tag ember">widgetType: "post"</span><h3>Single post</h3><p>Render one post by slug: release notes inside your app, or a story on a product page.</p></div>
+          </article>
+          <article class="mode">
+            <div class="mode-stage" aria-hidden="true"><div class="mode-render mini-form">
+              <svg><use href="#i-mail"/></svg>
+              <b>Get new posts by email</b>
+              <span class="mini-note">Updates from Acme Goods, sent from our own server.</span>
+              <span class="mini-input">you@example.com</span>
+              <span class="mini-btn">Subscribe</span>
+              <span class="mini-note">Double opt-in · one-click unsubscribe</span>
+            </div></div>
+            <div class="mode-text"><span class="tag ember">widgetType: "subscribe"</span><h3>Subscribe</h3><p>A site-scoped signup box with rate limiting, double opt-in confirmation, and one-click unsubscribe.</p></div>
+          </article>
+        </div>
+        <div class="strip">
+          <div class="strip-group"><span class="label">Config</span><span class="tag">endpoint</span><span class="tag">site</span><span class="tag">siteKey</span><span class="tag">slug</span><span class="tag">maxItems</span><span class="tag">showExcerpt</span><span class="tag">theme: light | dark | card | inherit</span><span class="tag">accent</span><span class="tag">locale</span><span class="tag">container</span></div>
+          <div class="strip-group"><span class="label">API</span><span class="tag ember">init()</span><span class="tag ember">on("loaded")</span><span class="tag ember">on("error")</span><span class="tag ember">openPost(slug)</span></div>
         </div>
       </section>
+    </div>
 
-      <!-- Features -->
-      <section class="section" id="features">
-        <p class="sys">Features</p>
-        <div class="section-head">
-          <h2>Everything a small blog needs — nothing it doesn't.</h2>
-          <p class="copy muted">Feature-rich where it counts for readers and SEO, deliberately narrow everywhere else.</p>
-        </div>
-        <div class="grid">
-          <article class="cell"><span class="num">Publish</span><h3>Markdown posts</h3><p>Server-sanitized Markdown with tags, slugs, and auto excerpts. Raw HTML is escaped, never executed.</p><span class="sig">save_post()</span></article>
-          <article class="cell"><span class="num">Discover</span><h3>Canonical SEO pages</h3><p>Static-style post pages with Open Graph and social meta, plus tag listings and prepared-statement search.</p><span class="sig">/post/{slug}</span></article>
-          <article class="cell"><span class="num">Syndicate</span><h3>RSS + sitemap</h3><p>Standards-compliant <code>feed.xml</code> and <code>sitemap.xml</code> generated straight from your posts.</p><span class="sig">/feed.xml</span></article>
-          <article class="cell"><span class="num">Embed</span><h3>One widget, three modes</h3><p>Feed, single post, or subscribe box from one script tag, themeable with CSS-variable overrides.</p><span class="sig">widgetType</span></article>
-          <article class="cell"><span class="num">Capture</span><h3>Subscribers</h3><p>Site-scoped subscribe endpoint with rate limiting, ready for double opt-in on the roadmap.</p><span class="sig">/api/subscribe</span></article>
-          <article class="cell"><span class="num">Host</span><h3>Media uploads</h3><p>Image-only uploads with an execution-denied uploads directory. No object storage required.</p><span class="sig">uploads/</span></article>
-          <article class="cell"><span class="num">Protect</span><h3>Secure by default</h3><p>PDO prepared statements, CSRF tokens, session timeout, password hashing, and a CORS origin allowlist.</p><span class="sig">check_cors()</span></article>
-          <article class="cell"><span class="num">Own</span><h3>No third parties</h3><p>No analytics scripts, no external fonts on your blog, no phone-home. Your data stays in your hosting account.</p><span class="sig">0 trackers</span></article>
-        </div>
-      </section>
+    <!-- Features -->
+    <div class="band paper">
+      <div class="wrap">
+        <section class="section" id="features" aria-labelledby="features-title">
+          <p class="sys">Features</p>
+          <div class="section-head">
+            <h2 id="features-title">Everything a small blog needs — nothing it doesn't.</h2>
+            <p class="copy">Feature-rich where it counts for readers and SEO, deliberately narrow everywhere else.</p>
+          </div>
+          <div class="grid">
+            <article class="cell"><div class="cell-top"><span class="ico"><svg aria-hidden="true"><use href="#i-file"/></svg></span><span class="num">Publish</span></div><h3>Markdown posts</h3><p>Server-sanitized Markdown with tags, slugs, and auto excerpts. Raw HTML is escaped, never executed.</p><span class="sig">save_post()</span></article>
+            <article class="cell"><div class="cell-top"><span class="ico"><svg aria-hidden="true"><use href="#i-search"/></svg></span><span class="num">Discover</span></div><h3>Canonical SEO pages</h3><p>Static-style post pages with Open Graph and social meta, plus tag listings and prepared-statement search.</p><span class="sig">/post/{slug}</span></article>
+            <article class="cell"><div class="cell-top"><span class="ico"><svg aria-hidden="true"><use href="#i-rss"/></svg></span><span class="num">Syndicate</span></div><h3>RSS + sitemap</h3><p>Standards-compliant <code>feed.xml</code> and <code>sitemap.xml</code> generated straight from your posts.</p><span class="sig">/feed.xml</span></article>
+            <article class="cell"><div class="cell-top"><span class="ico"><svg aria-hidden="true"><use href="#i-code"/></svg></span><span class="num">Embed</span></div><h3>One widget, four modes</h3><p>Feed, single post, subscribe box, or a &ldquo;What&rsquo;s new&rdquo; badge from one script tag, themeable with CSS-variable overrides.</p><span class="sig">widgetType</span></article>
+            <article class="cell"><div class="cell-top"><span class="ico"><svg aria-hidden="true"><use href="#i-mail"/></svg></span><span class="num">Capture</span></div><h3>Subscribers</h3><p>Site-scoped subscribe endpoint with rate limiting, double opt-in confirmation, and one-click unsubscribe.</p><span class="sig">/api/subscribe</span></article>
+            <article class="cell"><div class="cell-top"><span class="ico"><svg aria-hidden="true"><use href="#i-image"/></svg></span><span class="num">Host</span></div><h3>Media uploads</h3><p>Image-only uploads with an execution-denied uploads directory. No object storage required.</p><span class="sig">uploads/</span></article>
+            <article class="cell"><div class="cell-top"><span class="ico"><svg aria-hidden="true"><use href="#i-shield"/></svg></span><span class="num">Protect</span></div><h3>Secure by default</h3><p>PDO prepared statements, CSRF tokens, session timeout, password hashing, and a CORS origin allowlist.</p><span class="sig">check_cors_or_fail()</span></article>
+            <article class="cell"><div class="cell-top"><span class="ico"><svg aria-hidden="true"><use href="#i-eye-off"/></svg></span><span class="num">Own</span></div><h3>No third parties</h3><p>No analytics scripts, no external fonts on your blog, no phone-home. Your data stays in your hosting account.</p><span class="sig">0 trackers</span></article>
+          </div>
+          <div class="box-chips">
+            <span class="label">Also in the box</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>Drafts &amp; scheduled posts</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>Pinned &amp; related posts</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>FTS5 search with fallback</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>Reading time</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>BlogPosting JSON-LD</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>JSON Feed</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>llms.txt</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>JSON export &amp; import</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>Privacy-friendly view counts</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>ETag / 304</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>Dark mode</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>Editor &amp; admin roles</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>Month archives</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>Hosting health checks</span>
+            <span class="chip"><svg aria-hidden="true"><use href="#i-check"/></svg>Server-rendered HTML include</span>
+          </div>
+        </section>
+      </div>
+    </div>
 
-      <section class="section admin-shots" id="admin-screenshots">
+    <!-- Admin -->
+    <div class="wrap">
+      <section class="section admin-shots" id="admin-screenshots" aria-labelledby="admin-title">
         <p class="sys">Admin</p>
         <div class="section-head">
-          <h2>What the admin looks like.</h2>
-          <p class="copy muted">The daily publishing surface is quiet, keyboard-friendly, and built around the jobs you do most often.</p>
+          <h2 id="admin-title">What the admin looks like.</h2>
+          <p class="copy">The daily publishing surface is quiet, keyboard-friendly, and built around the jobs you do most often: set up, write, publish, put it on your site.</p>
         </div>
-        <div class="shot-grid">
+        <div class="shot-grid quad">
           <figure class="shot">
-            <img src="assets/shot-admin-dashboard.png" alt="TinyBlog admin dashboard with stats, status badges, and recent posts." width="720" height="450" loading="lazy" decoding="async">
-            <figcaption>Dashboard overview</figcaption>
+            <img src="assets/shot-admin-dashboard.png" alt="TinyBlog admin home with a setup checklist, at-a-glance stats, top posts, and drafts and scheduled posts." width="720" height="450" loading="lazy" decoding="async">
+            <figcaption>Home: setup checklist and what needs you</figcaption>
           </figure>
           <figure class="shot">
-            <img src="assets/shot-admin-editor.png" alt="TinyBlog post editor in dark mode with Markdown toolbar, live preview, and settings." width="720" height="450" loading="lazy" decoding="async">
-            <figcaption>Editor with preview</figcaption>
+            <img src="assets/shot-admin-editor.png" alt="TinyBlog post editor in split view with Markdown on the left, a server-rendered preview on the right, and a publishing rail with draft, publish, and schedule options." width="720" height="450" loading="lazy" decoding="async">
+            <figcaption>Editor with server-rendered preview</figcaption>
           </figure>
           <figure class="shot">
-            <img src="assets/shot-admin-media.png" alt="TinyBlog media library with upload drop zone and image grid." width="720" height="450" loading="lazy" decoding="async">
+            <img src="assets/shot-admin-embed.png" alt="TinyBlog Add to site screen with allowed websites, a refused request with an Allow button, layout options, platform tabs, and a live widget preview." width="720" height="450" loading="lazy" decoding="async">
+            <figcaption>Add to site: allow, configure, copy, verify</figcaption>
+          </figure>
+          <figure class="shot">
+            <img src="assets/shot-admin-media.png" alt="TinyBlog media library with upload drop zone, required alt text, and image grid." width="720" height="450" loading="lazy" decoding="async">
             <figcaption>Media library</figcaption>
           </figure>
         </div>
       </section>
+    </div>
 
-      <!-- Compare -->
-      <section class="section" id="compare">
+    <!-- Security -->
+    <div class="band paper">
+      <div class="wrap">
+        <section class="section" id="security" aria-labelledby="security-title">
+          <p class="sys">Security</p>
+          <div class="section-head">
+            <h2 id="security-title">Security you can read in one file.</h2>
+            <p class="copy">The threats that matter for a small PHP blog each have a specific, inspectable answer — no plugin marketplace to audit.</p>
+          </div>
+          <div class="threats" role="table" aria-label="Threats and mitigations">
+            <div class="threat head" role="row"><span class="label" role="columnheader">Threat</span><span class="label" role="columnheader">How TinyBlog answers it</span><span class="label" role="columnheader">Look for</span></div>
+            <div class="threat" role="row"><span class="who" role="cell"><span class="ico"><svg aria-hidden="true"><use href="#i-database"/></svg></span>SQL injection</span><p role="cell">PDO prepared statements for every query, including search and its FTS5 fallback.</p><span role="cell"><span class="tag">prepared statements</span></span></div>
+            <div class="threat" role="row"><span class="who" role="cell"><span class="ico"><svg aria-hidden="true"><use href="#i-code"/></svg></span>Cross-site scripting</span><p role="cell">Output escaping, server-sanitized Markdown, and a second sanitization pass inside the widget.</p><span role="cell"><span class="tag">htmlEscape()</span></span></div>
+            <div class="threat" role="row"><span class="who" role="cell"><span class="ico"><svg aria-hidden="true"><use href="#i-shield"/></svg></span>Cross-site request forgery</span><p role="cell">CSRF tokens on every admin write; a POST without a valid token gets a 403.</p><span role="cell"><span class="tag">require_csrf()</span></span></div>
+            <div class="threat" role="row"><span class="who" role="cell"><span class="ico"><svg aria-hidden="true"><use href="#i-image"/></svg></span>Unsafe uploads</span><p role="cell">Image-only uploads, and script execution denied inside uploads/.</p><span role="cell"><span class="tag">uploads/.htaccess</span></span></div>
+            <div class="threat" role="row"><span class="who" role="cell"><span class="ico"><svg aria-hidden="true"><use href="#i-lock"/></svg></span>Credential attacks</span><p role="cell">Password hashing, session timeout, and rate-limited logins. No default admin password ships.</p><span role="cell"><span class="tag">rate_limit()</span></span></div>
+            <div class="threat" role="row"><span class="who" role="cell"><span class="ico"><svg aria-hidden="true"><use href="#i-globe"/></svg></span>Cross-origin exposure</span><p role="cell">A per-site CORS origin allowlist, plus an optional public siteKey for API reads.</p><span role="cell"><span class="tag">check_cors_or_fail()</span></span></div>
+          </div>
+          <div class="links-row"><a href="docs.html#security">Read the security checklist</a><a href="https://github.com/tanzir71/tinyblog/blob/main/tinyblog.php">Read the source — it's one file</a></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Compare -->
+    <div class="wrap">
+      <section class="section" id="compare" aria-labelledby="compare-title">
         <p class="sys">Compare</p>
         <div class="section-head">
-          <h2>Why teams pick it over hosted blogs.</h2>
-          <p class="copy muted">For a store, portfolio, docs site, or product-updates feed, a full CMS or a hosted platform is often too much — and lock-in and per-seat pricing punish you later.</p>
+          <h2 id="compare-title">Why teams pick it over hosted blogs.</h2>
+          <p class="copy">For a store, portfolio, docs site, or product-updates feed, a full CMS or a hosted platform is often too much — and lock-in and per-seat pricing punish you later.</p>
         </div>
-        <div class="vs-grid">
-          <div class="vs">
-            <span class="label">vs DropInBlog</span>
+        <div class="vs-layout">
+          <div class="vs featured">
+            <span class="tag">vs DropInBlog</span>
             <h3>The $0 self-hosted embed</h3>
-            <p>DropInBlog starts from $49/mo for managed convenience. TinyBlog gives you the same blog-embed job as open-source files on your host.</p>
-            <a href="tinyblog-vs-dropinblog.html">Compare TinyBlog vs DropInBlog &rarr;</a>
+            <p>DropInBlog lists its Solo plan at $99/mo, or $79/mo billed yearly, for managed convenience. TinyBlog does the same blog-embed job as open-source files on your host.</p>
+            <div class="price-cmp">
+              <div class="self"><small>TinyBlog</small><strong>$0</strong><span>self-hosted · MIT</span></div>
+              <div><small>DropInBlog</small><strong>$79–99/mo</strong><span>Solo plan, yearly–monthly</span></div>
+            </div>
+            <a href="tinyblog-vs-dropinblog.html">Compare TinyBlog vs DropInBlog</a>
+            <p class="fine">Prices from DropInBlog's site and Shopify listing, November 2026. Plans change; verify before quoting.</p>
           </div>
-          <div class="vs">
-            <span class="label">vs Substack</span>
-            <h3>Own the feed, skip the lock-in</h3>
-            <p>No platform lock-in, no revenue cut, and the archive lives on your domain instead of someone else's subdomain.</p>
-            <a href="tinyblog-vs-substack.html">Compare TinyBlog vs Substack &rarr;</a>
-          </div>
-          <div class="vs">
-            <span class="label">vs Ghost</span>
-            <h3>No Node server to babysit</h3>
-            <p>Runs on the cheapest PHP shared hosting — no Node process, no reverse proxy, no monthly Ghost(Pro) bill.</p>
-            <a href="tinyblog-vs-ghost.html">Compare TinyBlog vs Ghost &rarr;</a>
-          </div>
-          <div class="vs">
-            <span class="label">vs WordPress</span>
-            <h3>One file vs plugin sprawl</h3>
-            <p>A readable single file instead of a plugin-and-update treadmill and a database you can't fit in your head.</p>
-            <a href="tinyblog-vs-wordpress.html">Compare TinyBlog vs WordPress &rarr;</a>
-          </div>
-          <div class="vs">
-            <span class="label">vs third-party widgets</span>
-            <h3>No trackers on your readers</h3>
-            <p>Unlike third-party embed widgets, TinyBlog serves its own JSON from your host — no cross-site cookies or tracking.</p>
-            <a href="tinyblog-vs-disqus-embed.html">Compare TinyBlog vs third-party widgets &rarr;</a>
-          </div>
-        </div>
-      </section>
-
-      <!-- Scope -->
-      <section class="section">
-        <p class="sys">Scope</p>
-        <div class="section-head">
-          <h2>What it deliberately doesn't do.</h2>
-          <p class="copy muted">Honest scope beats an inflated feature list. When you outgrow these limits, the docs' "How to scale" section points the way.</p>
-        </div>
-        <div class="choose">
-          <div>
-            <h3>Not a CMS fleet</h3>
-            <p>No multi-tenant admin, no page builder, no theme marketplace, no plugin API. One app, one blog, one readable file.</p>
-          </div>
-          <div>
-            <h3>Not a heavy stack</h3>
-            <p>No Node runtime, no build step, no Composer dependencies, no background job queue. SQLite until you genuinely outgrow it.</p>
+          <div class="vs-grid">
+            <div class="vs">
+              <span class="label">vs Substack</span>
+              <h3>Own the feed, skip the lock-in</h3>
+              <p>No platform lock-in, no revenue cut, and the archive lives on your domain instead of someone else's subdomain.</p>
+              <a href="tinyblog-vs-substack.html">Compare TinyBlog vs Substack</a>
+            </div>
+            <div class="vs">
+              <span class="label">vs Ghost</span>
+              <h3>No Node server to babysit</h3>
+              <p>Runs on the cheapest PHP shared hosting — no Node process, no reverse proxy, no monthly Ghost(Pro) bill.</p>
+              <a href="tinyblog-vs-ghost.html">Compare TinyBlog vs Ghost</a>
+            </div>
+            <div class="vs">
+              <span class="label">vs WordPress</span>
+              <h3>One file vs plugin sprawl</h3>
+              <p>A readable single file instead of a plugin-and-update treadmill and a database you can't fit in your head.</p>
+              <a href="tinyblog-vs-wordpress.html">Compare TinyBlog vs WordPress</a>
+            </div>
+            <div class="vs">
+              <span class="label">vs third-party widgets</span>
+              <h3>No trackers on your readers</h3>
+              <p>Unlike third-party embed widgets, TinyBlog serves its own JSON from your host — no cross-site cookies or tracking.</p>
+              <a href="tinyblog-vs-disqus-embed.html">Compare TinyBlog vs third-party widgets</a>
+            </div>
           </div>
         </div>
       </section>
+    </div>
 
-      <!-- Quick start + CTA -->
-      <section class="section">
-        <p class="sys">Quick start</p>
+    <!-- Scope -->
+    <div class="band paper">
+      <div class="wrap">
+        <section class="section" id="scope" aria-labelledby="scope-title">
+          <p class="sys">Scope</p>
+          <div class="section-head">
+            <h2 id="scope-title">What it deliberately doesn't do.</h2>
+            <p class="copy">Honest scope beats an inflated feature list. When you outgrow these limits, the docs' "How to scale" section points the way.</p>
+          </div>
+          <div class="choose">
+            <div>
+              <span class="ico"><svg aria-hidden="true"><use href="#i-x"/></svg></span>
+              <h3>Not a CMS fleet</h3>
+              <p>No multi-tenant admin, no page builder, no theme marketplace, no plugin API. One app, one blog, one readable file.</p>
+            </div>
+            <div>
+              <span class="ico"><svg aria-hidden="true"><use href="#i-x"/></svg></span>
+              <h3>Not a heavy stack</h3>
+              <p>No Node runtime, no build step, no Composer dependencies, no background job queue. SQLite until you genuinely outgrow it.</p>
+            </div>
+            <div class="dark">
+              <span class="ico"><svg aria-hidden="true"><use href="#i-arrow-ur"/></svg></span>
+              <h3>When you outgrow it</h3>
+              <p>Move to Postgres when multiple authors, higher write volume, or large subscriber lists make SQLite locking noticeable, and move media to object storage when uploads outgrow your disk.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="wrap">
+      <section class="section" id="faq" aria-labelledby="faq-title">
+        <p class="sys">FAQ</p>
         <div class="section-head">
-          <h2>Grab the file, add the tag.</h2>
-          <p class="copy muted">The library is a single static file. Download it into your project, then drop in the embed.</p>
+          <h2 id="faq-title">Questions before you upload.</h2>
+          <p class="copy">Short answers here. The docs have the long ones, including deployment, routes, and backups.</p>
         </div>
-        <div class="code-card" style="margin-top: var(--s-6);" aria-label="Quick start commands">
+        <div class="faq">
+          <div>
+            <details class="faq-item" open><summary><h3>Where does TinyBlog run?</h3></summary><p>Any PHP 8 host with PDO SQLite, including typical cPanel shared hosting. The PHP app does not run on Vercel; Vercel only hosts the marketing site and demo feed.</p></details>
+            <details class="faq-item"><summary><h3>Can I add it to Shopify, WordPress, or Squarespace?</h3></summary><p>Anywhere you can paste a script tag: a custom HTML block, a theme section, or a code block. Admin → Add to site generates the snippet with step-by-step instructions per platform. Some site builders only run scripts on certain plans.</p></details>
+            <details class="faq-item"><summary><h3>Is an embedded blog good for SEO?</h3></summary><p>The widget is for display. Every post also gets a canonical page on your blog host with Open Graph tags, BlogPosting JSON-LD, RSS, and a sitemap. For pages that must ship posts in the HTML itself, include the server-rendered <code>/embed/feed.html</code> fragment.</p></details>
+          </div>
+          <div>
+            <details class="faq-item" open><summary><h3>Who owns the data?</h3></summary><p>You do. Posts, settings, media, and subscribers live in SQLite and uploads/ on your host, and Settings exports everything as JSON for backups or moving hosts.</p></details>
+            <details class="faq-item"><summary><h3>Does it send newsletters?</h3></summary><p>No. Subscribers get double opt-in confirmation (optionally through PHP mail()) and one-click unsubscribe, and you can export confirmed subscribers as CSV. Sending newsletters is deliberately out of scope.</p></details>
+            <details class="faq-item"><summary><h3>Is it really free?</h3></summary><p>Yes. MIT licensed, with no paid tier and no per-seat pricing. You pay only for the hosting you already have.</p></details>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Quick start + CTA -->
+    <div class="band night cta-band" id="quick-start">
+      <div class="wrap cta-grid">
+        <div>
+          <p class="sys">Quick start</p>
+          <h2>Publish updates worth opening.</h2>
+          <p class="lede">Grab the file, add the tag. The library is a single static file: download it into your project, then drop in the embed.</p>
+          <div class="actions">
+            <a class="btn accent" href="docs.html">Read the docs</a>
+            <a class="btn inverse" href="https://github.com/tanzir71/tinyblog">Star on GitHub</a>
+          </div>
+        </div>
+        <div class="code-card" aria-label="Quick start commands">
           <div class="code-bar">
             <span>terminal</span>
-            <button class="copy-btn" type="button" data-copy="#snippet-quick">Copy</button>
+            <button class="copy-btn" type="button" data-copy="#snippet-quick"><svg width="12" height="12" aria-hidden="true"><use href="#i-copy"/></svg>Copy</button>
           </div>
 <pre id="snippet-quick"><code><span class="tok-com"># clone the repo (backend + widget + docs)</span>
-git clone https://github.com/tanzir71/tinyblog
+git clone <span class="tok-str">https://github.com/tanzir71/tinyblog</span>
 
 <span class="tok-com"># or grab just the widget for the client side</span>
-curl -LO https://blog.example.com/tinyblog-widget.js</code></pre>
+curl -LO <span class="tok-str">https://blog.example.com/tinyblog-widget.js</span></code></pre>
         </div>
-      </section>
+      </div>
+    </div>
+  </main>
 
-      <div class="cta">
-        <h2>Publish updates worth opening.</h2>
-        <div class="actions" style="margin-top:0;">
-          <a class="btn" href="docs.html">Read the docs</a>
-          <a class="btn ghost" href="https://github.com/tanzir71/tinyblog">Star on GitHub</a>
+  <div class="site-foot">
+    <div class="wrap">
+      <footer>
+        <div class="foot-cols">
+          <div class="foot-col">
+            <a class="brand" href="./" aria-label="TinyBlog home"><svg class="wordmark" viewBox="0 0 90 29" role="img" aria-label="TinyBlog"><use href="#wm"/></svg></a>
+            <p class="copy muted" style="font-size:var(--fs-small); max-width:34ch;">A free, self-hosted, single-file blog backend with a one-line embed. MIT licensed.</p>
+          </div>
+          <div class="foot-col">
+            <span class="label">Product</span>
+            <a href="#features">Features</a>
+            <a href="#setup">Setup</a>
+            <a href="docs.html">Docs</a>
+            <a href="docs.html#security">Security</a>
+          </div>
+          <div class="foot-col">
+            <span class="label">Compare</span>
+            <a href="tinyblog-vs-dropinblog.html">vs DropInBlog</a>
+            <a href="tinyblog-vs-substack.html">vs Substack</a>
+            <a href="tinyblog-vs-ghost.html">vs Ghost</a>
+            <a href="tinyblog-vs-wordpress.html">vs WordPress</a>
+            <a href="tinyblog-vs-disqus-embed.html">vs third-party widgets</a>
+          </div>
+          <div class="foot-col">
+            <span class="label">Project</span>
+            <a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a>
+            <a href="docs.html#deployment">Deployment</a>
+            <a href="docs.html#changelog">Changelog</a>
+          </div>
         </div>
-      </div>
-    </main>
-
-    <footer>
-      <div class="foot-cols">
-        <div class="foot-col">
-          <span class="label">TinyBlog</span>
-          <p class="copy muted" style="font-size:var(--fs-small); max-width:34ch;">A free, self-hosted, single-file blog backend with a one-line embed. MIT licensed.</p>
+        <div class="foot-bottom">
+          <span>TinyBlog Widget — free &amp; open source, MIT licensed.</span>
+          <span>Repository: <a href="https://github.com/tanzir71/tinyblog">github.com/tanzir71/tinyblog</a></span>
         </div>
-        <div class="foot-col">
-          <span class="label">Product</span>
-          <a href="#features">Features</a>
-          <a href="#setup">Setup</a>
-          <a href="docs.html">Docs</a>
-          <a href="docs.html#security">Security</a>
-        </div>
-        <div class="foot-col">
-          <span class="label">Compare</span>
-          <a href="tinyblog-vs-dropinblog.html">vs DropInBlog</a>
-          <a href="tinyblog-vs-substack.html">vs Substack</a>
-          <a href="tinyblog-vs-ghost.html">vs Ghost</a>
-          <a href="tinyblog-vs-wordpress.html">vs WordPress</a>
-          <a href="tinyblog-vs-disqus-embed.html">vs third-party widgets</a>
-        </div>
-        <div class="foot-col">
-          <span class="label">Project</span>
-          <a class="ext" href="https://github.com/tanzir71/tinyblog">GitHub</a>
-          <a href="docs.html#deployment">Deployment</a>
-          <a href="docs.html#changelog">Changelog</a>
-        </div>
-      </div>
-      <div class="foot-bottom">
-        TinyBlog Widget — free &amp; open source, MIT licensed. Repository: <a href="https://github.com/tanzir71/tinyblog">github.com/tanzir71/tinyblog</a>
-      </div>
-    </footer>
+      </footer>
+    </div>
   </div>
 
   <script src="tinyblog-widget.js"></script>
@@ -305,23 +564,52 @@ curl -LO https://blog.example.com/tinyblog-widget.js</code></pre>
         widgetType: "feed",
         maxItems: 3,
         showExcerpt: true,
+        theme: "card",
         canonicalUrl: "https://github.com/tanzir71/tinyblog"
       });
     })();
   </script>
   <script>
-    document.querySelectorAll('.copy-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var el = document.querySelector(btn.getAttribute('data-copy'));
-        if (!el) return;
-        var text = el.innerText;
+    (function () {
+      function copyText(btn, text) {
+        if (!navigator.clipboard) return;
         navigator.clipboard.writeText(text).then(function () {
-          var prev = btn.textContent;
-          btn.textContent = 'Copied';
-          setTimeout(function () { btn.textContent = prev; }, 1200);
+          var label = btn.lastChild;
+          var prev = label.textContent;
+          label.textContent = "Copied";
+          setTimeout(function () { label.textContent = prev; }, 1200);
+        });
+      }
+      document.querySelectorAll(".copy-btn[data-copy]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var el = document.querySelector(btn.getAttribute("data-copy"));
+          if (el) copyText(btn, el.innerText);
         });
       });
-    });
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+      function select(tab) {
+        tabs.forEach(function (t) {
+          var on = t === tab;
+          t.setAttribute("aria-selected", on ? "true" : "false");
+          t.tabIndex = on ? 0 : -1;
+          document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+        });
+      }
+      tabs.forEach(function (tab, i) {
+        tab.addEventListener("click", function () { select(tab); });
+        tab.addEventListener("keydown", function (e) {
+          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+          var next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+          select(next); next.focus();
+        });
+      });
+      document.querySelectorAll("[data-copy-tabs]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var panel = document.querySelector('.tab-panel:not([hidden])');
+          if (panel) copyText(btn, panel.innerText);
+        });
+      });
+    })();
   </script>
 </body>
 </html>
